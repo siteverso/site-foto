@@ -39,6 +39,10 @@ export default {
     definePassword: 'Definir uma senha',
     passwordHelp: 'Ao definir uma senha, você poderá entrar sem o Google usando seu usuário ou e-mail.',
     accessMethods: 'Métodos de acesso',
+    observerVisibility: 'Quem pode ver sua lista',
+    observerVisibilityPublic: 'Pública — todos podem ver',
+    observerVisibilityPrivate: 'Privada — ninguém pode ver',
+    observerVisibilityHelp: 'Você sempre poderá ver sua própria lista no perfil.',
   },
   login: {
     title: 'Entrar',

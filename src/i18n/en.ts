@@ -39,6 +39,10 @@ export default {
     definePassword: 'Set a password',
     passwordHelp: 'After setting a password, you can sign in without Google using your username or email.',
     accessMethods: 'Sign-in methods',
+    observerVisibility: 'Who can see your list',
+    observerVisibilityPublic: 'Public — everyone can see it',
+    observerVisibilityPrivate: 'Private — no one can see it',
+    observerVisibilityHelp: 'You will always be able to see your own list on your profile.',
   },
   login: {
     title: 'Sign in',

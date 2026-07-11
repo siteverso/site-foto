@@ -4,6 +4,7 @@ import { requireUser } from '../../../lib/server/session';
 import { normalizeUsername, validateUsername } from '../../../lib/server/security';
 import { withConnection } from '../../../lib/server/oracle';
 import { validateMessageLength } from '../../../lib/message-limit';
+import { normalizeObserverVisibility } from '../../../lib/observer-visibility';
 
 type RouteContext = Parameters<APIRoute>[0];
 
@@ -17,6 +18,7 @@ type AccountRow = {
     PHOTO_COUNT: unknown;
     MESSAGE_COUNT: unknown;
     OBSERVER_COUNT: unknown;
+    OBSERVER_VISIBILITY_CODE: unknown;
 };
 
 type ExecuteResult<T> = {
@@ -41,6 +43,7 @@ export async function GET(context: RouteContext) {
                         u.email,
                         NVL(u.bio, '') AS bio,
                         NVL(u.avatar_url, '') AS avatar_url,
+                        NVL(u.observer_visibility_code, 'public') AS observer_visibility_code,
                         NVL2(u.password_hash, 1, 0) AS has_password,
                         NVL2(u.google_sub, 1, 0) AS has_google,
                         (SELECT COUNT(*)
@@ -76,6 +79,7 @@ export async function GET(context: RouteContext) {
                 photoCount: Number(row.PHOTO_COUNT || 0),
                 messageCount: Number(row.MESSAGE_COUNT || 0),
                 observerCount: Number(row.OBSERVER_COUNT || 0),
+                observerVisibility: normalizeObserverVisibility(row.OBSERVER_VISIBILITY_CODE || 'public'),
             };
         });
 
@@ -88,10 +92,11 @@ export async function GET(context: RouteContext) {
 export async function PATCH(context: RouteContext) {
     try {
         const user = await requireUser(context);
-        const input = await body<{ username?: string; bio?: string }>(context.request);
+        const input = await body<{ username?: string; bio?: string; observerVisibility?: string }>(context.request);
         const username = normalizeUsername(input.username);
         const bio = validateMessageLength(input.bio, 'A apresentação');
         validateUsername(username);
+        const observerVisibility = normalizeObserverVisibility(input.observerVisibility);
 
         await withConnection(async connection => {
             const db = connection as unknown as OracleExecutor;
@@ -101,9 +106,10 @@ export async function PATCH(context: RouteContext) {
                     `UPDATE murm_user
                         SET username = :username,
                             bio = :bio,
+                            observer_visibility_code = :observer_visibility_code,
                             updated_at = SYSTIMESTAMP
                       WHERE id = :id`,
-                    { username, bio: bio || null, id: user.id },
+                    { username, bio: bio || null, observer_visibility_code: observerVisibility, id: user.id },
                     { autoCommit: true },
                 );
             } catch (error) {

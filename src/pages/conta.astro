@@ -32,6 +32,14 @@ const t = getMessages(locale);
           <div class="field"><label for="username">{t.common.username}</label><input id="username" name="username" maxlength="30" required /></div>
           <div class="field"><label for="email">{t.common.email}</label><input id="email" name="email" type="email" readonly /></div>
           <div class="field"><label for="bio">{t.profile.bio}</label><textarea id="bio" name="bio" maxlength={MESSAGE_MAX_LENGTH} rows="5"></textarea></div>
+          <div class="field">
+            <label for="observerVisibility">{t.profile.observerVisibility}</label>
+            <select id="observerVisibility" name="observerVisibility">
+              <option value="public">{t.profile.observerVisibilityPublic}</option>
+              <option value="private">{t.profile.observerVisibilityPrivate}</option>
+            </select>
+            <small class="field-help">{t.profile.observerVisibilityHelp}</small>
+          </div>
           <button class="button primary" type="submit">{t.common.save}</button>
           <p class="form-message" data-form-message hidden></p>
         </form>
@@ -133,6 +141,7 @@ const t = getMessages(locale);
     profileForm.username.value = account.username;
     profileForm.email.value = account.email;
     profileForm.bio.value = account.bio || '';
+    profileForm.observerVisibility.value = account.observerVisibility || 'public';
 
     const methods = [];
     if (account.hasPassword) methods.push('Senha');
@@ -165,7 +174,11 @@ const t = getMessages(locale);
     try {
       await api('/api/auth/profile', {
         method: 'PATCH',
-        body: JSON.stringify({ username: profileForm.username.value, bio: profileForm.bio.value }),
+        body: JSON.stringify({
+          username: profileForm.username.value,
+          bio: profileForm.bio.value,
+          observerVisibility: profileForm.observerVisibility.value,
+        }),
       });
       await loadAccount();
       showMessage(profileForm, 'Dados da conta salvos com sucesso.', 'success');

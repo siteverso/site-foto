@@ -5,6 +5,7 @@ import { requireUser } from '../../lib/server/session';
 import { getComments, getFriendPhotos, getLatestPhotos, getPublicProfile, getUserPhotos, isFriend } from '../../lib/server/repositories/photos';
 import { getMessages, normalizeLocale } from '../../i18n';
 import { MESSAGE_MAX_LENGTH } from '../../lib/message-limit';
+import { canViewObservedList } from '../../lib/observer-visibility';
 
 const user = await requireUser(Astro);
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
@@ -15,8 +16,9 @@ if (!profile) Astro.response.status = 404;
 const isOwner = Boolean(profile && profile.id === user.id);
 const photos = profile ? await getUserPhotos(profile.username) : [];
 const alreadyFriend = profile && !isOwner ? await isFriend(user.id, profile.id) : false;
+const showObservedList = Boolean(profile && canViewObservedList(profile.id, user.id, profile.observerVisibility));
 const [friendPhotos, latestPhotos, commentsByPhoto] = await Promise.all([
-  profile ? getFriendPhotos(profile.id) : Promise.resolve([]),
+  profile && showObservedList ? getFriendPhotos(profile.id) : Promise.resolve([]),
   profile ? getLatestPhotos(profile.id) : Promise.resolve([]),
   Promise.all(photos.map(async photo => ({ photoId: photo.id, comments: await getComments(photo.id) }))),
 ]);
@@ -47,11 +49,24 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             </button>
           )}
 
-          {friendPhotos.length > 0 && (
-            <section class="profile-friends">
+          {showObservedList && friendPhotos.length > 0 && (
+            <section class="profile-friends" data-profile-friends>
               <h2>{t.publicProfile.friends}</h2>
               <div class="photo-mini-grid" data-live-section="profile-observers" data-live-list>{friendPhotos.map(item => (
-                <article class="photo-mini-card" data-live-key={`observer-${item.id}`}><a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a><div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div></article>
+                <article class="photo-mini-card" data-live-key={`observer-${item.id}`} data-friend-user-id={item.userId}>
+                  {isOwner && (
+                    <button
+                      class="photo-mini-remove"
+                      type="button"
+                      data-remove-friend
+                      data-user-id={item.userId}
+                      aria-label={`Remover @${item.username} dos observados`}
+                      title={`Remover @${item.username} dos observados`}
+                    >×</button>
+                  )}
+                  <a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a>
+                  <div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div>
+                </article>
               ))}</div>
             </section>
           )}
@@ -161,6 +176,23 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       else { button.disabled = false; alert(await response.text()); }
     });
     document.addEventListener('click', async event => {
+      const removeFriendButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-remove-friend]');
+      if (removeFriendButton) {
+        const userId = removeFriendButton.dataset.userId;
+        if (!userId || removeFriendButton.disabled) return;
+        removeFriendButton.disabled = true;
+        const response = await fetch(`/api/friends/${userId}`, { method: 'DELETE' });
+        if (!response.ok) {
+          removeFriendButton.disabled = false;
+          alert(await response.text());
+          return;
+        }
+        document.querySelectorAll<HTMLElement>(`[data-friend-user-id="${CSS.escape(userId)}"]`).forEach(card => card.remove());
+        const section = document.querySelector<HTMLElement>('[data-profile-friends]');
+        if (section && !section.querySelector('[data-friend-user-id]')) section.remove();
+        return;
+      }
+
       const current = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-delete-photo]');
       if (!current) return;
       if (!confirm(current.title)) return;

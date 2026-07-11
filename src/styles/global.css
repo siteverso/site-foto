@@ -1336,6 +1336,40 @@ body:has(.login-shell) {
   margin-top: 24px;
 }
 
+.profile-friends .photo-mini-card {
+  position: relative;
+}
+
+.photo-mini-remove {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 2;
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 72%);
+  border-radius: 50%;
+  color: #fff;
+  background: rgb(0 0 0 / 62%);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+.photo-mini-remove:hover {
+  background: rgb(0 0 0 / 82%);
+}
+
+.photo-mini-remove:disabled {
+  opacity: .5;
+  cursor: wait;
+}
+
 
 /* FotoLife: histórico recente no perfil do usuário */
 .profile-posts{margin-top:28px;padding-top:24px;border-top:1px solid #ddd}.profile-posts h2{margin:0 0 18px;font-size:.8rem;text-transform:uppercase;letter-spacing:.13em}.profile-post-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.profile-post-card{min-width:0;overflow:hidden;border:1px solid #e0e0dc;border-radius:14px;background:#fafaf8}.profile-post-card img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;background:#e7e7e3}.profile-post-card>div{padding:10px}.profile-post-card p{display:-webkit-box;overflow:hidden;margin:0 0 8px;line-height:1.4;font-size:.82rem;-webkit-box-orient:vertical;-webkit-line-clamp:2}.profile-post-card time{display:block;color:#777;font-size:.68rem}@media(max-width:760px){.profile-post-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:420px){.profile-post-grid{grid-template-columns:1fr}}

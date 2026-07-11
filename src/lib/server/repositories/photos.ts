@@ -345,6 +345,7 @@ export type PublicProfile = {
     username: string;
     bio: string;
     avatarUrl: string;
+    observerVisibility: 'public' | 'private';
 };
 
 export async function deletePhoto(postId: number, userId: number): Promise<boolean> {
@@ -370,7 +371,8 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
             `SELECT id,
                     username,
                     NVL(bio, '') AS bio,
-                    NVL(avatar_url, '') AS avatar_url
+                    NVL(avatar_url, '') AS avatar_url,
+                    NVL(observer_visibility_code, 'public') AS observer_visibility_code
              FROM murm_user
              WHERE LOWER(username) = LOWER(:username)
                AND active = 1`,
@@ -383,6 +385,7 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
             username: String(row.USERNAME),
             bio: String(row.BIO || ''),
             avatarUrl: String(row.AVATAR_URL || ''),
+            observerVisibility: String(row.OBSERVER_VISIBILITY_CODE || 'public') === 'private' ? 'private' : 'public',
         };
     });
 }
@@ -480,6 +483,43 @@ export async function isFriend(userId: number, friendUserId: number): Promise<bo
             { user_id: userId, friend_user_id: friendUserId },
         );
         return Boolean(result.rows?.[0]);
+    });
+}
+
+type FriendRemovalConnection = {
+    execute: (
+        sql: string,
+        binds: Record<string, number>,
+    ) => Promise<{ rowsAffected?: number }>;
+};
+
+export async function removeFriendWithConnection(
+    connection: FriendRemovalConnection,
+    userId: number,
+    friendUserId: number,
+): Promise<boolean> {
+    if (userId === friendUserId) throw new Error('AMIGO_INVALIDO');
+
+    const result = await connection.execute(
+        `DELETE FROM murm_friend
+         WHERE (user_id = :user_id AND friend_user_id = :friend_user_id)
+            OR (user_id = :friend_user_id AND friend_user_id = :user_id)`,
+        { user_id: userId, friend_user_id: friendUserId },
+    );
+
+    return Number(result.rowsAffected || 0) > 0;
+}
+
+export async function removeFriend(userId: number, friendUserId: number): Promise<boolean> {
+    return withConnection(async connection => {
+        try {
+            const removed = await removeFriendWithConnection(connection, userId, friendUserId);
+            await connection.commit();
+            return removed;
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        }
     });
 }
 
