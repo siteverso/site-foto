@@ -76,7 +76,7 @@ export async function getTodayPhoto(userId: number): Promise<PhotoCard | null> {
     });
 }
 
-export async function getFriendPhotos(userId: number): Promise<PhotoCard[]> {
+export async function getFriendPhotos(userId: number, includeHidden = true): Promise<PhotoCard[]> {
     return withConnection(async connection => {
         const result = await connection.execute<OracleRow>(
             `SELECT *
@@ -92,12 +92,21 @@ export async function getFriendPhotos(userId: number): Promise<PhotoCard[]> {
                  JOIN murm_user u ON u.id = p.user_id
                  WHERE f.user_id = :user_id
                    AND f.status = 'A'
+                   AND (
+                       :include_hidden = 1
+                       OR NOT EXISTS (
+                           SELECT 1
+                           FROM murm_observer_hidden h
+                           WHERE h.owner_user_id = f.user_id
+                             AND h.hidden_user_id = f.friend_user_id
+                       )
+                   )
                    AND p.post_type = 'photo'
                    AND p.status = 'published'
                  ORDER BY p.created_at DESC
              )
              WHERE ROWNUM <= 8`,
-            { user_id: userId },
+            { user_id: userId, include_hidden: includeHidden ? 1 : 0 },
         );
         return (result.rows || []).map(card);
     });

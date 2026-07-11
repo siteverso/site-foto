@@ -40,6 +40,11 @@ const t = getMessages(locale);
             </select>
             <small class="field-help">{t.profile.observerVisibilityHelp}</small>
           </div>
+          <fieldset class="field observed-privacy" data-observed-privacy data-empty-text="Você ainda não observa ninguém.">
+            <legend>{t.profile.hiddenObservedTitle}</legend>
+            <small class="field-help">{t.profile.hiddenObservedHelp}</small>
+            <div class="observed-privacy-list" data-observed-privacy-list></div>
+          </fieldset>
           <button class="button primary" type="submit">{t.common.save}</button>
           <p class="form-message" data-form-message hidden></p>
         </form>
@@ -69,6 +74,8 @@ const t = getMessages(locale);
   const profileForm = document.querySelector('[data-profile-form]');
   const passwordForm = document.querySelector('[data-password-form]');
   const toastElement = document.querySelector('[data-toast]');
+  const observedPrivacy = document.querySelector('[data-observed-privacy]');
+  const observedPrivacyList = document.querySelector('[data-observed-privacy-list]');
 
   const api = async (url, options = {}) => {
     const response = await fetch(url, {
@@ -142,6 +149,33 @@ const t = getMessages(locale);
     profileForm.email.value = account.email;
     profileForm.bio.value = account.bio || '';
     profileForm.observerVisibility.value = account.observerVisibility || 'public';
+    if (observedPrivacyList) {
+      observedPrivacyList.replaceChildren();
+      const observedUsers = Array.isArray(account.observedUsers) ? account.observedUsers : [];
+      if (observedUsers.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'observed-privacy-empty';
+        empty.textContent = observedPrivacy?.dataset.emptyText || 'Você ainda não observa ninguém.';
+        observedPrivacyList.append(empty);
+      } else {
+        observedUsers.forEach(item => {
+          const label = document.createElement('label');
+          label.className = 'observed-privacy-item';
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.name = 'hiddenObservedUserIds';
+          checkbox.value = String(item.id);
+          checkbox.checked = Boolean(item.hidden);
+          const avatar = document.createElement('span');
+          avatar.className = 'observed-privacy-avatar';
+          avatar.textContent = initials(item.username);
+          const username = document.createElement('strong');
+          username.textContent = `@${item.username}`;
+          label.append(checkbox, avatar, username);
+          observedPrivacyList.append(label);
+        });
+      }
+    }
 
     const methods = [];
     if (account.hasPassword) methods.push('Senha');
@@ -178,6 +212,7 @@ const t = getMessages(locale);
           username: profileForm.username.value,
           bio: profileForm.bio.value,
           observerVisibility: profileForm.observerVisibility.value,
+          hiddenObservedUserIds: [...profileForm.querySelectorAll('input[name="hiddenObservedUserIds"]:checked')].map(input => Number(input.value)),
         }),
       });
       await loadAccount();

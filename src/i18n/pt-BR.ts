@@ -43,6 +43,9 @@ export default {
     observerVisibilityPublic: 'Pública — todos podem ver',
     observerVisibilityPrivate: 'Privada — ninguém pode ver',
     observerVisibilityHelp: 'Você sempre poderá ver sua própria lista no perfil.',
+    hiddenObservedTitle: 'Ocultar pessoas da lista pública',
+    hiddenObservedHelp: 'Marque quem não deve aparecer para outras pessoas. Você continuará vendo todos no seu próprio perfil.',
+    hiddenObservedEmpty: 'Você ainda não observa ninguém.',
   },
   login: {
     title: 'Entrar',

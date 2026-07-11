@@ -18,7 +18,7 @@ const photos = profile ? await getUserPhotos(profile.username) : [];
 const alreadyFriend = profile && !isOwner ? await isFriend(user.id, profile.id) : false;
 const showObservedList = Boolean(profile && canViewObservedList(profile.id, user.id, profile.observerVisibility));
 const [friendPhotos, latestPhotos, commentsByPhoto] = await Promise.all([
-  profile && showObservedList ? getFriendPhotos(profile.id) : Promise.resolve([]),
+  profile && showObservedList ? getFriendPhotos(profile.id, isOwner) : Promise.resolve([]),
   profile ? getLatestPhotos(profile.id) : Promise.resolve([]),
   Promise.all(photos.map(async photo => ({ photoId: photo.id, comments: await getComments(photo.id) }))),
 ]);

@@ -43,6 +43,9 @@ export default {
     observerVisibilityPublic: 'Public — everyone can see it',
     observerVisibilityPrivate: 'Private — no one can see it',
     observerVisibilityHelp: 'You will always be able to see your own list on your profile.',
+    hiddenObservedTitle: 'Hide people from the public list',
+    hiddenObservedHelp: 'Select who should not appear to other people. You will still see everyone on your own profile.',
+    hiddenObservedEmpty: 'You are not following anyone yet.',
   },
   login: {
     title: 'Sign in',

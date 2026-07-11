@@ -23,5 +23,4 @@ TODO, um de cada vez:
 - passar edicao da conta pra dentro do perfil ali na esquerda, qd for o proprietario claro ![img.png](img.png)
 - quando o perfil for meu o termo é Observando e nao observadores ![img_2.png](img_2.png)
 - so deve aparecer a ultima atualizacao da pessoa ![img_1.png](img_1.png) para ter apenas uma entrada no grid
-- crie uma secao privacidade mantenha o padrao visual e coloque esta questao de visibilidade a lista dos meus observados
-- o termo correto aqui é observando ![img_3.png](img_3.png) 
+- colocar isso na secao privicadade da conta e so listar pra marcar quem a pessoa esta observando

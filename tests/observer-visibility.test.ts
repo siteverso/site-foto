@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { canViewObservedList, normalizeObserverVisibility } from '../src/lib/observer-visibility';
+import {
+    canViewObservedList,
+    normalizeHiddenObservedUserIds,
+    normalizeObserverVisibility,
+} from '../src/lib/observer-visibility';
 
 describe('normalizeObserverVisibility', () => {
     it('aceita somente as opções persistidas pelo sistema', () => {
@@ -9,6 +13,16 @@ describe('normalizeObserverVisibility', () => {
 
     it('rejeita valores desconhecidos', () => {
         expect(() => normalizeObserverVisibility('friends')).toThrow('VISIBILIDADE_OBSERVADOS_INVALIDA');
+    });
+});
+
+describe('normalizeHiddenObservedUserIds', () => {
+    it('normaliza, remove duplicados e descarta ids inválidos', () => {
+        expect(normalizeHiddenObservedUserIds(['8', 3, 8, 0, -1, 'x'])).toEqual([3, 8]);
+    });
+
+    it('rejeita valores que não sejam lista', () => {
+        expect(() => normalizeHiddenObservedUserIds('8')).toThrow('OBSERVADOS_OCULTOS_INVALIDOS');
     });
 });
 
