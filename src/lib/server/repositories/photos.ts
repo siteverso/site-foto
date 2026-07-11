@@ -12,6 +12,7 @@ export type PhotoCard = {
 
 export type PhotoComment = {
     id: number;
+    userId: number;
     username: string;
     message: string;
     createdAt: string;
@@ -105,6 +106,7 @@ export async function getComments(postId: number): Promise<PhotoComment[]> {
     return withConnection(async connection => {
         const result = await connection.execute<Record<string, unknown>>(
             `SELECT c.id,
+                    c.user_id,
                     u.username,
                     c.contents AS message,
                     TO_CHAR(c.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS created_at
@@ -118,6 +120,7 @@ export async function getComments(postId: number): Promise<PhotoComment[]> {
         );
         return (result.rows || []).map(row => ({
             id: Number(row.ID),
+            userId: Number(row.USER_ID),
             username: String(row.USERNAME),
             message: String(row.MESSAGE),
             createdAt: String(row.CREATED_AT),
@@ -196,5 +199,186 @@ export async function getPhotoImage(postId: number): Promise<{ data: Buffer; mim
         const row = result.rows?.[0];
         if (!row?.IMAGE_BLOB) return null;
         return { data: row.IMAGE_BLOB as Buffer, mimeType: String(row.IMAGE_MIME_TYPE || 'image/jpeg') };
+    });
+}
+
+
+export type PublicProfile = {
+    id: number;
+    username: string;
+    bio: string;
+    avatarUrl: string;
+};
+
+export async function deletePhoto(postId: number, userId: number): Promise<boolean> {
+    return withConnection(async connection => {
+        const result = await connection.execute(
+            `UPDATE murm_post
+             SET status = 'deleted',
+                 updated_at = SYSTIMESTAMP
+             WHERE id = :id
+               AND user_id = :user_id
+               AND post_type = 'photo'
+               AND status = 'published'`,
+            { id: postId, user_id: userId },
+            { autoCommit: true },
+        );
+        return Number(result.rowsAffected || 0) > 0;
+    });
+}
+
+export async function getPublicProfile(username: string): Promise<PublicProfile | null> {
+    return withConnection(async connection => {
+        const result = await connection.execute<Record<string, unknown>>(
+            `SELECT id,
+                    username,
+                    NVL(bio, '') AS bio,
+                    NVL(avatar_url, '') AS avatar_url
+             FROM murm_user
+             WHERE LOWER(username) = LOWER(:username)
+               AND active = 1`,
+            { username },
+        );
+        const row = result.rows?.[0];
+        if (!row) return null;
+        return {
+            id: Number(row.ID),
+            username: String(row.USERNAME),
+            bio: String(row.BIO || ''),
+            avatarUrl: String(row.AVATAR_URL || ''),
+        };
+    });
+}
+
+export async function getUserPhotos(username: string): Promise<PhotoCard[]> {
+    return withConnection(async connection => {
+        const result = await connection.execute<Record<string, unknown>>(
+            `SELECT p.id,
+                    p.user_id,
+                    u.username,
+                    NVL(u.avatar_url, '') AS avatar_url,
+                    NVL(p.contents, '') AS caption,
+                    TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
+             FROM murm_post p
+             JOIN murm_user u ON u.id = p.user_id
+             WHERE LOWER(u.username) = LOWER(:username)
+               AND u.active = 1
+               AND p.post_type = 'photo'
+               AND p.status = 'published'
+             ORDER BY p.photo_day DESC, p.created_at DESC`,
+            { username },
+        );
+        return (result.rows || []).map(card);
+    });
+}
+
+export async function getFeedPhotos(limit = 30): Promise<PhotoCard[]> {
+    return withConnection(async connection => {
+        const result = await connection.execute<Record<string, unknown>>(
+            `SELECT *
+             FROM (
+                 SELECT p.id,
+                        p.user_id,
+                        u.username,
+                        NVL(u.avatar_url, '') AS avatar_url,
+                        NVL(p.contents, '') AS caption,
+                        TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
+                 FROM murm_post p
+                 JOIN murm_user u ON u.id = p.user_id
+                 WHERE p.post_type = 'photo'
+                   AND p.status = 'published'
+                 ORDER BY p.created_at DESC
+             )
+             WHERE ROWNUM <= :photo_limit`,
+            { photo_limit: limit },
+        );
+        return (result.rows || []).map(card);
+    });
+}
+
+export async function getUserLatestPhoto(username: string): Promise<PhotoCard | null> {
+    return withConnection(async connection => {
+        const result = await connection.execute<Record<string, unknown>>(
+            `SELECT *
+             FROM (
+                 SELECT p.id,
+                        p.user_id,
+                        u.username,
+                        NVL(u.avatar_url, '') AS avatar_url,
+                        NVL(p.contents, '') AS caption,
+                        TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
+                 FROM murm_post p
+                 JOIN murm_user u ON u.id = p.user_id
+                 WHERE LOWER(u.username) = LOWER(:username)
+                   AND p.post_type = 'photo'
+                   AND p.status = 'published'
+                 ORDER BY p.photo_day DESC, p.created_at DESC
+             )
+             WHERE ROWNUM = 1`,
+            { username },
+        );
+        return result.rows?.[0] ? card(result.rows[0]) : null;
+    });
+}
+
+
+export async function isFriend(userId: number, friendUserId: number): Promise<boolean> {
+    return withConnection(async connection => {
+        const result = await connection.execute<Record<string, unknown>>(
+            `SELECT 1 AS found
+             FROM murm_friend
+             WHERE user_id = :user_id
+               AND friend_user_id = :friend_user_id
+               AND status = 'A'`,
+            { user_id: userId, friend_user_id: friendUserId },
+        );
+        return Boolean(result.rows?.[0]);
+    });
+}
+
+export async function addFriend(userId: number, friendUserId: number): Promise<void> {
+    if (userId === friendUserId) throw new Error('AMIGO_INVALIDO');
+
+    await withConnection(async connection => {
+        await connection.execute(
+            `MERGE INTO murm_friend f
+             USING (
+                 SELECT :user_id AS user_id,
+                        :friend_user_id AS friend_user_id
+                 FROM dual
+             ) x
+             ON (
+                 f.user_id = x.user_id
+                 AND f.friend_user_id = x.friend_user_id
+             )
+             WHEN MATCHED THEN UPDATE SET
+                 f.status = 'A'
+             WHEN NOT MATCHED THEN INSERT
+                 (user_id, friend_user_id, status)
+             VALUES
+                 (:user_id, :friend_user_id, 'A')`,
+            { user_id: userId, friend_user_id: friendUserId },
+        );
+
+        await connection.execute(
+            `MERGE INTO murm_friend f
+             USING (
+                 SELECT :friend_user_id AS user_id,
+                        :user_id AS friend_user_id
+                 FROM dual
+             ) x
+             ON (
+                 f.user_id = x.user_id
+                 AND f.friend_user_id = x.friend_user_id
+             )
+             WHEN MATCHED THEN UPDATE SET
+                 f.status = 'A'
+             WHEN NOT MATCHED THEN INSERT
+                 (user_id, friend_user_id, status)
+             VALUES
+                 (:friend_user_id, :user_id, 'A')`,
+            { user_id: userId, friend_user_id: friendUserId },
+            { autoCommit: true },
+        );
     });
 }

@@ -1,0 +1,31 @@
+---
+import LanguageSwitch from './LanguageSwitch.astro';
+import { getMessages, normalizeLocale } from '../i18n';
+
+interface Props {
+  username: string;
+}
+
+const { username } = Astro.props;
+const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
+const t = getMessages(locale);
+---
+<header class="site-header">
+  <div class="site-header-inner site-container">
+    <a class="wordmark dark" href="/" aria-label={t.site.title}><span>foto</span>life</a>
+
+    <nav class="site-header-actions" aria-label="Navegação principal">
+      <a class="site-user-link" href={`/perfil/${username}`}><strong>@{username}</strong></a>
+      <a class="site-account-link" href="/conta">{locale === 'pt-BR' ? 'Conta' : 'Account'}</a>
+      <LanguageSwitch locale={locale} />
+      <button class="flog-logout" type="button" data-logout>{t.home.logout}</button>
+    </nav>
+  </div>
+</header>
+
+<script>
+  document.querySelector('[data-logout]')?.addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    location.href = '/login';
+  });
+</script>

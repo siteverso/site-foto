@@ -1,0 +1,106 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { requireUser } from '../../lib/server/session';
+import { getComments, getFriendPhotos, getLatestPhotos, getPublicProfile, getUserLatestPhoto, isFriend } from '../../lib/server/repositories/photos';
+import { getMessages, normalizeLocale } from '../../i18n';
+
+const user = await requireUser(Astro);
+const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
+const t = getMessages(locale);
+const username = String(Astro.params.username || '').trim();
+const profile = username ? await getPublicProfile(username) : null;
+if (!profile) Astro.response.status = 404;
+const isOwner = Boolean(profile && profile.id === user.id);
+const photo = profile ? await getUserLatestPhoto(profile.username) : null;
+const alreadyFriend = profile && !isOwner ? await isFriend(user.id, profile.id) : false;
+const [friendPhotos, latestPhotos, comments] = await Promise.all([
+  profile ? getFriendPhotos(profile.id) : Promise.resolve([]),
+  profile ? getLatestPhotos(profile.id) : Promise.resolve([]),
+  photo ? getComments(photo.id) : Promise.resolve([]),
+]);
+const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
+---
+<AppLayout title={profile ? `@${profile.username} — ${t.site.title}` : t.publicProfile.notFound}>
+  <main class="flog-page">
+    <SiteHeader username={user.username} />
+
+    {profile ? (
+      <section class="flog-grid">
+        <aside class="flog-panel">
+          <div class="user-profile-intro user-profile-intro-sidebar">
+            {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`@${profile.username}`} /> : <span>{profile.username.slice(0,2).toUpperCase()}</span>}
+            <div><h1>@{profile.username}</h1>{profile.bio && <p>{profile.bio}</p>}</div>
+          </div>
+
+          {!isOwner && (
+            <button
+              class="friend-button"
+              type="button"
+              data-add-friend
+              data-user-id={profile.id}
+              disabled={alreadyFriend}
+            >
+              {alreadyFriend ? t.publicProfile.alreadyFriend : t.publicProfile.addFriend}
+            </button>
+          )}
+
+          {friendPhotos.length > 0 && (
+            <section class="profile-friends">
+              <h2>{t.publicProfile.friends}</h2>
+              <div class="photo-mini-grid">{friendPhotos.map(item => (
+                <article class="photo-mini-card"><a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a><div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div></article>
+              ))}</div>
+            </section>
+          )}
+        </aside>
+
+        <section class="flog-center">
+          {photo ? (
+            <article class="daily-photo" data-daily-photo>
+              {isOwner && <button class="daily-photo-delete" type="button" data-delete-photo data-photo-id={photo.id} aria-label={t.home.deletePhoto} title={t.home.deletePhoto}>×</button>}
+              <img src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} />
+              {photo.caption && <p>{photo.caption}</p>}
+            </article>
+          ) : isOwner ? (
+            <form class="daily-upload" data-photo-form data-processing-text={t.home.processing} data-completed-text={t.home.completed}>
+              <label class="upload-drop" data-upload-drop><input name="photo" type="file" accept="image/*" required data-photo-input /><img class="upload-preview" alt="" data-photo-preview hidden /><span data-photo-label>{t.home.choosePhoto}</span></label>
+              <div class="photo-upload-progress" data-upload-progress hidden><div class="photo-upload-progress-head"><span data-upload-status>{t.home.uploading}</span><strong data-upload-percent>0%</strong></div><div class="photo-upload-progress-track" data-upload-bar><span data-upload-fill></span></div></div>
+              <textarea name="caption" maxlength="1000" placeholder={t.home.caption}></textarea><button type="submit" data-publish-button>{t.home.publish}</button>
+            </form>
+          ) : <p class="empty-state profile-no-photo">{t.publicProfile.noPhotos}</p>}
+
+          <section class="comments-panel">
+            <h2>{t.home.comments}</h2>
+            {comments.length ? <div class="comment-list">{comments.map(comment => (
+              <article><a class="comment-user" href={`/perfil/${comment.username}`}><strong>@{comment.username}</strong></a><p>{comment.message}</p><time>{formatDate(comment.createdAt)}</time></article>
+            ))}</div> : <p class="empty-state">{t.home.noComments}</p>}
+            {photo && <form class="comment-form" data-comment-form data-post-id={photo.id}><input name="message" maxlength="500" placeholder={t.home.commentPlaceholder} required /><button type="submit">{t.home.send}</button></form>}
+          </section>
+        </section>
+
+        <aside class="flog-panel">
+          <h2>{t.home.updates}</h2>
+          {latestPhotos.length ? <div class="photo-mini-grid">{latestPhotos.map(item => (
+            <article class="photo-mini-card"><a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a><div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div></article>
+          ))}</div> : <p class="empty-state">{t.home.noUpdates}</p>}
+        </aside>
+      </section>
+    ) : <section class="public-profile-not-found"><h1>{t.publicProfile.notFound}</h1><a href="/">{t.publicProfile.back}</a></section>}
+  </main>
+
+  <script>
+    document.querySelector<HTMLButtonElement>('[data-add-friend]')?.addEventListener('click', async event => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      const response = await fetch(`/api/friends/${button.dataset.userId}`, { method: 'POST' });
+      if (response.ok) location.reload();
+      else { button.disabled = false; alert(await response.text()); }
+    });
+    document.querySelector<HTMLButtonElement>('[data-delete-photo]')?.addEventListener('click', async event => { const button = event.currentTarget; if (!confirm(button.title)) return; const response = await fetch(`/api/photos/${button.dataset.photoId}`, { method: 'DELETE' }); if (response.ok) location.reload(); else alert(await response.text()); });
+    const input = document.querySelector<HTMLInputElement>('[data-photo-input]'); const preview = document.querySelector<HTMLImageElement>('[data-photo-preview]'); const label = document.querySelector<HTMLElement>('[data-photo-label]'); let previewUrl='';
+    input?.addEventListener('change', () => { const file=input.files?.[0]; if(!file || !file.type.startsWith('image/') || !preview) return; if(previewUrl) URL.revokeObjectURL(previewUrl); previewUrl=URL.createObjectURL(file); preview.src=previewUrl; preview.hidden=false; if(label) label.hidden=true; });
+    document.querySelector<HTMLFormElement>('[data-photo-form]')?.addEventListener('submit', event => { event.preventDefault(); const form=event.currentTarget; const progress=form.querySelector<HTMLElement>('[data-upload-progress]'); const status=form.querySelector<HTMLElement>('[data-upload-status]'); const percent=form.querySelector<HTMLElement>('[data-upload-percent]'); const fill=form.querySelector<HTMLElement>('[data-upload-fill]'); const button=form.querySelector<HTMLButtonElement>('[data-publish-button]'); const xhr=new XMLHttpRequest(); progress?.removeAttribute('hidden'); if(button) button.disabled=true; xhr.open('POST','/api/photos/today'); xhr.upload.onprogress=e=>{if(e.lengthComputable){const p=Math.round(e.loaded/e.total*100); if(percent) percent.textContent=`${p}%`; if(fill) fill.style.width=`${p}%`;}}; xhr.upload.onload=()=>{if(status) status.textContent=form.dataset.processingText||'';}; xhr.onload=()=>{if(xhr.status>=200&&xhr.status<300) location.reload(); else {if(button)button.disabled=false;alert(xhr.responseText);}}; xhr.onerror=()=>{if(button)button.disabled=false;}; xhr.send(new FormData(form)); });
+    document.querySelector<HTMLFormElement>('[data-comment-form]')?.addEventListener('submit', async event => { event.preventDefault(); const form=event.currentTarget; const field=form.elements.namedItem('message') as HTMLInputElement; const response=await fetch('/api/comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({postId:Number(form.dataset.postId),message:field.value})}); if(response.ok) location.reload(); else alert(await response.text()); });
+  </script>
+</AppLayout>
