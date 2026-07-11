@@ -35,12 +35,14 @@ export async function getTodayPhoto(userId: number): Promise<PhotoCard | null> {
                     p.user_id,
                     u.username,
                     NVL(u.avatar_url, '') AS avatar_url,
-                    NVL(p.caption, '') AS caption,
-                    TO_CHAR(p.published_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
-             FROM foto_post p
+                    NVL(p.contents, '') AS caption,
+                    TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
+             FROM murm_post p
              JOIN murm_user u ON u.id = p.user_id
              WHERE p.user_id = :user_id
-               AND p.photo_day = TRUNC(CURRENT_DATE)`,
+               AND p.post_type = 'photo'
+               AND p.photo_day = TRUNC(CURRENT_DATE)
+               AND p.status = 'published'`,
             { user_id: userId },
         );
         return result.rows?.[0] ? card(result.rows[0]) : null;
@@ -56,14 +58,16 @@ export async function getFriendPhotos(userId: number): Promise<PhotoCard[]> {
                         p.user_id,
                         u.username,
                         NVL(u.avatar_url, '') AS avatar_url,
-                        NVL(p.caption, '') AS caption,
-                        TO_CHAR(p.published_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
-                 FROM foto_friend f
-                 JOIN foto_post p ON p.user_id = f.friend_user_id
+                        NVL(p.contents, '') AS caption,
+                        TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
+                 FROM murm_friend f
+                 JOIN murm_post p ON p.user_id = f.friend_user_id
                  JOIN murm_user u ON u.id = p.user_id
                  WHERE f.user_id = :user_id
                    AND f.status = 'A'
-                 ORDER BY p.published_at DESC
+                   AND p.post_type = 'photo'
+                   AND p.status = 'published'
+                 ORDER BY p.created_at DESC
              )
              WHERE ROWNUM <= 8`,
             { user_id: userId },
@@ -81,12 +85,14 @@ export async function getLatestPhotos(userId: number): Promise<PhotoCard[]> {
                         p.user_id,
                         u.username,
                         NVL(u.avatar_url, '') AS avatar_url,
-                        NVL(p.caption, '') AS caption,
-                        TO_CHAR(p.published_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
-                 FROM foto_post p
+                        NVL(p.contents, '') AS caption,
+                        TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
+                 FROM murm_post p
                  JOIN murm_user u ON u.id = p.user_id
                  WHERE p.user_id <> :user_id
-                 ORDER BY p.published_at DESC
+                   AND p.post_type = 'photo'
+                   AND p.status = 'published'
+                 ORDER BY p.created_at DESC
              )
              WHERE ROWNUM <= 8`,
             { user_id: userId },
@@ -100,11 +106,13 @@ export async function getComments(postId: number): Promise<PhotoComment[]> {
         const result = await connection.execute<Record<string, unknown>>(
             `SELECT c.id,
                     u.username,
-                    c.message,
+                    c.contents AS message,
                     TO_CHAR(c.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS created_at
-             FROM foto_comment c
+             FROM murm_post c
              JOIN murm_user u ON u.id = c.user_id
-             WHERE c.post_id = :post_id
+             WHERE c.parent_post_id = :post_id
+               AND c.post_type = 'comment'
+               AND c.status = 'published'
              ORDER BY c.created_at`,
             { post_id: postId },
         );
@@ -126,22 +134,31 @@ export async function saveTodayPhoto(input: {
 }): Promise<void> {
     await withConnection(async connection => {
         await connection.execute(
-            `MERGE INTO foto_post p
-             USING (SELECT :user_id AS user_id, TRUNC(CURRENT_DATE) AS photo_day FROM dual) x
-             ON (p.user_id = x.user_id AND p.photo_day = x.photo_day)
+            `MERGE INTO murm_post p
+             USING (
+                 SELECT :user_id AS user_id,
+                        TRUNC(CURRENT_DATE) AS photo_day
+                 FROM dual
+             ) x
+             ON (
+                 p.user_id = x.user_id
+                 AND p.post_type = 'photo'
+                 AND p.photo_day = x.photo_day
+             )
              WHEN MATCHED THEN UPDATE SET
-                 p.caption = :caption,
+                 p.contents = :contents,
                  p.image_blob = :image_blob,
                  p.image_filename = :image_filename,
                  p.image_mime_type = :image_mime_type,
+                 p.status = 'published',
                  p.updated_at = SYSTIMESTAMP
              WHEN NOT MATCHED THEN INSERT
-                 (user_id, photo_day, caption, image_blob, image_filename, image_mime_type)
+                 (user_id, contents, post_type, photo_day, image_blob, image_filename, image_mime_type)
              VALUES
-                 (:user_id, TRUNC(CURRENT_DATE), :caption, :image_blob, :image_filename, :image_mime_type)`,
+                 (:user_id, :contents, 'photo', TRUNC(CURRENT_DATE), :image_blob, :image_filename, :image_mime_type)`,
             {
                 user_id: input.userId,
-                caption: input.caption || null,
+                contents: input.caption || 'Foto do dia',
                 image_blob: { val: input.image, type: oracledb.BLOB },
                 image_filename: input.filename,
                 image_mime_type: input.mimeType,
@@ -154,9 +171,11 @@ export async function saveTodayPhoto(input: {
 export async function addComment(postId: number, userId: number, message: string): Promise<void> {
     await withConnection(async connection => {
         await connection.execute(
-            `INSERT INTO foto_comment (post_id, user_id, message)
-             VALUES (:post_id, :user_id, :message)`,
-            { post_id: postId, user_id: userId, message },
+            `INSERT INTO murm_post
+                (user_id, parent_post_id, contents, post_type)
+             VALUES
+                (:user_id, :post_id, :contents, 'comment')`,
+            { post_id: postId, user_id: userId, contents: message },
             { autoCommit: true },
         );
     });
@@ -165,9 +184,12 @@ export async function addComment(postId: number, userId: number, message: string
 export async function getPhotoImage(postId: number): Promise<{ data: Buffer; mimeType: string } | null> {
     return withConnection(async connection => {
         const result = await connection.execute<Record<string, unknown>>(
-            `SELECT image_blob, image_mime_type
-             FROM foto_post
-             WHERE id = :id`,
+            `SELECT image_blob,
+                    image_mime_type
+             FROM murm_post
+             WHERE id = :id
+               AND post_type = 'photo'
+               AND status = 'published'`,
             { id: postId },
             { fetchInfo: { IMAGE_BLOB: { type: oracledb.BUFFER } } },
         );
