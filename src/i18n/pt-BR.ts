@@ -68,6 +68,7 @@ export default {
   publicProfile: {
     title: 'Perfil do usuário',
     photos: 'Fotos publicadas',
+    latestPosts: 'Últimas postagens',
     noPhotos: 'Este usuário ainda não publicou fotos.',
     notFound: 'Perfil não encontrado',
     back: 'Voltar ao FotoLife',

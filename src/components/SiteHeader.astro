@@ -3,7 +3,7 @@ import LanguageSwitch from './LanguageSwitch.astro';
 import { getMessages, normalizeLocale } from '../i18n';
 
 interface Props {
-  username: string;
+  username?: string;
 }
 
 const { username } = Astro.props;
@@ -15,10 +15,19 @@ const t = getMessages(locale);
     <a class="wordmark dark" href="/" aria-label={t.site.title}><span>foto</span>life</a>
 
     <nav class="site-header-actions" aria-label="Navegação principal">
-      <a class="site-user-link" href={`/perfil/${username}`}><strong>@{username}</strong></a>
-      <a class="site-account-link" href="/conta">{locale === 'pt-BR' ? 'Conta' : 'Account'}</a>
-      <LanguageSwitch locale={locale} />
-      <button class="flog-logout" type="button" data-logout>{t.home.logout}</button>
+      {username ? (
+        <>
+          <a class="site-user-link" href={`/perfil/${username}`}><strong>@{username}</strong></a>
+          <a class="site-account-link" href="/conta">{locale === 'pt-BR' ? 'Conta' : 'Account'}</a>
+          <LanguageSwitch locale={locale} />
+          <button class="flog-logout" type="button" data-logout>{t.home.logout}</button>
+        </>
+      ) : (
+        <>
+          <LanguageSwitch locale={locale} />
+          <a class="site-account-link" href="/login">{locale === 'pt-BR' ? 'Entrar' : 'Sign in'}</a>
+        </>
+      )}
     </nav>
   </div>
 </header>

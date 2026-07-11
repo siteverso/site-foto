@@ -1,19 +1,24 @@
 ---
 import AppLayout from '../../layouts/AppLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
-import { requireUser } from '../../lib/server/session';
+import { currentUser } from '../../lib/server/session';
 import { getComments, getFriendPhotos, getLatestPhotos, getPublicProfile, getUserLatestPhoto, isFriend } from '../../lib/server/repositories/photos';
 import { getMessages, normalizeLocale } from '../../i18n';
+import { MESSAGE_MAX_LENGTH } from '../../lib/message-limit';
 
-const user = await requireUser(Astro);
+const user = await currentUser(Astro);
+if (!user) {
+  const next = `${Astro.url.pathname}${Astro.url.search}`;
+  return Astro.redirect(`/login?next=${encodeURIComponent(next)}`);
+}
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
 const username = String(Astro.params.username || '').trim();
 const profile = username ? await getPublicProfile(username) : null;
 if (!profile) Astro.response.status = 404;
-const isOwner = Boolean(profile && profile.id === user.id);
+const isOwner = Boolean(profile && user && profile.id === user.id);
 const photo = profile ? await getUserLatestPhoto(profile.username) : null;
-const alreadyFriend = profile && !isOwner ? await isFriend(user.id, profile.id) : false;
+const alreadyFriend = profile && user && !isOwner ? await isFriend(user.id, profile.id) : false;
 const [friendPhotos, latestPhotos, comments] = await Promise.all([
   profile ? getFriendPhotos(profile.id) : Promise.resolve([]),
   profile ? getLatestPhotos(profile.id) : Promise.resolve([]),
@@ -23,7 +28,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
 ---
 <AppLayout title={profile ? `@${profile.username} — ${t.site.title}` : t.publicProfile.notFound}>
   <main class="flog-page">
-    <SiteHeader username={user.username} />
+    <SiteHeader username={user?.username} />
 
     {profile ? (
       <section class="flog-grid">
@@ -33,7 +38,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             <div><h1>@{profile.username}</h1>{profile.bio && <p>{profile.bio}</p>}</div>
           </div>
 
-          {!isOwner && (
+          {user && !isOwner && (
             <button
               class="friend-button"
               type="button"
@@ -56,26 +61,27 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         </aside>
 
         <section class="flog-center">
+          {isOwner && (
+            <button class="profile-new-post-button" type="button" data-open-post-dialog>
+              <span aria-hidden="true">＋</span>
+              <strong>Nova postagem</strong>
+            </button>
+          )}
+
           {photo ? (
             <article class="daily-photo" data-daily-photo>
               {isOwner && <button class="daily-photo-delete" type="button" data-delete-photo data-photo-id={photo.id} aria-label={t.home.deletePhoto} title={t.home.deletePhoto}>×</button>}
               <img src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} />
               {photo.caption && <p>{photo.caption}</p>}
             </article>
-          ) : isOwner ? (
-            <form class="daily-upload" data-photo-form data-processing-text={t.home.processing} data-completed-text={t.home.completed}>
-              <label class="upload-drop" data-upload-drop><input name="photo" type="file" accept="image/*" required data-photo-input /><img class="upload-preview" alt="" data-photo-preview hidden /><span data-photo-label>{t.home.choosePhoto}</span></label>
-              <div class="photo-upload-progress" data-upload-progress hidden><div class="photo-upload-progress-head"><span data-upload-status>{t.home.uploading}</span><strong data-upload-percent>0%</strong></div><div class="photo-upload-progress-track" data-upload-bar><span data-upload-fill></span></div></div>
-              <textarea name="caption" maxlength="1000" placeholder={t.home.caption}></textarea><button type="submit" data-publish-button>{t.home.publish}</button>
-            </form>
-          ) : <p class="empty-state profile-no-photo">{t.publicProfile.noPhotos}</p>}
+          ) : <p class="empty-state profile-no-photo">{isOwner ? t.home.noPhoto : t.publicProfile.noPhotos}</p>}
 
           <section class="comments-panel">
             <h2>{t.home.comments}</h2>
             {comments.length ? <div class="comment-list">{comments.map(comment => (
               <article><a class="comment-user" href={`/perfil/${comment.username}`}><strong>@{comment.username}</strong></a><p>{comment.message}</p><time>{formatDate(comment.createdAt)}</time></article>
             ))}</div> : <p class="empty-state">{t.home.noComments}</p>}
-            {photo && <form class="comment-form" data-comment-form data-post-id={photo.id}><input name="message" maxlength="500" placeholder={t.home.commentPlaceholder} required /><button type="submit">{t.home.send}</button></form>}
+            {photo && user && <form class="comment-form" data-comment-form data-post-id={photo.id}><input name="message" maxlength={MESSAGE_MAX_LENGTH} placeholder={t.home.commentPlaceholder} required /><button type="submit">{t.home.send}</button></form>}
           </section>
         </section>
 
@@ -89,6 +95,35 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     ) : <section class="public-profile-not-found"><h1>{t.publicProfile.notFound}</h1><a href="/">{t.publicProfile.back}</a></section>}
   </main>
 
+  {isOwner && (
+    <div class="post-dialog" data-post-dialog hidden>
+      <div class="post-dialog-backdrop" data-close-post-dialog></div>
+      <section class="post-dialog-card" role="dialog" aria-modal="true" aria-label="Nova postagem">
+        <header>
+          <h2>Nova postagem</h2>
+          <button type="button" aria-label="Fechar" data-close-post-dialog>×</button>
+        </header>
+        <form class="daily-upload post-dialog-form" data-photo-form data-processing-text={t.home.processing}>
+          <label class="upload-drop" data-upload-drop>
+            <input name="photo" type="file" accept="image/*" required data-photo-input />
+            <img class="upload-preview" alt="" data-photo-preview hidden />
+            <span data-photo-label>{t.home.choosePhoto}</span>
+          </label>
+          <div class="photo-upload-progress" data-upload-progress hidden>
+            <div class="photo-upload-progress-head">
+              <span data-upload-status>{t.home.uploading}</span>
+              <strong data-upload-percent>0%</strong>
+            </div>
+            <div class="photo-upload-progress-track" data-upload-bar><span data-upload-fill></span></div>
+          </div>
+          <textarea name="caption" maxlength={MESSAGE_MAX_LENGTH} placeholder={t.home.caption}></textarea>
+          <p class="form-message post-dialog-message" data-post-message hidden></p>
+          <button type="submit" data-publish-button disabled>{t.home.publish}</button>
+        </form>
+      </section>
+    </div>
+  )}
+
   <script>
     document.querySelector<HTMLButtonElement>('[data-add-friend]')?.addEventListener('click', async event => {
       const button = event.currentTarget;
@@ -98,9 +133,129 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       else { button.disabled = false; alert(await response.text()); }
     });
     document.querySelector<HTMLButtonElement>('[data-delete-photo]')?.addEventListener('click', async event => { const button = event.currentTarget; if (!confirm(button.title)) return; const response = await fetch(`/api/photos/${button.dataset.photoId}`, { method: 'DELETE' }); if (response.ok) location.reload(); else alert(await response.text()); });
-    const input = document.querySelector<HTMLInputElement>('[data-photo-input]'); const preview = document.querySelector<HTMLImageElement>('[data-photo-preview]'); const label = document.querySelector<HTMLElement>('[data-photo-label]'); let previewUrl='';
-    input?.addEventListener('change', () => { const file=input.files?.[0]; if(!file || !file.type.startsWith('image/') || !preview) return; if(previewUrl) URL.revokeObjectURL(previewUrl); previewUrl=URL.createObjectURL(file); preview.src=previewUrl; preview.hidden=false; if(label) label.hidden=true; });
-    document.querySelector<HTMLFormElement>('[data-photo-form]')?.addEventListener('submit', event => { event.preventDefault(); const form=event.currentTarget; const progress=form.querySelector<HTMLElement>('[data-upload-progress]'); const status=form.querySelector<HTMLElement>('[data-upload-status]'); const percent=form.querySelector<HTMLElement>('[data-upload-percent]'); const fill=form.querySelector<HTMLElement>('[data-upload-fill]'); const button=form.querySelector<HTMLButtonElement>('[data-publish-button]'); const xhr=new XMLHttpRequest(); progress?.removeAttribute('hidden'); if(button) button.disabled=true; xhr.open('POST','/api/photos/today'); xhr.upload.onprogress=e=>{if(e.lengthComputable){const p=Math.round(e.loaded/e.total*100); if(percent) percent.textContent=`${p}%`; if(fill) fill.style.width=`${p}%`;}}; xhr.upload.onload=()=>{if(status) status.textContent=form.dataset.processingText||'';}; xhr.onload=()=>{if(xhr.status>=200&&xhr.status<300) location.reload(); else {if(button)button.disabled=false;alert(xhr.responseText);}}; xhr.onerror=()=>{if(button)button.disabled=false;}; xhr.send(new FormData(form)); });
+    const postDialog = document.querySelector<HTMLElement>('[data-post-dialog]');
+    const postForm = document.querySelector<HTMLFormElement>('[data-photo-form]');
+    const input = document.querySelector<HTMLInputElement>('[data-photo-input]');
+    const preview = document.querySelector<HTMLImageElement>('[data-photo-preview]');
+    const label = document.querySelector<HTMLElement>('[data-photo-label]');
+    const progress = document.querySelector<HTMLElement>('[data-upload-progress]');
+    const status = document.querySelector<HTMLElement>('[data-upload-status]');
+    const percent = document.querySelector<HTMLElement>('[data-upload-percent]');
+    const fill = document.querySelector<HTMLElement>('[data-upload-fill]');
+    const publishButton = document.querySelector<HTMLButtonElement>('[data-publish-button]');
+    const postMessage = document.querySelector<HTMLElement>('[data-post-message]');
+    let previewUrl = '';
+    let uploadToken = '';
+    let uploadPromise: Promise<string> | null = null;
+    let activeUpload: XMLHttpRequest | null = null;
+
+    const showPostMessage = (message = '', type = 'error') => {
+      if (!postMessage) return;
+      postMessage.textContent = message;
+      postMessage.dataset.type = type;
+      postMessage.hidden = !message;
+    };
+
+    const responseError = async (response: Response) => {
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const data = await response.json().catch(() => ({}));
+        return String(data.error || 'Não foi possível concluir a operação.');
+      }
+      return (await response.text()) || 'Não foi possível concluir a operação.';
+    };
+
+    const setPostDialogOpen = (open: boolean) => {
+      if (!postDialog) return;
+      postDialog.hidden = !open;
+      document.documentElement.classList.toggle('dialog-open', open);
+    };
+
+    document.querySelector('[data-open-post-dialog]')?.addEventListener('click', () => setPostDialogOpen(true));
+    document.querySelectorAll('[data-close-post-dialog]').forEach(element => element.addEventListener('click', () => setPostDialogOpen(false)));
+
+    function stagePhoto(file: File): Promise<string> {
+      activeUpload?.abort();
+      uploadToken = '';
+      showPostMessage();
+      if (publishButton) publishButton.disabled = true;
+      progress?.removeAttribute('hidden');
+      if (status) status.textContent = 'Enviando foto…';
+      if (percent) percent.textContent = '0%';
+      if (fill) fill.style.width = '0%';
+
+      uploadPromise = new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        activeUpload = xhr;
+        const data = new FormData();
+        data.append('photo', file);
+        xhr.open('POST', '/api/photos/stage');
+        xhr.upload.onprogress = event => {
+          if (!event.lengthComputable) return;
+          const value = Math.round(event.loaded / event.total * 100);
+          if (percent) percent.textContent = `${value}%`;
+          if (fill) fill.style.width = `${value}%`;
+        };
+        xhr.upload.onload = () => { if (status) status.textContent = postForm?.dataset.processingText || 'Processando imagem…'; };
+        xhr.onload = () => {
+          activeUpload = null;
+          if (xhr.status < 200 || xhr.status >= 300) {
+            reject(new Error(xhr.responseText || 'Não foi possível enviar a imagem.'));
+            return;
+          }
+          const data = JSON.parse(xhr.responseText);
+          uploadToken = String(data.uploadToken || '');
+          if (status) status.textContent = 'Imagem pronta';
+          if (percent) percent.textContent = '100%';
+          if (fill) fill.style.width = '100%';
+          if (publishButton) publishButton.disabled = !uploadToken;
+          resolve(uploadToken);
+        };
+        xhr.onerror = () => { activeUpload = null; reject(new Error('Não foi possível enviar a imagem.')); };
+        xhr.onabort = () => reject(new Error('Envio substituído.'));
+        xhr.send(data);
+      });
+
+      uploadPromise.catch(error => {
+        if (activeUpload) return;
+        if (status) status.textContent = 'Falha no envio';
+        if (publishButton) publishButton.disabled = true;
+        if (error.message !== 'Envio substituído.') showPostMessage(error.message);
+      });
+      return uploadPromise;
+    }
+
+    input?.addEventListener('change', () => {
+      const file = input.files?.[0];
+      if (!file || !file.type.startsWith('image/') || !preview) return;
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(file);
+      preview.src = previewUrl;
+      preview.hidden = false;
+      if (label) label.hidden = true;
+      stagePhoto(file);
+    });
+
+    postForm?.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (publishButton) publishButton.disabled = true;
+      try {
+        const token = uploadToken || await uploadPromise;
+        if (!token) throw new Error('Escolha uma foto.');
+        if (status) status.textContent = 'Publicando…';
+        const caption = String(new FormData(postForm).get('caption') || '');
+        const response = await fetch('/api/photos/today', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uploadToken: token, caption }),
+        });
+        if (!response.ok) throw new Error(await responseError(response));
+        location.reload();
+      } catch (error) {
+        if (publishButton) publishButton.disabled = !uploadToken;
+        showPostMessage(error instanceof Error ? error.message : 'Não foi possível publicar.');
+      }
+    });
     document.querySelector<HTMLFormElement>('[data-comment-form]')?.addEventListener('submit', async event => { event.preventDefault(); const form=event.currentTarget; const field=form.elements.namedItem('message') as HTMLInputElement; const response=await fetch('/api/comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({postId:Number(form.dataset.postId),message:field.value})}); if(response.ok) location.reload(); else alert(await response.text()); });
   </script>
 </AppLayout>

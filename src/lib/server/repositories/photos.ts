@@ -1,5 +1,22 @@
+// noinspection SqlResolve,JSUnusedGlobalSymbols
+import { Buffer } from 'node:buffer';
 import oracledb from 'oracledb';
 import { withConnection } from '../oracle';
+
+type OracleRow = Record<string, unknown> & {
+    ID?: unknown;
+    USER_ID?: unknown;
+    USERNAME?: unknown;
+    AVATAR_URL?: unknown;
+    CAPTION?: unknown;
+    PUBLISHED_AT?: unknown;
+    MESSAGE?: unknown;
+    CREATED_AT?: unknown;
+    TOTAL?: unknown;
+    IMAGE_BLOB?: unknown;
+    IMAGE_MIME_TYPE?: unknown;
+    BIO?: unknown;
+};
 
 export type PhotoCard = {
     id: number;
@@ -18,7 +35,12 @@ export type PhotoComment = {
     createdAt: string;
 };
 
-function card(row: Record<string, unknown>): PhotoCard {
+export type PhotoCommentsPage = {
+    items: PhotoComment[];
+    total: number;
+};
+
+function card(row: OracleRow): PhotoCard {
     return {
         id: Number(row.ID),
         userId: Number(row.USER_ID),
@@ -31,19 +53,23 @@ function card(row: Record<string, unknown>): PhotoCard {
 
 export async function getTodayPhoto(userId: number): Promise<PhotoCard | null> {
     return withConnection(async connection => {
-        const result = await connection.execute<Record<string, unknown>>(
-            `SELECT p.id,
-                    p.user_id,
-                    u.username,
-                    NVL(u.avatar_url, '') AS avatar_url,
-                    NVL(p.contents, '') AS caption,
-                    TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
-             FROM murm_post p
-             JOIN murm_user u ON u.id = p.user_id
-             WHERE p.user_id = :user_id
-               AND p.post_type = 'photo'
-               AND p.photo_day = TRUNC(CURRENT_DATE)
-               AND p.status = 'published'`,
+        const result = await connection.execute<OracleRow>(
+            `SELECT *
+             FROM (
+                 SELECT p.id,
+                        p.user_id,
+                        u.username,
+                        NVL(u.avatar_url, '') AS avatar_url,
+                        NVL(p.contents, '') AS caption,
+                        TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
+                 FROM murm_post p
+                 JOIN murm_user u ON u.id = p.user_id
+                 WHERE p.user_id = :user_id
+                   AND p.post_type = 'photo'
+                   AND p.status = 'published'
+                 ORDER BY p.created_at DESC
+             )
+             WHERE ROWNUM = 1`,
             { user_id: userId },
         );
         return result.rows?.[0] ? card(result.rows[0]) : null;
@@ -52,7 +78,7 @@ export async function getTodayPhoto(userId: number): Promise<PhotoCard | null> {
 
 export async function getFriendPhotos(userId: number): Promise<PhotoCard[]> {
     return withConnection(async connection => {
-        const result = await connection.execute<Record<string, unknown>>(
+        const result = await connection.execute<OracleRow>(
             `SELECT *
              FROM (
                  SELECT p.id,
@@ -79,7 +105,7 @@ export async function getFriendPhotos(userId: number): Promise<PhotoCard[]> {
 
 export async function getLatestPhotos(userId: number): Promise<PhotoCard[]> {
     return withConnection(async connection => {
-        const result = await connection.execute<Record<string, unknown>>(
+        const result = await connection.execute<OracleRow>(
             `SELECT *
              FROM (
                  SELECT p.id,
@@ -102,30 +128,84 @@ export async function getLatestPhotos(userId: number): Promise<PhotoCard[]> {
     });
 }
 
-export async function getComments(postId: number): Promise<PhotoComment[]> {
+export async function getComments(postId: number, limit = 10, offset = 0): Promise<PhotoCommentsPage> {
     return withConnection(async connection => {
-        const result = await connection.execute<Record<string, unknown>>(
-            `SELECT c.id,
-                    c.user_id,
-                    u.username,
-                    c.contents AS message,
-                    TO_CHAR(c.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS created_at
-             FROM murm_post c
-             JOIN murm_user u ON u.id = c.user_id
-             WHERE c.parent_post_id = :post_id
-               AND c.post_type = 'comment'
-               AND c.status = 'published'
-             ORDER BY c.created_at`,
-            { post_id: postId },
+        const result = await connection.execute<OracleRow>(
+            `SELECT id,
+                    user_id,
+                    username,
+                    message,
+                    created_at,
+                    total
+             FROM (
+                 SELECT c.id,
+                        c.user_id,
+                        u.username,
+                        c.contents AS message,
+                        TO_CHAR(c.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS created_at,
+                        COUNT(*) OVER () AS total,
+                        ROW_NUMBER() OVER (ORDER BY c.created_at) AS row_number_value
+                 FROM murm_post c
+                 JOIN murm_user u ON u.id = c.user_id
+                 WHERE c.parent_post_id = :post_id
+                   AND c.post_type = 'comment'
+                   AND c.status = 'published'
+             )
+             WHERE row_number_value > :comment_offset
+               AND row_number_value <= :comment_offset + :comment_limit
+             ORDER BY row_number_value`,
+            {
+                post_id: postId,
+                comment_offset: Math.max(0, offset),
+                comment_limit: Math.max(1, Math.min(limit, 50)),
+            },
         );
-        return (result.rows || []).map(row => ({
-            id: Number(row.ID),
-            userId: Number(row.USER_ID),
-            username: String(row.USERNAME),
-            message: String(row.MESSAGE),
-            createdAt: String(row.CREATED_AT),
-        }));
+        const rows = result.rows || [];
+        return {
+            items: rows.map(row => ({
+                id: Number(row.ID),
+                userId: Number(row.USER_ID),
+                username: String(row.USERNAME),
+                message: String(row.MESSAGE),
+                createdAt: String(row.CREATED_AT),
+            })),
+            total: Number(rows[0]?.TOTAL || 0),
+        };
     });
+}
+
+export type PhotoPeriodType = 'MINUTE' | 'DAY';
+
+export class PhotoLimitError extends Error {
+    constructor(
+        public readonly limit: number,
+        public readonly periodAmount: number,
+        public readonly periodType: PhotoPeriodType,
+        public readonly retryAfterSeconds: number,
+    ) {
+        super(`Limite de ${limit} foto(s) por ${periodAmount} ${periodType.toLowerCase()}(s) atingido.`);
+        this.name = 'PhotoLimitError';
+    }
+}
+
+function positiveInteger(value: string | undefined, fallback: number): number {
+    const parsed = Number.parseInt(String(value || ''), 10);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function photoPeriodType(value: string | undefined): PhotoPeriodType {
+    const normalized = String(value || '')
+        .trim()
+        .toUpperCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+    if (['DAY', 'DAYS', 'DIA', 'DIAS'].includes(normalized)) return 'DAY';
+    return 'MINUTE';
+}
+
+function periodMinutes(amount: number, type: PhotoPeriodType): number {
+    return type === 'DAY' ? amount * 24 * 60 : amount;
 }
 
 export async function saveTodayPhoto(input: {
@@ -135,39 +215,63 @@ export async function saveTodayPhoto(input: {
     mimeType: string;
     image: Buffer;
 }): Promise<void> {
+    const limit = positiveInteger(import.meta.env.PHOTO_POST_LIMIT, 10);
+    const periodAmount = positiveInteger(import.meta.env.PHOTO_POST_PERIOD_AMOUNT, 1);
+    const periodType = photoPeriodType(import.meta.env.PHOTO_POST_PERIOD_TYPE);
+    const configuredPeriodMinutes = periodMinutes(periodAmount, periodType);
+
     await withConnection(async connection => {
-        await connection.execute(
-            `MERGE INTO murm_post p
-             USING (
-                 SELECT :user_id AS user_id,
-                        TRUNC(CURRENT_DATE) AS photo_day
-                 FROM dual
-             ) x
-             ON (
-                 p.user_id = x.user_id
-                 AND p.post_type = 'photo'
-                 AND p.photo_day = x.photo_day
-             )
-             WHEN MATCHED THEN UPDATE SET
-                 p.contents = :contents,
-                 p.image_blob = :image_blob,
-                 p.image_filename = :image_filename,
-                 p.image_mime_type = :image_mime_type,
-                 p.status = 'published',
-                 p.updated_at = SYSTIMESTAMP
-             WHEN NOT MATCHED THEN INSERT
-                 (user_id, contents, post_type, photo_day, image_blob, image_filename, image_mime_type)
-             VALUES
-                 (:user_id, :contents, 'photo', TRUNC(CURRENT_DATE), :image_blob, :image_filename, :image_mime_type)`,
-            {
-                user_id: input.userId,
-                contents: input.caption || 'Foto do dia',
-                image_blob: { val: input.image, type: oracledb.BLOB },
-                image_filename: input.filename,
-                image_mime_type: input.mimeType,
-            },
-            { autoCommit: true },
-        );
+        try {
+            await connection.execute(
+                `SELECT id
+                 FROM murm_user
+                 WHERE id = :user_id
+                 FOR UPDATE`,
+                { user_id: input.userId },
+            );
+
+            const result = await connection.execute<OracleRow>(
+                `SELECT COUNT(*) AS total,
+                        MIN(created_at) AS oldest_created_at
+                 FROM murm_post
+                 WHERE user_id = :user_id
+                   AND post_type = 'photo'
+                   AND status = 'published'
+                   AND created_at >= SYSTIMESTAMP - NUMTODSINTERVAL(:period_minutes, 'MINUTE')`,
+                {
+                    user_id: input.userId,
+                    period_minutes: configuredPeriodMinutes,
+                },
+            );
+
+            const row = result.rows?.[0];
+            const total = Number(row?.TOTAL || 0);
+            if (total >= limit) {
+                const oldestCreatedAt = row?.OLDEST_CREATED_AT ? new Date(String(row.OLDEST_CREATED_AT)) : new Date();
+                const nextAllowedAt = oldestCreatedAt.getTime() + configuredPeriodMinutes * 60_000;
+                const retryAfterSeconds = Math.max(1, Math.ceil((nextAllowedAt - Date.now()) / 1000));
+                throw new PhotoLimitError(limit, periodAmount, periodType, retryAfterSeconds);
+            }
+
+            await connection.execute(
+                `INSERT INTO murm_post
+                    (user_id, contents, post_type, photo_day, image_blob, image_filename, image_mime_type)
+                 VALUES
+                    (:user_id, :contents, 'photo', TRUNC(CURRENT_DATE), :image_blob, :image_filename, :image_mime_type)`,
+                {
+                    user_id: input.userId,
+                    contents: input.caption || 'Foto',
+                    image_blob: { val: input.image, type: oracledb.BLOB },
+                    image_filename: input.filename,
+                    image_mime_type: input.mimeType,
+                },
+            );
+
+            await connection.commit();
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        }
     });
 }
 
@@ -186,7 +290,7 @@ export async function addComment(postId: number, userId: number, message: string
 
 export async function getPhotoImage(postId: number): Promise<{ data: Buffer; mimeType: string } | null> {
     return withConnection(async connection => {
-        const result = await connection.execute<Record<string, unknown>>(
+        const result = await connection.execute<OracleRow>(
             `SELECT image_blob,
                     image_mime_type
              FROM murm_post
@@ -229,7 +333,7 @@ export async function deletePhoto(postId: number, userId: number): Promise<boole
 
 export async function getPublicProfile(username: string): Promise<PublicProfile | null> {
     return withConnection(async connection => {
-        const result = await connection.execute<Record<string, unknown>>(
+        const result = await connection.execute<OracleRow>(
             `SELECT id,
                     username,
                     NVL(bio, '') AS bio,
@@ -252,7 +356,7 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
 
 export async function getUserPhotos(username: string): Promise<PhotoCard[]> {
     return withConnection(async connection => {
-        const result = await connection.execute<Record<string, unknown>>(
+        const result = await connection.execute<OracleRow>(
             `SELECT p.id,
                     p.user_id,
                     u.username,
@@ -272,25 +376,35 @@ export async function getUserPhotos(username: string): Promise<PhotoCard[]> {
     });
 }
 
-export async function getFeedPhotos(limit = 30): Promise<PhotoCard[]> {
+export async function getFeedPhotos(limit = 20, offset = 0): Promise<PhotoCard[]> {
     return withConnection(async connection => {
-        const result = await connection.execute<Record<string, unknown>>(
-            `SELECT *
+        const result = await connection.execute<OracleRow>(
+            `SELECT id,
+                    user_id,
+                    username,
+                    avatar_url,
+                    caption,
+                    published_at
              FROM (
                  SELECT p.id,
                         p.user_id,
                         u.username,
                         NVL(u.avatar_url, '') AS avatar_url,
                         NVL(p.contents, '') AS caption,
-                        TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
+                        TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at,
+                        ROW_NUMBER() OVER (ORDER BY p.created_at DESC) AS row_number_value
                  FROM murm_post p
                  JOIN murm_user u ON u.id = p.user_id
                  WHERE p.post_type = 'photo'
                    AND p.status = 'published'
-                 ORDER BY p.created_at DESC
              )
-             WHERE ROWNUM <= :photo_limit`,
-            { photo_limit: limit },
+             WHERE row_number_value > :photo_offset
+               AND row_number_value <= :photo_offset + :photo_limit
+             ORDER BY row_number_value`,
+            {
+                photo_offset: Math.max(0, offset),
+                photo_limit: Math.max(1, Math.min(limit, 20)),
+            },
         );
         return (result.rows || []).map(card);
     });
@@ -298,7 +412,7 @@ export async function getFeedPhotos(limit = 30): Promise<PhotoCard[]> {
 
 export async function getUserLatestPhoto(username: string): Promise<PhotoCard | null> {
     return withConnection(async connection => {
-        const result = await connection.execute<Record<string, unknown>>(
+        const result = await connection.execute<OracleRow>(
             `SELECT *
              FROM (
                  SELECT p.id,
@@ -324,7 +438,7 @@ export async function getUserLatestPhoto(username: string): Promise<PhotoCard | 
 
 export async function isFriend(userId: number, friendUserId: number): Promise<boolean> {
     return withConnection(async connection => {
-        const result = await connection.execute<Record<string, unknown>>(
+        const result = await connection.execute<OracleRow>(
             `SELECT 1 AS found
              FROM murm_friend
              WHERE user_id = :user_id

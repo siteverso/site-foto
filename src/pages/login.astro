@@ -4,7 +4,9 @@ import LanguageSwitch from '../components/LanguageSwitch.astro';
 import { currentUser } from '../lib/server/session';
 import { getMessages, normalizeLocale } from '../i18n';
 
-if (await currentUser(Astro)) return Astro.redirect('/');
+const rawNext = Astro.url.searchParams.get('next') || '/';
+const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
+if (await currentUser(Astro)) return Astro.redirect(next);
 
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
@@ -62,7 +64,7 @@ const googleEnabled = googleClientId.endsWith('.apps.googleusercontent.com');
     </section>
   </main>
 
-  <script define:vars={{ googleEnabled, errors: t.errors }}>
+  <script define:vars={{ googleEnabled, errors: t.errors, next }}>
     const showMessage = (element, text) => {
       element.textContent = text;
       element.hidden = !text;
@@ -93,7 +95,7 @@ const googleEnabled = googleClientId.endsWith('.apps.googleusercontent.com');
           password: values.get('password'),
           remember: values.get('remember') === 'on',
         });
-        location.href = '/';
+        location.href = next;
       } catch (error) {
         showMessage(formMessage, String(error).includes('LOGIN_INVALIDO') ? errors.invalidLogin : errors.generic);
       } finally {
@@ -114,7 +116,7 @@ const googleEnabled = googleClientId.endsWith('.apps.googleusercontent.com');
             try {
               showMessage(message, '');
               await post('/api/auth/google', { credential });
-              location.href = '/';
+              location.href = next;
             } catch {
               showMessage(message, errors.googleInvalid);
             }

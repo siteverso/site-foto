@@ -1335,3 +1335,92 @@ body:has(.login-shell) {
 .profile-friends {
   margin-top: 24px;
 }
+
+
+/* FotoLife: histórico recente no perfil do usuário */
+.profile-posts{margin-top:28px;padding-top:24px;border-top:1px solid #ddd}.profile-posts h2{margin:0 0 18px;font-size:.8rem;text-transform:uppercase;letter-spacing:.13em}.profile-post-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.profile-post-card{min-width:0;overflow:hidden;border:1px solid #e0e0dc;border-radius:14px;background:#fafaf8}.profile-post-card img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;background:#e7e7e3}.profile-post-card>div{padding:10px}.profile-post-card p{display:-webkit-box;overflow:hidden;margin:0 0 8px;line-height:1.4;font-size:.82rem;-webkit-box-orient:vertical;-webkit-line-clamp:2}.profile-post-card time{display:block;color:#777;font-size:.68rem}@media(max-width:760px){.profile-post-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:420px){.profile-post-grid{grid-template-columns:1fr}}
+
+/* Feed principal: atualizações laterais, fotos e mensagens */
+.home-feed-layout{display:grid;grid-template-columns:260px minmax(0,720px);justify-content:center;gap:28px;align-items:start}.site-updates-panel{position:sticky;top:96px;border:1px solid #deded9;border-radius:18px;background:#fff;padding:18px}.site-updates-panel h1{margin:0 0 14px;font-size:.76rem;text-transform:uppercase;letter-spacing:.12em}.site-updates-list{display:grid;gap:4px}.site-updates-list a{display:grid;grid-template-columns:42px minmax(0,1fr);gap:10px;align-items:center;padding:8px;border-radius:10px;color:#111;text-decoration:none}.site-updates-list a:hover{background:#f3f3ef}.site-updates-list img{width:42px;height:42px;object-fit:cover;border-radius:9px;background:#ecece8}.site-updates-list span{min-width:0}.site-updates-list strong,.site-updates-list small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.site-updates-list strong{font-size:.78rem}.site-updates-list small{margin-top:2px;color:#777;font-size:.66rem}.photo-feed{display:grid;gap:24px}.photo-post{overflow:hidden;border:1px solid #deded9;border-radius:20px;background:#fff}.photo-post-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 18px}.photo-post-header a{color:#111;text-decoration:none}.photo-post-header time{color:#777;font-size:.72rem}.photo-post-image{display:block;width:100%;max-height:820px;object-fit:contain;background:#111}.photo-post-caption{margin:0;padding:16px 18px 0;line-height:1.55}.photo-comments{padding:16px 18px 18px}.photo-comments-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em}.photo-comments-title span{color:#777}.photo-comment-list,.comments-dialog-list{display:grid;gap:8px}.photo-comment-list article,.comments-dialog-list article{position:relative;padding:10px 12px;border:1px solid #e3e3de;border-radius:11px;background:#fafaf8}.photo-comment-list a,.comments-dialog-list a{color:#111;font-size:.74rem;font-weight:800;text-decoration:none}.photo-comment-list p,.comments-dialog-list p{margin:4px 0 0;padding-right:90px;line-height:1.45}.photo-comment-list time,.comments-dialog-list time{position:absolute;right:11px;top:11px;color:#888;font-size:.64rem}.text-button{margin-top:10px;padding:0;border:0;background:transparent;color:#555;font:inherit;font-size:.76rem;font-weight:700;cursor:pointer}.text-button:hover{text-decoration:underline}.photo-comment-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:12px}.photo-comment-form input{min-width:0;border:1px solid #ccc;border-radius:10px;padding:10px 12px;font:inherit}.photo-comment-form button,.feed-load-more{border:0;border-radius:10px;background:#111;color:#fff;padding:10px 15px;font-weight:800;cursor:pointer}.feed-load-more{display:block;margin:24px auto 0;min-width:160px}.feed-load-more[hidden]{display:none}.feed-load-more:disabled,.photo-comment-form button:disabled{opacity:.55;cursor:default}.comments-dialog[hidden]{display:none}.comments-dialog{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:18px}.comments-dialog-backdrop{position:absolute;inset:0;background:rgb(0 0 0 / 55%)}.comments-dialog-card{position:relative;width:min(620px,100%);max-height:min(760px,calc(100vh - 36px));overflow:auto;border-radius:18px;background:#fff;padding:20px;box-shadow:0 24px 80px rgb(0 0 0 / 25%)}.comments-dialog-card>header{position:sticky;top:-20px;z-index:2;margin:-20px -20px 14px;padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #e4e4df}.comments-dialog-card h2{margin:0;font-size:1rem}.comments-dialog-card header button{width:34px;height:34px;border:0;border-radius:50%;background:#f0f0ec;font-size:1.25rem;cursor:pointer}.dialog-open{overflow:hidden}@media(max-width:900px){.home-feed-layout{grid-template-columns:1fr}.site-updates-panel{position:static}.site-updates-list{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.home-feed-layout{width:100%;padding-inline:10px}.site-updates-panel{display:none}.photo-feed{gap:14px}.photo-post{border-radius:14px}.photo-post-header{padding:12px 14px}.photo-comments{padding:14px}.photo-comment-list p,.comments-dialog-list p{padding-right:0}.photo-comment-list time,.comments-dialog-list time{position:static;display:block;margin-top:5px}.photo-comment-form{grid-template-columns:1fr}.photo-comment-form button{width:100%}}
+
+
+.profile-new-post-button {
+  width: 100%;
+  min-height: 50px;
+  margin: 0 0 18px;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--strong);
+  border-radius: 14px;
+  color: var(--inverse);
+  background: var(--strong);
+  font: inherit;
+  cursor: pointer;
+}
+.profile-new-post-button span { font-size: 1.35rem; line-height: 1; }
+.profile-new-post-button strong { font-size: .88rem; }
+.profile-new-post-button:hover { opacity: .86; }
+.profile-new-post-button:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+
+.post-dialog[hidden] { display: none; }
+.post-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+.post-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 55%);
+}
+.post-dialog-card {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 25%);
+}
+.post-dialog-card > header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.post-dialog-card h2 { margin: 0; font-size: 1rem; }
+.post-dialog-card header button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-2);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+.post-dialog-form {
+  margin: 0;
+  padding: 18px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.post-dialog-form [data-publish-button]:disabled { opacity: .5; cursor: default; }
+
+@media (max-width: 560px) {
+  .post-dialog { padding: 8px; }
+  .post-dialog-card { max-height: calc(100vh - 16px); border-radius: 15px; }
+  .post-dialog-form { padding: 12px; }
+}

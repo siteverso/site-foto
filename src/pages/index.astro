@@ -2,40 +2,209 @@
 import AppLayout from '../layouts/AppLayout.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import { requireUser } from '../lib/server/session';
-import { getFeedPhotos } from '../lib/server/repositories/photos';
+import { getComments, getFeedPhotos } from '../lib/server/repositories/photos';
 import { getMessages, normalizeLocale } from '../i18n';
+import { MESSAGE_MAX_LENGTH } from '../lib/message-limit';
 
 const user = await requireUser(Astro);
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
-const photos = await getFeedPhotos(30);
+const photos = await getFeedPhotos(20, 0);
+const feedItems = await Promise.all(photos.map(async photo => ({
+  ...photo,
+  comments: await getComments(photo.id, 10, 0),
+})));
+const updates = photos.slice(0, 10);
 const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
-  day: '2-digit', month: 'short', year: 'numeric'
+  day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
 }).format(new Date(value));
 ---
 <AppLayout title={`${t.home.feedTitle} — ${t.site.title}`}>
   <main class="feed-page">
     <SiteHeader username={user.username} />
 
-    <section class="feed-shell site-container site-section">
+    <section class="home-feed-layout site-container site-section">
+      <aside class="site-updates-panel">
+        <h1>{t.home.updates}</h1>
+        <div class="site-updates-list">
+          {updates.map(photo => (
+            <a href={`#foto-${photo.id}`}>
+              <img src={`/api/photos/${photo.id}`} alt="" loading="lazy" />
+              <span>
+                <strong>@{photo.username}</strong>
+                <small>{formatDate(photo.publishedAt)}</small>
+              </span>
+            </a>
+          ))}
+        </div>
+      </aside>
 
-      {photos.length ? (
-        <div class="feed-grid">
-          {photos.map(photo => (
-            <article class="feed-card">
-              <a class="feed-card-image" href={`/perfil/${photo.username}`}>
-                <img src={`/api/photos/${photo.id}`} alt={photo.caption || `@${photo.username}`} loading="lazy" />
-              </a>
-              <div class="feed-card-body">
+      <section class="photo-feed-column" aria-label={t.home.feedTitle}>
+        <div class="photo-feed" data-photo-feed>
+          {feedItems.map(photo => (
+            <article class="photo-post" id={`foto-${photo.id}`} data-photo-id={photo.id}>
+              <header class="photo-post-header">
                 <a href={`/perfil/${photo.username}`}><strong>@{photo.username}</strong></a>
                 <time>{formatDate(photo.publishedAt)}</time>
-                {photo.caption && <p>{photo.caption}</p>}
-              </div>
+              </header>
+
+              <img class="photo-post-image" src={`/api/photos/${photo.id}`} alt={photo.caption || `@${photo.username}`} loading="lazy" />
+              {photo.caption && <p class="photo-post-caption">{photo.caption}</p>}
+
+              <section class="photo-comments">
+                <div class="photo-comments-title">
+                  <strong>{t.home.comments}</strong>
+                  <span data-comment-count>{photo.comments.total}</span>
+                </div>
+                <div class="photo-comment-list" data-comment-list>
+                  {photo.comments.items.map(comment => (
+                    <article>
+                      <a href={`/perfil/${comment.username}`}>@{comment.username}</a>
+                      <p>{comment.message}</p>
+                      <time>{formatDate(comment.createdAt)}</time>
+                    </article>
+                  ))}
+                </div>
+                {photo.comments.total > 10 && (
+                  <button class="text-button" type="button" data-open-comments data-photo-id={photo.id}>
+                    Ver todas as mensagens
+                  </button>
+                )}
+                <form class="photo-comment-form" data-comment-form>
+                  <input type="text" name="message" maxlength={MESSAGE_MAX_LENGTH} placeholder={t.home.commentPlaceholder} required />
+                  <button type="submit">{t.home.send}</button>
+                </form>
+              </section>
             </article>
           ))}
         </div>
-      ) : <p class="empty-state feed-empty">{t.home.noUpdates}</p>}
+
+        {photos.length === 20 && <button class="feed-load-more" type="button" data-load-more>Carregar mais</button>}
+        {!photos.length && <p class="empty-state feed-empty">{t.home.noUpdates}</p>}
+      </section>
     </section>
   </main>
 
+
+  <div class="comments-dialog" data-comments-dialog hidden>
+    <div class="comments-dialog-backdrop" data-close-comments></div>
+    <section class="comments-dialog-card" role="dialog" aria-modal="true" aria-label="Mensagens da foto">
+      <header>
+        <h2>Mensagens</h2>
+        <button type="button" aria-label="Fechar" data-close-comments>×</button>
+      </header>
+      <div class="comments-dialog-list" data-dialog-list></div>
+      <button class="feed-load-more" type="button" data-dialog-more hidden>Carregar mais</button>
+    </section>
+  </div>
+
+  <script define:vars={{ locale, currentUsername: user.username, messageMaxLength: MESSAGE_MAX_LENGTH }}>
+    const feed = document.querySelector('[data-photo-feed]');
+    const loadMoreButton = document.querySelector('[data-load-more]');
+    const dialog = document.querySelector('[data-comments-dialog]');
+    const dialogList = document.querySelector('[data-dialog-list]');
+    const dialogMore = document.querySelector('[data-dialog-more]');
+    let feedOffset = document.querySelectorAll('.photo-post').length;
+    let dialogPhotoId = 0;
+    let dialogOffset = 0;
+    let dialogTotal = 0;
+
+    const formatDate = value => new Intl.DateTimeFormat(locale, {
+      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    }).format(new Date(value));
+
+    const escapeHtml = value => String(value).replace(/[&<>'"]/g, char => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    })[char]);
+
+    function commentHtml(comment) {
+      return `<article><a href="/perfil/${encodeURIComponent(comment.username)}">@${escapeHtml(comment.username)}</a><p>${escapeHtml(comment.message)}</p><time>${formatDate(comment.createdAt)}</time></article>`;
+    }
+
+    function postHtml(photo) {
+      const comments = photo.comments.items.map(commentHtml).join('');
+      const viewAll = photo.comments.total > 10
+        ? `<button class="text-button" type="button" data-open-comments data-photo-id="${photo.id}">Ver todas as mensagens</button>`
+        : '';
+      return `<article class="photo-post" id="foto-${photo.id}" data-photo-id="${photo.id}">
+        <header class="photo-post-header"><a href="/perfil/${encodeURIComponent(photo.username)}"><strong>@${escapeHtml(photo.username)}</strong></a><time>${formatDate(photo.publishedAt)}</time></header>
+        <img class="photo-post-image" src="/api/photos/${photo.id}" alt="${escapeHtml(photo.caption || `@${photo.username}`)}" loading="lazy">
+        ${photo.caption ? `<p class="photo-post-caption">${escapeHtml(photo.caption)}</p>` : ''}
+        <section class="photo-comments">
+          <div class="photo-comments-title"><strong>Mensagens</strong><span data-comment-count>${photo.comments.total}</span></div>
+          <div class="photo-comment-list" data-comment-list>${comments}</div>
+          ${viewAll}
+          <form class="photo-comment-form" data-comment-form><input type="text" name="message" maxlength="${messageMaxLength}" placeholder="Escreva uma mensagem" required><button type="submit">Enviar</button></form>
+        </section>
+      </article>`;
+    }
+
+    loadMoreButton?.addEventListener('click', async () => {
+      loadMoreButton.disabled = true;
+      loadMoreButton.textContent = 'Carregando…';
+      const response = await fetch(`/api/feed?offset=${feedOffset}`);
+      if (!response.ok) return location.reload();
+      const data = await response.json();
+      feed.insertAdjacentHTML('beforeend', data.items.map(postHtml).join(''));
+      feedOffset += data.items.length;
+      loadMoreButton.hidden = !data.hasMore;
+      loadMoreButton.disabled = false;
+      loadMoreButton.textContent = 'Carregar mais';
+    });
+
+    document.addEventListener('submit', async event => {
+      const form = event.target.closest('[data-comment-form]');
+      if (!form) return;
+      event.preventDefault();
+      const post = form.closest('.photo-post');
+      const input = form.elements.message;
+      const message = input.value.trim();
+      if (!message) return;
+      form.querySelector('button').disabled = true;
+      const response = await fetch('/api/comments', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: Number(post.dataset.photoId), message })
+      });
+      form.querySelector('button').disabled = false;
+      if (!response.ok) return;
+      const data = await response.json();
+      const list = post.querySelector('[data-comment-list]');
+      if (list.children.length < 10) list.insertAdjacentHTML('beforeend', commentHtml(data.comment));
+      const counter = post.querySelector('[data-comment-count]');
+      counter.textContent = String(Number(counter.textContent || 0) + 1);
+      input.value = '';
+    });
+
+    async function loadDialog(reset = false) {
+      if (reset) {
+        dialogOffset = 0;
+        dialogList.innerHTML = '';
+      }
+      dialogMore.disabled = true;
+      const response = await fetch(`/api/comments?postId=${dialogPhotoId}&offset=${dialogOffset}`);
+      if (!response.ok) return;
+      const data = await response.json();
+      dialogTotal = data.total;
+      dialogList.insertAdjacentHTML('beforeend', data.items.map(commentHtml).join(''));
+      dialogOffset += data.items.length;
+      dialogMore.hidden = dialogOffset >= dialogTotal;
+      dialogMore.disabled = false;
+    }
+
+    document.addEventListener('click', event => {
+      const open = event.target.closest('[data-open-comments]');
+      if (open) {
+        dialogPhotoId = Number(open.dataset.photoId);
+        dialog.hidden = false;
+        document.body.classList.add('dialog-open');
+        loadDialog(true);
+      }
+      if (event.target.closest('[data-close-comments]')) {
+        dialog.hidden = true;
+        document.body.classList.remove('dialog-open');
+      }
+    });
+
+    dialogMore?.addEventListener('click', () => loadDialog(false));
+  </script>
 </AppLayout>

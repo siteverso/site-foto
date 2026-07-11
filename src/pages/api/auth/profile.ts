@@ -3,13 +3,14 @@ import { body, errorResponse, json } from '../../../lib/server/http';
 import { requireUser } from '../../../lib/server/session';
 import { normalizeUsername, validateUsername } from '../../../lib/server/security';
 import { withConnection } from '../../../lib/server/oracle';
+import { validateMessageLength } from '../../../lib/message-limit';
 
 export const PATCH: APIRoute = async context => {
     try {
         const user = await requireUser(context);
         const input = await body<{ username?: string; bio?: string }>(context.request);
         const username = normalizeUsername(input.username);
-        const bio = String(input.bio || '').trim().slice(0, 180);
+        const bio = validateMessageLength(input.bio, 'A apresentação');
         validateUsername(username);
 
         await withConnection(async connection => {
