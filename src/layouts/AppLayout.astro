@@ -1,0 +1,26 @@
+---
+import '../styles/global.css';
+import { getMessages, normalizeLocale, type Locale } from '../i18n';
+import { currentUser } from '../lib/server/session';
+
+const locale: Locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
+const messages = getMessages(locale);
+const { title = messages.site.title, description = messages.site.description, auth = true } = Astro.props;
+
+if (auth && !await currentUser(Astro)) {
+  return Astro.redirect('/login');
+}
+---
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="light" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

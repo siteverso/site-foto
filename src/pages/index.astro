@@ -1,0 +1,126 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+import LanguageSwitch from '../components/LanguageSwitch.astro';
+import { requireUser } from '../lib/server/session';
+import { getComments, getFriendPhotos, getLatestPhotos, getTodayPhoto } from '../lib/server/repositories/photos';
+import { getMessages, normalizeLocale } from '../i18n';
+
+const user = await requireUser(Astro);
+const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
+const t = getMessages(locale);
+const todayPhoto = await getTodayPhoto(user.id);
+const [friendPhotos, latestPhotos, comments] = await Promise.all([
+  getFriendPhotos(user.id),
+  getLatestPhotos(user.id),
+  todayPhoto ? getComments(todayPhoto.id) : Promise.resolve([]),
+]);
+const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short' }).format(new Date(value));
+---
+<AppLayout title={t.site.title}>
+  <main class="flog-page">
+    <header class="flog-header">
+      <a class="wordmark dark" href="/"><span>foto</span>life</a>
+      <div class="flog-header-actions">
+        <span class="flog-user">@{user.username}</span>
+        <LanguageSwitch locale={locale} />
+        <button class="flog-logout" data-logout>{t.home.logout}</button>
+      </div>
+    </header>
+
+    <section class="flog-grid">
+      <aside class="flog-panel">
+        <h2>{t.home.friends}</h2>
+        {friendPhotos.length ? (
+          <div class="photo-mini-grid">
+            {friendPhotos.map(photo => (
+              <article class="photo-mini-card">
+                <img src={`/api/photos/${photo.id}`} alt={photo.caption || photo.username} loading="lazy" />
+                <div><strong>@{photo.username}</strong><time>{formatDate(photo.publishedAt)}</time></div>
+              </article>
+            ))}
+          </div>
+        ) : <p class="empty-state">{t.home.noFriends}</p>}
+      </aside>
+
+      <section class="flog-center">
+        <div class="flog-section-title"><span>{t.home.today}</span><small>{t.home.signedAs} @{user.username}</small></div>
+
+        {todayPhoto ? (
+          <article class="daily-photo">
+            <img src={`/api/photos/${todayPhoto.id}`} alt={todayPhoto.caption || t.home.today} />
+            {todayPhoto.caption && <p>{todayPhoto.caption}</p>}
+          </article>
+        ) : (
+          <form class="daily-upload" data-photo-form>
+            <label class="upload-drop">
+              <input name="photo" type="file" accept="image/*" required />
+              <span>{t.home.choosePhoto}</span>
+            </label>
+            <textarea name="caption" maxlength="1000" placeholder={t.home.caption}></textarea>
+            <button type="submit">{t.home.publish}</button>
+          </form>
+        )}
+
+        <section class="comments-panel">
+          <h2>{t.home.comments}</h2>
+          {comments.length ? (
+            <div class="comment-list">
+              {comments.map(comment => (
+                <article><strong>@{comment.username}</strong><p>{comment.message}</p><time>{formatDate(comment.createdAt)}</time></article>
+              ))}
+            </div>
+          ) : <p class="empty-state">{t.home.noComments}</p>}
+
+          {todayPhoto && (
+            <form class="comment-form" data-comment-form data-post-id={todayPhoto.id}>
+              <input name="message" maxlength="500" placeholder={t.home.commentPlaceholder} required />
+              <button type="submit">{t.home.send}</button>
+            </form>
+          )}
+        </section>
+      </section>
+
+      <aside class="flog-panel">
+        <h2>{t.home.updates}</h2>
+        {latestPhotos.length ? (
+          <div class="photo-mini-grid">
+            {latestPhotos.map(photo => (
+              <article class="photo-mini-card">
+                <img src={`/api/photos/${photo.id}`} alt={photo.caption || photo.username} loading="lazy" />
+                <div><strong>@{photo.username}</strong><time>{formatDate(photo.publishedAt)}</time></div>
+              </article>
+            ))}
+          </div>
+        ) : <p class="empty-state">{t.home.noUpdates}</p>}
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    document.querySelector('[data-logout]')?.addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      location.href = '/login';
+    });
+
+    document.querySelector<HTMLFormElement>('[data-photo-form]')?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const response = await fetch('/api/photos/today', { method: 'POST', body: new FormData(form) });
+      if (response.ok) location.reload();
+      else alert(await response.text());
+    });
+
+    document.querySelector<HTMLFormElement>('[data-comment-form]')?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const input = form.elements.namedItem('message') as HTMLInputElement;
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: Number(form.dataset.postId), message: input.value }),
+      });
+      if (response.ok) location.reload();
+      else alert(await response.text());
+    });
+  </script>
+</AppLayout>

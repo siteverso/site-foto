@@ -1,0 +1,16 @@
+---
+import { normalizeLocale } from '../i18n';
+const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
+---
+<div class="language-switch" aria-label="Idioma">
+  <button class:list={['language-option', { active: locale === 'pt-BR' }]} type="button" data-language="pt-BR">PT</button>
+  <button class:list={['language-option', { active: locale === 'en' }]} type="button" data-language="en">EN</button>
+</div>
+<script>
+  document.querySelectorAll('[data-language]').forEach(button => {
+    button.addEventListener('click', () => {
+      document.cookie = `fotolife-language=${button.dataset.language}; Path=/; Max-Age=31536000; SameSite=Lax`;
+      location.reload();
+    });
+  });
+</script>

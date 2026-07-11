@@ -1,0 +1,21 @@
+{
+  "name": "site-foto",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev --host 0.0.0.0 --port 4322",
+    "build": "astro build",
+    "preview": "astro preview --host 0.0.0.0 --port 4322"
+  },
+  "dependencies": {
+    "@astrojs/node": "^10.1.4",
+    "astro": "^6.4.7",
+    "bcryptjs": "^3.0.3",
+    "google-auth-library": "^10.9.0",
+    "oracledb": "^7.0.0"
+  }
+}

@@ -1,0 +1,132 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+import LanguageSwitch from '../components/LanguageSwitch.astro';
+import { currentUser } from '../lib/server/session';
+import { getMessages, normalizeLocale } from '../i18n';
+
+if (await currentUser(Astro)) return Astro.redirect('/');
+
+const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
+const t = getMessages(locale);
+const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID?.trim() || '';
+const googleEnabled = googleClientId.endsWith('.apps.googleusercontent.com');
+---
+<AppLayout title={`${t.login.title} — ${t.site.title}`} auth={false}>
+  <main class="login-shell">
+    <section class="photo-stage" aria-label={t.site.title}>
+      <div class="stage-top">
+        <a class="wordmark" href="/login"><span>foto</span>life</a>
+        <LanguageSwitch />
+      </div>
+      <div class="stage-copy">
+        <span class="stage-number">01</span>
+        <h1>{t.login.headline}</h1>
+        <p>{t.login.intro}</p>
+      </div>
+      <div class="stage-frame" aria-hidden="true"><span>{t.login.visualTag}</span></div>
+    </section>
+
+    <section class="login-panel">
+      <div class="login-card">
+        <header>
+          <span class="kicker">{t.site.title}</span>
+          <h2>{t.login.title}</h2>
+          <p>{t.login.description}</p>
+        </header>
+
+        {googleEnabled ? (
+          <>
+            <div class="google-login" data-google-login data-client-id={googleClientId}>
+              <div data-google-button></div>
+              <p class="message" data-google-message hidden></p>
+            </div>
+            <div class="divider"><span>{t.login.or}</span></div>
+            <script is:inline src={`https://accounts.google.com/gsi/client?hl=${locale === 'en' ? 'en' : 'pt-BR'}`} async defer></script>
+          </>
+        ) : null}
+
+        <form data-login-form>
+          <label>
+            <span>{t.login.identifier}</span>
+            <input name="identifier" autocomplete="username" placeholder={t.login.identifierPlaceholder} required />
+          </label>
+          <label>
+            <span>{t.login.password}</span>
+            <input name="password" type="password" autocomplete="current-password" minlength="6" placeholder={t.login.passwordPlaceholder} required />
+          </label>
+          <label class="remember"><input type="checkbox" name="remember" checked /> <span>{t.login.remember}</span></label>
+          <button type="submit">{t.login.submit}</button>
+          <p class="message" data-form-message hidden></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script define:vars={{ googleEnabled, errors: t.errors }}>
+    const showMessage = (element, text) => {
+      element.textContent = text;
+      element.hidden = !text;
+    };
+
+    const post = async (url, payload) => {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || 'ERRO');
+      return data;
+    };
+
+    const form = document.querySelector('[data-login-form]');
+    const formMessage = document.querySelector('[data-form-message]');
+    form?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const button = form.querySelector('button');
+      const values = new FormData(form);
+      button.disabled = true;
+      showMessage(formMessage, '');
+      try {
+        await post('/api/auth/login', {
+          identifier: values.get('identifier'),
+          password: values.get('password'),
+          remember: values.get('remember') === 'on',
+        });
+        location.href = '/';
+      } catch (error) {
+        showMessage(formMessage, String(error).includes('LOGIN_INVALIDO') ? errors.invalidLogin : errors.generic);
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    if (googleEnabled) {
+      const mountGoogle = () => {
+        const root = document.querySelector('[data-google-login]');
+        const target = document.querySelector('[data-google-button]');
+        const message = document.querySelector('[data-google-message]');
+        const clientId = root?.dataset.clientId;
+        if (!root || !target || !clientId || !window.google?.accounts?.id) return false;
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: async ({ credential }) => {
+            try {
+              showMessage(message, '');
+              await post('/api/auth/google', { credential });
+              location.href = '/';
+            } catch {
+              showMessage(message, errors.googleInvalid);
+            }
+          },
+        });
+        window.google.accounts.id.renderButton(target, {
+          theme: 'outline', size: 'large', shape: 'pill', width: Math.min(380, target.clientWidth || 380),
+        });
+        return true;
+      };
+      const timer = setInterval(() => { if (mountGoogle()) clearInterval(timer); }, 100);
+      setTimeout(() => clearInterval(timer), 10000);
+    }
+  </script>
+</AppLayout>
