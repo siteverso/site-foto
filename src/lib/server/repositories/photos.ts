@@ -174,16 +174,12 @@ export async function getComments(postId: number, limit = 10, offset = 0): Promi
     });
 }
 
-export type PhotoPeriodType = 'MINUTE' | 'DAY';
-
 export class PhotoLimitError extends Error {
     constructor(
         public readonly limit: number,
-        public readonly periodAmount: number,
-        public readonly periodType: PhotoPeriodType,
-        public readonly retryAfterSeconds: number,
+        public readonly periodMinutes: number,
     ) {
-        super(`Limite de ${limit} foto(s) por ${periodAmount} ${periodType.toLowerCase()}(s) atingido.`);
+        super(`Limite de ${limit} foto(s) a cada ${periodMinutes} minuto(s) atingido.`);
         this.name = 'PhotoLimitError';
     }
 }
@@ -193,21 +189,6 @@ function positiveInteger(value: string | undefined, fallback: number): number {
     return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function photoPeriodType(value: string | undefined): PhotoPeriodType {
-    const normalized = String(value || '')
-        .trim()
-        .toUpperCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
-
-    if (['DAY', 'DAYS', 'DIA', 'DIAS'].includes(normalized)) return 'DAY';
-    return 'MINUTE';
-}
-
-function periodMinutes(amount: number, type: PhotoPeriodType): number {
-    return type === 'DAY' ? amount * 24 * 60 : amount;
-}
-
 export async function saveTodayPhoto(input: {
     userId: number;
     caption: string;
@@ -215,10 +196,8 @@ export async function saveTodayPhoto(input: {
     mimeType: string;
     image: Buffer;
 }): Promise<void> {
-    const limit = positiveInteger(import.meta.env.PHOTO_POST_LIMIT, 10);
-    const periodAmount = positiveInteger(import.meta.env.PHOTO_POST_PERIOD_AMOUNT, 1);
-    const periodType = photoPeriodType(import.meta.env.PHOTO_POST_PERIOD_TYPE);
-    const configuredPeriodMinutes = periodMinutes(periodAmount, periodType);
+    const limit = positiveInteger(import.meta.env.PHOTO_POST_LIMIT, 1);
+    const periodMinutes = positiveInteger(import.meta.env.PHOTO_POST_PERIOD_MINUTES, 1);
 
     await withConnection(async connection => {
         try {
@@ -231,8 +210,7 @@ export async function saveTodayPhoto(input: {
             );
 
             const result = await connection.execute<OracleRow>(
-                `SELECT COUNT(*) AS total,
-                        MIN(created_at) AS oldest_created_at
+                `SELECT COUNT(*) AS total
                  FROM murm_post
                  WHERE user_id = :user_id
                    AND post_type = 'photo'
@@ -240,18 +218,12 @@ export async function saveTodayPhoto(input: {
                    AND created_at >= SYSTIMESTAMP - NUMTODSINTERVAL(:period_minutes, 'MINUTE')`,
                 {
                     user_id: input.userId,
-                    period_minutes: configuredPeriodMinutes,
+                    period_minutes: periodMinutes,
                 },
             );
 
-            const row = result.rows?.[0];
-            const total = Number(row?.TOTAL || 0);
-            if (total >= limit) {
-                const oldestCreatedAt = row?.OLDEST_CREATED_AT ? new Date(String(row.OLDEST_CREATED_AT)) : new Date();
-                const nextAllowedAt = oldestCreatedAt.getTime() + configuredPeriodMinutes * 60_000;
-                const retryAfterSeconds = Math.max(1, Math.ceil((nextAllowedAt - Date.now()) / 1000));
-                throw new PhotoLimitError(limit, periodAmount, periodType, retryAfterSeconds);
-            }
+            const total = Number(result.rows?.[0]?.TOTAL || 0);
+            if (total >= limit) throw new PhotoLimitError(limit, periodMinutes);
 
             await connection.execute(
                 `INSERT INTO murm_post
@@ -275,16 +247,77 @@ export async function saveTodayPhoto(input: {
     });
 }
 
-export async function addComment(postId: number, userId: number, message: string): Promise<void> {
-    await withConnection(async connection => {
-        await connection.execute(
+export async function addComment(postId: number, userId: number, message: string): Promise<number> {
+    return withConnection(async connection => {
+        const result = await connection.execute(
             `INSERT INTO murm_post
                 (user_id, parent_post_id, contents, post_type)
              VALUES
-                (:user_id, :post_id, :contents, 'comment')`,
-            { post_id: postId, user_id: userId, contents: message },
+                (:user_id, :post_id, :contents, 'comment')
+             RETURNING id INTO :comment_id`,
+            {
+                post_id: postId,
+                user_id: userId,
+                contents: message,
+                comment_id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
+            },
             { autoCommit: true },
         );
+        const outBinds = result.outBinds as { comment_id?: number[] } | undefined;
+        return Number(outBinds?.comment_id?.[0] || 0);
+    });
+}
+
+export async function deleteComment(commentId: number, userId: number): Promise<boolean> {
+    return withConnection(async connection => {
+        const result = await connection.execute(
+            `UPDATE murm_post c
+             SET c.status = 'deleted',
+                 c.updated_at = SYSTIMESTAMP
+             WHERE c.id = :comment_id
+               AND c.post_type = 'comment'
+               AND c.status = 'published'
+               AND (
+                    c.user_id = :user_id
+                    OR EXISTS (
+                        SELECT 1
+                        FROM murm_post p
+                        WHERE p.id = c.parent_post_id
+                          AND p.user_id = :user_id
+                          AND p.post_type = 'photo'
+                    )
+               )`,
+            { comment_id: commentId, user_id: userId },
+            { autoCommit: true },
+        );
+        return Number(result.rowsAffected || 0) > 0;
+    });
+}
+
+export async function restoreComment(commentId: number, userId: number): Promise<boolean> {
+    return withConnection(async connection => {
+        const result = await connection.execute(
+            `UPDATE murm_post c
+             SET c.status = 'published',
+                 c.updated_at = SYSTIMESTAMP
+             WHERE c.id = :comment_id
+               AND c.post_type = 'comment'
+               AND c.status = 'deleted'
+               AND c.updated_at >= SYSTIMESTAMP - NUMTODSINTERVAL(30, 'SECOND')
+               AND (
+                    c.user_id = :user_id
+                    OR EXISTS (
+                        SELECT 1
+                        FROM murm_post p
+                        WHERE p.id = c.parent_post_id
+                          AND p.user_id = :user_id
+                          AND p.post_type = 'photo'
+                    )
+               )`,
+            { comment_id: commentId, user_id: userId },
+            { autoCommit: true },
+        );
+        return Number(result.rowsAffected || 0) > 0;
     });
 }
 

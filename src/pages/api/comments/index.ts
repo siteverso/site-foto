@@ -24,6 +24,6 @@ export const POST: APIRoute = async context => {
         return Response.json({ ok: false, error: error instanceof Error ? error.message : `A mensagem deve ter no máximo ${MESSAGE_MAX_LENGTH} caracteres.` }, { status: 400 });
     }
     if (!Number.isInteger(postId) || !message) return Response.json({ ok: false, error: 'Escreva uma mensagem antes de enviar.' }, { status: 400 });
-    await addComment(postId, user.id, message);
-    return Response.json({ ok: true, comment: { username: user.username, message, createdAt: new Date().toISOString() } });
+    const id = await addComment(postId, user.id, message);
+    return Response.json({ ok: true, comment: { id, userId: user.id, username: user.username, message, createdAt: new Date().toISOString() } });
 };

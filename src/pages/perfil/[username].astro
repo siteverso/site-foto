@@ -80,7 +80,18 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                     <section class="comments-panel" data-comments-panel>
                       <h2>{t.home.comments}</h2>
                       <div class="comment-list" data-comment-list hidden={!comments?.items.length}>{comments?.items.map(comment => (
-                        <article><a class="comment-user" href={`/perfil/${comment.username}`}><strong>@{comment.username}</strong></a><p>{comment.message}</p><time>{formatDate(comment.createdAt)}</time></article>
+                        <article class="comment-item" data-comment-item data-comment-id={comment.id}>
+                          <div class="comment-content">
+                            <a class="comment-user" href={`/perfil/${comment.username}`}><strong>@{comment.username}</strong></a>
+                            <p>{comment.message}</p>
+                            <time>{formatDate(comment.createdAt)}</time>
+                          </div>
+                          {(comment.userId === user.id || isOwner) && (
+                            <div class="comment-delete-area" data-comment-delete-area>
+                              <button class="comment-delete-trigger" type="button" data-comment-delete-trigger>Excluir</button>
+                            </div>
+                          )}
+                        </article>
                       ))}</div>
                       <p class="empty-state comment-empty" data-comment-empty hidden={Boolean(comments?.items.length)}>{t.home.noComments}</p>
                       <form class="comment-form" data-comment-form data-post-id={photo.id}>
@@ -271,6 +282,85 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     });
     const formatCommentDate = (value: string) => new Intl.DateTimeFormat(document.documentElement.lang || 'pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
 
+
+
+    const showCommentActionError = (item: HTMLElement, message: string) => {
+      const area = item.querySelector<HTMLElement>('[data-comment-delete-area]');
+      if (!area) return;
+      area.innerHTML = '';
+      const error = document.createElement('span');
+      error.className = 'comment-delete-error';
+      error.textContent = message;
+      area.append(error);
+      window.setTimeout(() => {
+        area.innerHTML = '<button class="comment-delete-trigger" type="button" data-comment-delete-trigger>Excluir</button>';
+      }, 2500);
+    };
+
+    document.addEventListener('click', async event => {
+      const target = event.target as HTMLElement;
+      const item = target.closest<HTMLElement>('[data-comment-item]');
+      if (!item) return;
+      const area = item.querySelector<HTMLElement>('[data-comment-delete-area]');
+      const id = Number(item.dataset.commentId);
+      if (!area || !id) return;
+
+      if (target.closest('[data-comment-delete-trigger]')) {
+        area.innerHTML = `
+          <span class="comment-delete-confirm">Excluir?</span>
+          <button type="button" data-comment-delete-confirm>Confirmar</button>
+          <button type="button" data-comment-delete-cancel>Cancelar</button>
+        `;
+        return;
+      }
+
+      if (target.closest('[data-comment-delete-cancel]')) {
+        area.innerHTML = '<button class="comment-delete-trigger" type="button" data-comment-delete-trigger>Excluir</button>';
+        return;
+      }
+
+      if (target.closest('[data-comment-delete-confirm]')) {
+        const response = await fetch(`/api/comments/${id}`, { method: 'DELETE' });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showCommentActionError(item, String(data.error || 'Não foi possível excluir.'));
+          return;
+        }
+
+        item.classList.add('is-comment-deleted');
+        area.innerHTML = `
+          <span class="comment-deleted-label">Mensagem excluída</span>
+          <button type="button" data-comment-undo>Desfazer</button>
+        `;
+
+        const commentList = item.closest<HTMLElement>('[data-comment-list]');
+        const commentPanel = item.closest<HTMLElement>('[data-comments-panel]');
+        const removeTimer = window.setTimeout(() => {
+          item.remove();
+          if (commentList && !commentList.querySelector('[data-comment-item]')) {
+            list.hidden = true;
+            const empty = commentPanel?.querySelector<HTMLElement>('[data-comment-empty]');
+            if (empty) empty.hidden = false;
+          }
+        }, 5000);
+        item.dataset.removeTimer = String(removeTimer);
+        return;
+      }
+
+      if (target.closest('[data-comment-undo]')) {
+        const timer = Number(item.dataset.removeTimer);
+        if (timer) window.clearTimeout(timer);
+        const response = await fetch(`/api/comments/${id}`, { method: 'PATCH' });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showCommentActionError(item, String(data.error || 'Não foi possível desfazer.'));
+          return;
+        }
+        item.classList.remove('is-comment-deleted');
+        delete item.dataset.removeTimer;
+        area.innerHTML = '<button class="comment-delete-trigger" type="button" data-comment-delete-trigger>Excluir</button>';
+      }
+    });
     document.querySelectorAll<HTMLFormElement>('[data-comment-form]').forEach(form => {
       form.addEventListener('submit', async event => {
         event.preventDefault();
@@ -308,8 +398,23 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             strong.textContent = `@${data.comment.username}`;
             text.textContent = String(data.comment.message || message);
             time.textContent = formatCommentDate(String(data.comment.createdAt || new Date().toISOString()));
+            const content = document.createElement('div');
+            const deleteArea = document.createElement('div');
+            const deleteButton = document.createElement('button');
+            article.className = 'comment-item';
+            article.dataset.commentItem = '';
+            article.dataset.commentId = String(data.comment.id || '');
+            content.className = 'comment-content';
+            deleteArea.className = 'comment-delete-area';
+            deleteArea.dataset.commentDeleteArea = '';
+            deleteButton.className = 'comment-delete-trigger';
+            deleteButton.type = 'button';
+            deleteButton.dataset.commentDeleteTrigger = '';
+            deleteButton.textContent = 'Excluir';
             userLink.append(strong);
-            article.append(userLink, text, time);
+            content.append(userLink, text, time);
+            deleteArea.append(deleteButton);
+            article.append(content, deleteArea);
             list.append(article);
             list.hidden = false;
           }
@@ -354,4 +459,15 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
   .profile-photo-post .comment-form button:disabled { opacity: .55; transform: none; cursor: default; }
   .profile-photo-post .comment-form button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .comment-form-message { margin: 7px 2px 0; color: #a12626; font-size: .76rem; }
+
+  .comment-item { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+  .comment-content { min-width: 0; }
+  .comment-delete-area { min-height: 28px; display: flex; align-items: center; justify-content: flex-end; gap: 7px; font-size: .72rem; }
+  .comment-delete-area button { border: 0; background: transparent; color: #666; padding: 4px 6px; border-radius: 8px; cursor: pointer; font: inherit; }
+  .comment-delete-area button:hover { background: #f0f0ec; color: #111; }
+  .comment-delete-trigger { opacity: .62; }
+  .comment-delete-confirm, .comment-deleted-label { color: #777; }
+  .comment-delete-error { color: #a12626; }
+  .comment-item.is-comment-deleted .comment-content { opacity: .2; filter: grayscale(1); }
+  .comment-item.is-comment-deleted { min-height: 40px; }
 </style>
