@@ -59,6 +59,10 @@ const googleEnabled = googleClientId.endsWith('.apps.googleusercontent.com');
           <label class="remember"><input type="checkbox" name="remember" checked /> <span>{t.login.remember}</span></label>
           <button type="submit">{t.login.submit}</button>
           <p class="message" data-form-message hidden></p>
+          <div class="login-signup-callout">
+            <span>{t.login.noAccount}</span>
+            <a href="/criar-conta">{t.login.createAccount}</a>
+          </div>
         </form>
       </div>
     </section>

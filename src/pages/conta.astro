@@ -33,7 +33,7 @@ const t = getMessages(locale);
           <div class="field"><label for="email">{t.common.email}</label><input id="email" name="email" type="email" readonly /></div>
           <div class="field"><label for="bio">{t.profile.bio}</label><textarea id="bio" name="bio" maxlength={MESSAGE_MAX_LENGTH} rows="5"></textarea></div>
           <button class="button primary" type="submit">{t.common.save}</button>
-          <p class="form-message" data-form-message></p>
+          <p class="form-message" data-form-message hidden></p>
         </form>
       </section>
 
@@ -47,7 +47,7 @@ const t = getMessages(locale);
           <div class="field"><label for="newPassword">{t.common.newPassword}</label><input id="newPassword" name="password" type="password" minlength="6" autocomplete="new-password" required /></div>
           <div class="field"><label for="confirmNewPassword">{t.common.confirmPassword}</label><input id="confirmNewPassword" name="confirmPassword" type="password" minlength="6" autocomplete="new-password" required /></div>
           <button class="button primary" type="submit">{t.profile.definePassword}</button>
-          <p class="form-message" data-form-message></p>
+          <p class="form-message" data-form-message hidden></p>
         </form>
       </section>
     </div>
@@ -55,3 +55,144 @@ const t = getMessages(locale);
   </main>
   <div class="toast" data-toast></div>
 </AppLayout>
+
+
+<script>
+  const profileForm = document.querySelector('[data-profile-form]');
+  const passwordForm = document.querySelector('[data-password-form]');
+  const toastElement = document.querySelector('[data-toast]');
+
+  const api = async (url, options = {}) => {
+    const response = await fetch(url, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'ERRO_INTERNO');
+    return data;
+  };
+
+  const messages = {
+    CONTA_EXISTENTE: 'Este usuário já está em uso.',
+    USUARIO_INVALIDO: 'Use de 3 a 30 caracteres: letras, números ou sublinhado.',
+    SENHA_INVALIDA: 'A senha deve ter pelo menos 6 caracteres.',
+    SENHAS_DIFERENTES: 'As senhas não conferem.',
+    NAO_AUTENTICADO: 'Sua sessão expirou. Entre novamente.',
+    ERRO_INTERNO: 'Não foi possível concluir. Tente novamente.',
+  };
+
+  function showMessage(form, text = '', type = 'info') {
+    const element = form?.querySelector('[data-form-message]');
+    if (!element) return;
+    element.textContent = text;
+    element.dataset.type = type;
+    element.hidden = !text;
+  }
+
+  function setLoading(button, loading, loadingText) {
+    if (!button) return;
+    if (loading) {
+      button.dataset.label = button.textContent.trim();
+      button.disabled = true;
+      button.textContent = loadingText;
+    } else {
+      button.disabled = false;
+      button.textContent = button.dataset.label || button.textContent;
+      delete button.dataset.label;
+    }
+  }
+
+  function toast(text) {
+    if (!toastElement) return;
+    toastElement.textContent = text;
+    toastElement.classList.add('show');
+    window.clearTimeout(toastElement._timer);
+    toastElement._timer = window.setTimeout(() => toastElement.classList.remove('show'), 3000);
+  }
+
+  function initials(username = '') {
+    return String(username).trim().slice(0, 2).toUpperCase() || 'FL';
+  }
+
+  function renderAccount(account) {
+    document.querySelector('[data-profile-avatar]').textContent = initials(account.username);
+    document.querySelector('[data-profile-username]').textContent = `@${account.username}`;
+    document.querySelector('[data-profile-email]').textContent = account.email;
+    document.querySelector('[data-profile-bio]').textContent = account.bio || 'Sem bio ainda.';
+    document.querySelector('[data-profile-posts]').textContent = account.photoCount;
+    document.querySelector('[data-profile-positive]').textContent = account.messageCount;
+    document.querySelector('[data-profile-shares]').textContent = account.observerCount;
+
+    profileForm.username.value = account.username;
+    profileForm.email.value = account.email;
+    profileForm.bio.value = account.bio || '';
+
+    const methods = [];
+    if (account.hasPassword) methods.push('Senha');
+    if (account.hasGoogle) methods.push('Google');
+    document.querySelector('[data-auth-methods]').textContent = methods.join(' + ') || 'Nenhum';
+    document.querySelector('[data-auth-explanation]').textContent = account.hasGoogle
+      ? 'Sua conta pode ser acessada pelo Google. Você também pode definir ou trocar uma senha abaixo.'
+      : 'Sua conta usa acesso por usuário/e-mail e senha.';
+
+    const passwordLabel = account.hasPassword ? 'Trocar senha' : 'Definir senha';
+    document.querySelector('[data-password-title]').textContent = passwordLabel;
+    passwordForm.querySelector('button[type="submit"]').textContent = passwordLabel;
+  }
+
+  async function loadAccount() {
+    try {
+      const data = await api('/api/auth/profile');
+      renderAccount(data.account);
+    } catch (error) {
+      if (error.message === 'NAO_AUTENTICADO') location.replace('/login');
+      else showMessage(profileForm, messages[error.message] || messages.ERRO_INTERNO, 'error');
+    }
+  }
+
+  profileForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = profileForm.querySelector('button[type="submit"]');
+    showMessage(profileForm);
+    setLoading(button, true, 'Salvando…');
+    try {
+      await api('/api/auth/profile', {
+        method: 'PATCH',
+        body: JSON.stringify({ username: profileForm.username.value, bio: profileForm.bio.value }),
+      });
+      await loadAccount();
+      showMessage(profileForm, 'Dados da conta salvos com sucesso.', 'success');
+      toast('Conta atualizada.');
+    } catch (error) {
+      showMessage(profileForm, messages[error.message] || messages.ERRO_INTERNO, 'error');
+    } finally {
+      setLoading(button, false);
+    }
+  });
+
+  passwordForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = passwordForm.querySelector('button[type="submit"]');
+    showMessage(passwordForm);
+    setLoading(button, true, 'Atualizando…');
+    try {
+      await api('/api/auth/password', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          password: passwordForm.password.value,
+          confirmPassword: passwordForm.confirmPassword.value,
+        }),
+      });
+      passwordForm.reset();
+      await loadAccount();
+      showMessage(passwordForm, 'Senha atualizada com sucesso.', 'success');
+      toast('Senha atualizada.');
+    } catch (error) {
+      showMessage(passwordForm, messages[error.message] || messages.ERRO_INTERNO, 'error');
+    } finally {
+      setLoading(button, false);
+    }
+  });
+
+  loadAccount();
+</script>

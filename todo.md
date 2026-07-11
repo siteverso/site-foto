@@ -1,3 +1,4 @@
+site-foto
 Faca cada coisa de uma vez com cuidado e teste e nao duplique codigo
 Se preferir vamos fazer uma alteracao por vez e eu confirma revisando para fazer a proxima
 Mas voce pode ter a visao de conjunto antes
