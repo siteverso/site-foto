@@ -50,8 +50,8 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           {friendPhotos.length > 0 && (
             <section class="profile-friends">
               <h2>{t.publicProfile.friends}</h2>
-              <div class="photo-mini-grid">{friendPhotos.map(item => (
-                <article class="photo-mini-card"><a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a><div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div></article>
+              <div class="photo-mini-grid" data-live-section="profile-observers" data-live-list>{friendPhotos.map(item => (
+                <article class="photo-mini-card" data-live-key={`observer-${item.id}`}><a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a><div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div></article>
               ))}</div>
             </section>
           )}
@@ -65,12 +65,12 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             </button>
           )}
 
+          <div class="profile-photo-feed" data-live-section="profile-feed" data-live-list>
           {photos.length ? (
-            <div class="profile-photo-feed">
-              {photos.map(photo => {
+              photos.map(photo => {
                 const comments = commentsMap.get(photo.id);
                 return (
-                  <article class="profile-photo-post">
+                  <article class="profile-photo-post" data-live-key={`photo-${photo.id}`}>
                     <div class="daily-photo" data-daily-photo>
                       {isOwner && <button class="daily-photo-delete" type="button" data-delete-photo data-photo-id={photo.id} aria-label={t.home.deletePhoto} title={t.home.deletePhoto}>×</button>}
                       <img src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} loading="lazy" />
@@ -84,13 +84,17 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                           <div class="comment-content">
                             <a class="comment-user" href={`/perfil/${comment.username}`}><strong>@{comment.username}</strong></a>
                             <p>{comment.message}</p>
-                            <time>{formatDate(comment.createdAt)}</time>
-                          </div>
-                          {(comment.userId === user.id || isOwner) && (
-                            <div class="comment-delete-area" data-comment-delete-area>
-                              <button class="comment-delete-trigger" type="button" data-comment-delete-trigger>Excluir</button>
+                            <div class="comment-meta">
+                              {(comment.userId === user.id || isOwner) && (
+                                <div class="comment-delete-area" data-comment-delete-area>
+                                  <button class="comment-delete-trigger" type="button" data-comment-delete-trigger aria-label="Excluir mensagem" title="Excluir mensagem">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" /></svg>
+                                  </button>
+                                </div>
+                              )}
+                              <time>{formatDate(comment.createdAt)}</time>
                             </div>
-                          )}
+                          </div>
                         </article>
                       ))}</div>
                       <p class="empty-state comment-empty" data-comment-empty hidden={Boolean(comments?.items.length)}>{t.home.noComments}</p>
@@ -104,15 +108,15 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                     </section>
                   </article>
                 );
-              })}
-            </div>
-          ) : <p class="empty-state profile-no-photo">{isOwner ? t.home.noPhoto : t.publicProfile.noPhotos}</p>}
+              })
+          ) : <p class="empty-state profile-no-photo" data-live-key="empty">{isOwner ? t.home.noPhoto : t.publicProfile.noPhotos}</p>}
+          </div>
         </section>
 
         <aside class="flog-panel">
           <h2>{t.home.updates}</h2>
-          {latestPhotos.length ? <div class="photo-mini-grid">{latestPhotos.map(item => (
-            <article class="photo-mini-card"><a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a><div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div></article>
+          {latestPhotos.length ? <div class="photo-mini-grid" data-live-section="profile-updates" data-live-list>{latestPhotos.map(item => (
+            <article class="photo-mini-card" data-live-key={`update-${item.id}`}><a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a><div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div></article>
           ))}</div> : <p class="empty-state">{t.home.noUpdates}</p>}
         </aside>
       </section>
@@ -156,7 +160,13 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       if (response.ok) location.reload();
       else { button.disabled = false; alert(await response.text()); }
     });
-    document.querySelectorAll<HTMLButtonElement>('[data-delete-photo]').forEach(button => button.addEventListener('click', async event => { const current = event.currentTarget; if (!confirm(current.title)) return; const response = await fetch(`/api/photos/${current.dataset.photoId}`, { method: 'DELETE' }); if (response.ok) location.reload(); else alert(await response.text()); }));
+    document.addEventListener('click', async event => {
+      const current = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-delete-photo]');
+      if (!current) return;
+      if (!confirm(current.title)) return;
+      const response = await fetch(`/api/photos/${current.dataset.photoId}`, { method: 'DELETE' });
+      if (!response.ok) alert(await response.text());
+    });
     const postDialog = document.querySelector<HTMLElement>('[data-post-dialog]');
     const postForm = document.querySelector<HTMLFormElement>('[data-photo-form]');
     const input = document.querySelector<HTMLInputElement>('[data-photo-input]');
@@ -281,7 +291,11 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       }
     });
     const formatCommentDate = (value: string) => new Intl.DateTimeFormat(document.documentElement.lang || 'pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
-
+    const iconAttrs = `width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"`;
+    const deleteButtonHtml = `<button class="comment-delete-trigger" type="button" data-comment-delete-trigger aria-label="Excluir mensagem" title="Excluir mensagem"><svg ${iconAttrs}><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" /></svg></button>`;
+    const cancelIcon = `<svg ${iconAttrs}><path d="m7 7 10 10M17 7 7 17" /></svg>`;
+    const confirmIcon = `<svg ${iconAttrs}><path d="m5 12 4 4L19 6" /></svg>`;
+    const undoIcon = `<svg ${iconAttrs}><path d="M9 7 4 12l5 5M5 12h8a6 6 0 1 1 0 12" /></svg>`;
 
 
     const showCommentActionError = (item: HTMLElement, message: string) => {
@@ -293,7 +307,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       error.textContent = message;
       area.append(error);
       window.setTimeout(() => {
-        area.innerHTML = '<button class="comment-delete-trigger" type="button" data-comment-delete-trigger>Excluir</button>';
+        area.innerHTML = deleteButtonHtml;
       }, 2500);
     };
 
@@ -308,14 +322,14 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       if (target.closest('[data-comment-delete-trigger]')) {
         area.innerHTML = `
           <span class="comment-delete-confirm">Excluir?</span>
-          <button type="button" data-comment-delete-confirm>Confirmar</button>
-          <button type="button" data-comment-delete-cancel>Cancelar</button>
+          <button class="comment-action-button is-confirm" type="button" data-comment-delete-confirm aria-label="Confirmar exclusão" title="Confirmar">${confirmIcon}</button>
+          <button class="comment-action-button" type="button" data-comment-delete-cancel aria-label="Cancelar exclusão" title="Cancelar">${cancelIcon}</button>
         `;
         return;
       }
 
       if (target.closest('[data-comment-delete-cancel]')) {
-        area.innerHTML = '<button class="comment-delete-trigger" type="button" data-comment-delete-trigger>Excluir</button>';
+        area.innerHTML = deleteButtonHtml;
         return;
       }
 
@@ -330,7 +344,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         item.classList.add('is-comment-deleted');
         area.innerHTML = `
           <span class="comment-deleted-label">Mensagem excluída</span>
-          <button type="button" data-comment-undo>Desfazer</button>
+          <button class="comment-undo-button" type="button" data-comment-undo>${undoIcon}<span>Desfazer</span></button>
         `;
 
         const commentList = item.closest<HTMLElement>('[data-comment-list]');
@@ -338,7 +352,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         const removeTimer = window.setTimeout(() => {
           item.remove();
           if (commentList && !commentList.querySelector('[data-comment-item]')) {
-            list.hidden = true;
+            commentList.hidden = true;
             const empty = commentPanel?.querySelector<HTMLElement>('[data-comment-empty]');
             if (empty) empty.hidden = false;
           }
@@ -358,11 +372,12 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         }
         item.classList.remove('is-comment-deleted');
         delete item.dataset.removeTimer;
-        area.innerHTML = '<button class="comment-delete-trigger" type="button" data-comment-delete-trigger>Excluir</button>';
+        area.innerHTML = deleteButtonHtml;
       }
     });
-    document.querySelectorAll<HTMLFormElement>('[data-comment-form]').forEach(form => {
-      form.addEventListener('submit', async event => {
+    document.addEventListener('submit', async event => {
+        const form = (event.target as HTMLElement).closest<HTMLFormElement>('[data-comment-form]');
+        if (!form) return;
         event.preventDefault();
         const field = form.elements.namedItem('message') as HTMLInputElement;
         const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
@@ -410,11 +425,16 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             deleteButton.className = 'comment-delete-trigger';
             deleteButton.type = 'button';
             deleteButton.dataset.commentDeleteTrigger = '';
-            deleteButton.textContent = 'Excluir';
+            deleteButton.setAttribute('aria-label', 'Excluir mensagem');
+            deleteButton.title = 'Excluir mensagem';
+            deleteButton.innerHTML = `<svg ${iconAttrs}><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" /></svg>`;
+            const meta = document.createElement('div');
+            meta.className = 'comment-meta';
             userLink.append(strong);
-            content.append(userLink, text, time);
             deleteArea.append(deleteButton);
-            article.append(content, deleteArea);
+            meta.append(deleteArea, time);
+            content.append(userLink, text, meta);
+            article.append(content);
             list.append(article);
             list.hidden = false;
           }
@@ -431,7 +451,6 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           field.disabled = false;
           if (button) button.disabled = false;
         }
-      });
     });
   </script>
 </AppLayout>
@@ -460,14 +479,127 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
   .profile-photo-post .comment-form button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .comment-form-message { margin: 7px 2px 0; color: #a12626; font-size: .76rem; }
 
-  .comment-item { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+  .comment-item {
+    position: relative;
+    display: block;
+    padding: 10px 12px;
+    border-radius: 14px;
+    transition: background .2s ease, opacity .2s ease, transform .2s ease;
+  }
+  .comment-item:hover { background: rgba(0, 0, 0, .025); }
   .comment-content { min-width: 0; }
-  .comment-delete-area { min-height: 28px; display: flex; align-items: center; justify-content: flex-end; gap: 7px; font-size: .72rem; }
-  .comment-delete-area button { border: 0; background: transparent; color: #666; padding: 4px 6px; border-radius: 8px; cursor: pointer; font: inherit; }
-  .comment-delete-area button:hover { background: #f0f0ec; color: #111; }
-  .comment-delete-trigger { opacity: .62; }
-  .comment-delete-confirm, .comment-deleted-label { color: #777; }
-  .comment-delete-error { color: #a12626; }
-  .comment-item.is-comment-deleted .comment-content { opacity: .2; filter: grayscale(1); }
-  .comment-item.is-comment-deleted { min-height: 40px; }
+  .comment-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 5px;
+    color: #777;
+    font-size: .72rem;
+  }
+  .comment-meta time { white-space: nowrap; }
+  .comment-delete-area {
+    min-height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+    font-size: .72rem;
+  }
+  .comment-delete-area button {
+    border: 1px solid transparent;
+    cursor: pointer;
+    font: inherit;
+    transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease, opacity .18s ease;
+  }
+  .comment-delete-trigger,
+  .comment-action-button {
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #777;
+    opacity: .55;
+  }
+  .comment-item:hover .comment-delete-trigger,
+  .comment-delete-trigger:focus-visible { opacity: 1; }
+  .comment-delete-trigger:hover {
+    background: #fff0f0;
+    border-color: #f1d2d2;
+    color: #a12626;
+    transform: translateY(-1px);
+  }
+  .comment-delete-trigger svg,
+  .comment-action-button svg,
+  .comment-undo-button svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .comment-delete-confirm,
+  .comment-deleted-label {
+    color: #777;
+    white-space: nowrap;
+  }
+  .comment-action-button {
+    opacity: 1;
+    background: #f3f3ef;
+    color: #555;
+  }
+  .comment-action-button:hover {
+    background: #e8e8e2;
+    color: #111;
+    transform: translateY(-1px);
+  }
+  .comment-action-button.is-confirm {
+    background: #111;
+    color: #fff;
+  }
+  .comment-action-button.is-confirm:hover { background: #2a2a2a; }
+  .comment-undo-button {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #111;
+    color: #fff;
+  }
+  .comment-undo-button:hover {
+    background: #2a2a2a;
+    transform: translateY(-1px);
+  }
+  .comment-delete-error {
+    color: #a12626;
+    padding: 5px 8px;
+    border-radius: 9px;
+    background: #fff0f0;
+  }
+  .comment-item.is-comment-deleted {
+    min-height: 44px;
+    background: #f6f6f2;
+    transform: scale(.995);
+  }
+  .comment-item.is-comment-deleted .comment-user,
+  .comment-item.is-comment-deleted .comment-content > p,
+  .comment-item.is-comment-deleted .comment-meta > time {
+    opacity: .16;
+    filter: grayscale(1);
+  }
+  .comment-item.is-comment-deleted .comment-delete-area,
+  .comment-item.is-comment-deleted .comment-undo-button {
+    opacity: 1;
+    filter: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .comment-item,
+    .comment-delete-area button { transition: none; }
+  }
 </style>

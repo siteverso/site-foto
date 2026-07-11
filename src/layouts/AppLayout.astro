@@ -22,5 +22,207 @@ if (auth && !await currentUser(Astro)) {
   </head>
   <body>
     <slot />
+
+    {auth && (
+      <script>
+        const LIVE_REFRESH_MS = 5000;
+        let liveRefreshRunning = false;
+
+        function userIsInteracting() {
+          const active = document.activeElement;
+          return document.hidden
+            || active instanceof HTMLInputElement
+            || active instanceof HTMLTextAreaElement
+            || active instanceof HTMLSelectElement
+            || active?.getAttribute('contenteditable') === 'true'
+            || document.documentElement.classList.contains('dialog-open')
+            || Boolean(document.querySelector('[data-sending="true"], [data-upload-progress]:not([hidden]), [data-comment-undo], [data-comment-delete-confirm]'));
+        }
+
+        function stableChildKey(node) {
+          if (!(node instanceof Element)) return '';
+          const liveKey = node.getAttribute('data-live-key');
+          if (liveKey) return `live:${liveKey}`;
+          const commentId = node.getAttribute('data-comment-id');
+          if (commentId) return `comment:${commentId}`;
+          return '';
+        }
+
+        function syncAttributes(current, incoming) {
+          const preserveValue = current.matches('input, textarea, select');
+          const active = document.activeElement === current;
+
+          for (const attribute of Array.from(current.attributes)) {
+            if (!incoming.hasAttribute(attribute.name)) current.removeAttribute(attribute.name);
+          }
+          for (const attribute of Array.from(incoming.attributes)) {
+            if (preserveValue && active && (attribute.name === 'value' || attribute.name === 'checked')) continue;
+            if (current.getAttribute(attribute.name) !== attribute.value) {
+              current.setAttribute(attribute.name, attribute.value);
+            }
+          }
+
+          if (current instanceof HTMLInputElement && incoming instanceof HTMLInputElement) {
+            if (!active && current.value !== incoming.value) current.value = incoming.value;
+            if (!active && current.checked !== incoming.checked) current.checked = incoming.checked;
+          } else if (current instanceof HTMLTextAreaElement && incoming instanceof HTMLTextAreaElement) {
+            if (!active && current.value !== incoming.value) current.value = incoming.value;
+          } else if (current instanceof HTMLSelectElement && incoming instanceof HTMLSelectElement) {
+            if (!active && current.value !== incoming.value) current.value = incoming.value;
+          }
+        }
+
+        function sameElementKind(current, incoming) {
+          return current instanceof Element
+            && incoming instanceof Element
+            && current.tagName === incoming.tagName;
+        }
+
+        function syncNode(current, incoming) {
+          if (current.isEqualNode(incoming)) return false;
+
+          if (current.nodeType === Node.TEXT_NODE && incoming.nodeType === Node.TEXT_NODE) {
+            if (current.nodeValue !== incoming.nodeValue) current.nodeValue = incoming.nodeValue;
+            return true;
+          }
+
+          if (!sameElementKind(current, incoming)) {
+            current.replaceWith(incoming.cloneNode(true));
+            return true;
+          }
+
+          syncAttributes(current, incoming);
+
+          // Imagens existentes nunca são recriadas: isso evita piscar e refazer download.
+          if (current instanceof HTMLImageElement) return true;
+
+          const currentChildren = Array.from(current.childNodes);
+          const incomingChildren = Array.from(incoming.childNodes);
+          const keyedCurrent = new Map();
+          for (const child of currentChildren) {
+            const key = stableChildKey(child);
+            if (key) keyedCurrent.set(key, child);
+          }
+
+          let cursor = current.firstChild;
+          const used = new Set();
+
+          for (const incomingChild of incomingChildren) {
+            const key = stableChildKey(incomingChild);
+            let matching = key ? keyedCurrent.get(key) : null;
+
+            if (!matching && cursor && !used.has(cursor)) {
+              const compatibleText = cursor.nodeType === Node.TEXT_NODE && incomingChild.nodeType === Node.TEXT_NODE;
+              if (compatibleText || sameElementKind(cursor, incomingChild)) matching = cursor;
+            }
+
+            if (!matching) {
+              const clone = incomingChild.cloneNode(true);
+              current.insertBefore(clone, cursor);
+              used.add(clone);
+              continue;
+            }
+
+            if (matching !== cursor) current.insertBefore(matching, cursor);
+            used.add(matching);
+            syncNode(matching, incomingChild);
+            cursor = matching.nextSibling;
+          }
+
+          for (const child of Array.from(current.childNodes)) {
+            if (!used.has(child)) child.remove();
+          }
+          return true;
+        }
+
+        function syncKeyedList(current, incoming) {
+          const currentItems = new Map(
+            Array.from(current.querySelectorAll(':scope > [data-live-key]'))
+              .map(item => [item.getAttribute('data-live-key'), item])
+          );
+          const incomingItems = Array.from(incoming.querySelectorAll(':scope > [data-live-key]'));
+          let changed = false;
+
+          let cursor = current.firstElementChild;
+          for (const incomingItem of incomingItems) {
+            const key = incomingItem.getAttribute('data-live-key');
+            let currentItem = currentItems.get(key);
+
+            if (!currentItem) {
+              currentItem = incomingItem.cloneNode(true);
+              current.insertBefore(currentItem, cursor);
+              changed = true;
+            } else {
+              currentItems.delete(key);
+              if (!currentItem.isEqualNode(incomingItem)) {
+                syncNode(currentItem, incomingItem);
+                changed = true;
+              }
+              if (currentItem !== cursor) {
+                current.insertBefore(currentItem, cursor);
+                changed = true;
+              }
+            }
+            cursor = currentItem.nextElementSibling;
+          }
+
+          for (const staleItem of currentItems.values()) {
+            staleItem.remove();
+            changed = true;
+          }
+          return changed;
+        }
+
+        function syncLiveSections(incomingDocument) {
+          let changed = false;
+          document.querySelectorAll('[data-live-section]').forEach(current => {
+            const key = current.getAttribute('data-live-section');
+            if (!key) return;
+            const incoming = incomingDocument.querySelector(`[data-live-section="${CSS.escape(key)}"]`);
+            if (!incoming || current.isEqualNode(incoming)) return;
+
+            const sectionChanged = current.hasAttribute('data-live-list')
+              ? syncKeyedList(current, incoming)
+              : syncNode(current, incoming);
+
+            if (sectionChanged) {
+              changed = true;
+              current.dispatchEvent(new CustomEvent('fotolife:live-updated', { bubbles: true }));
+            }
+          });
+          return changed;
+        }
+
+        async function refreshLiveSections() {
+          if (liveRefreshRunning || userIsInteracting()) return;
+          liveRefreshRunning = true;
+          try {
+            const liveUrl = new URL(location.href);
+            const liveCounts = Array.from(document.querySelectorAll('[data-live-section][data-live-list]'))
+              .map(section => section.querySelectorAll(':scope > [data-live-key]').length);
+            liveUrl.searchParams.set('__live_count', String(Math.max(20, ...liveCounts)));
+            const response = await fetch(liveUrl, {
+              headers: { 'X-FotoLife-Live': '1' },
+              cache: 'no-store',
+              credentials: 'same-origin',
+            });
+            if (response.status === 401 || response.redirected && response.url.includes('/login')) {
+              location.assign('/login');
+              return;
+            }
+            if (!response.ok) return;
+            const html = await response.text();
+            const incomingDocument = new DOMParser().parseFromString(html, 'text/html');
+            syncLiveSections(incomingDocument);
+          } catch {
+            // Mantém a página atual; a próxima tentativa ocorrerá em 5 segundos.
+          } finally {
+            liveRefreshRunning = false;
+          }
+        }
+
+        window.setInterval(refreshLiveSections, LIVE_REFRESH_MS);
+      </script>
+    )}
   </body>
 </html>

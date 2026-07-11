@@ -9,7 +9,9 @@ import { MESSAGE_MAX_LENGTH } from '../lib/message-limit';
 const user = await requireUser(Astro);
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
-const photos = await getFeedPhotos(20, 0);
+const requestedLiveCount = Number.parseInt(Astro.url.searchParams.get('__live_count') || '20', 10);
+const feedLimit = Math.min(100, Math.max(20, Number.isFinite(requestedLiveCount) ? requestedLiveCount : 20));
+const photos = await getFeedPhotos(feedLimit, 0);
 const feedItems = await Promise.all(photos.map(async photo => ({
   ...photo,
   comments: await getComments(photo.id, 10, 0),
@@ -26,9 +28,9 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
     <section class="home-feed-layout site-container site-section">
       <aside class="site-updates-panel">
         <h1>{t.home.updates}</h1>
-        <div class="site-updates-list">
+        <div class="site-updates-list" data-live-section="home-updates" data-live-list>
           {updates.map(photo => (
-            <a href={`#foto-${photo.id}`}>
+            <a href={`#foto-${photo.id}`} data-live-key={`update-${photo.id}`}>
               <img src={`/api/photos/${photo.id}`} alt="" loading="lazy" />
               <span>
                 <strong>@{photo.username}</strong>
@@ -40,9 +42,9 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
       </aside>
 
       <section class="photo-feed-column" aria-label={t.home.feedTitle}>
-        <div class="photo-feed" data-photo-feed>
+        <div class="photo-feed" data-photo-feed data-live-section="home-feed" data-live-list>
           {feedItems.map(photo => (
-            <article class="photo-post" id={`foto-${photo.id}`} data-photo-id={photo.id}>
+            <article class="photo-post" id={`foto-${photo.id}`} data-photo-id={photo.id} data-live-key={`photo-${photo.id}`}>
               <header class="photo-post-header">
                 <a href={`/perfil/${photo.username}`}><strong>@{photo.username}</strong></a>
                 <time>{formatDate(photo.publishedAt)}</time>
@@ -79,7 +81,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
           ))}
         </div>
 
-        {photos.length === 20 && <button class="feed-load-more" type="button" data-load-more>Carregar mais</button>}
+        {feedLimit === 20 && photos.length === 20 && <button class="feed-load-more" type="button" data-load-more>Carregar mais</button>}
         {!photos.length && <p class="empty-state feed-empty">{t.home.noUpdates}</p>}
       </section>
     </section>

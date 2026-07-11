@@ -9,6 +9,15 @@ export type SessionUser = {
     avatarUrl: string;
 };
 
+type SessionLocals = {
+    fotolifeAuthResolved?: boolean;
+    fotolifeUser?: SessionUser | null;
+};
+
+function sessionLocals(context: APIContext): SessionLocals {
+    return context.locals as SessionLocals;
+}
+
 function cookieName(): string {
     return import.meta.env.SESSION_COOKIE_NAME || 'fotolife_session';
 }
@@ -53,6 +62,10 @@ export async function createSession(context: APIContext, userId: number, provide
         );
     });
 
+    const locals = sessionLocals(context);
+    locals.fotolifeAuthResolved = false;
+    locals.fotolifeUser = null;
+
     context.cookies.set(cookieName(), token, {
         path: '/',
         httpOnly: true,
@@ -77,13 +90,23 @@ export async function revokeSession(context: APIContext): Promise<void> {
         });
     }
     context.cookies.delete(cookieName(), { path: '/' });
+    const locals = sessionLocals(context);
+    locals.fotolifeAuthResolved = true;
+    locals.fotolifeUser = null;
 }
 
 export async function currentUser(context: APIContext): Promise<SessionUser | null> {
-    const token = context.cookies.get(cookieName())?.value;
-    if (!token) return null;
+    const locals = sessionLocals(context);
+    if (locals.fotolifeAuthResolved) return locals.fotolifeUser ?? null;
 
-    return withConnection(async connection => {
+    const token = context.cookies.get(cookieName())?.value;
+    if (!token) {
+        locals.fotolifeAuthResolved = true;
+        locals.fotolifeUser = null;
+        return null;
+    }
+
+    const user = await withConnection(async connection => {
         const result = await connection.execute<Record<string, unknown>>(
             `SELECT u.id,
                     u.username,
@@ -107,6 +130,10 @@ export async function currentUser(context: APIContext): Promise<SessionUser | nu
             avatarUrl: String(row.AVATAR_URL || ''),
         };
     });
+
+    locals.fotolifeAuthResolved = true;
+    locals.fotolifeUser = user;
+    return user;
 }
 
 export async function requireUser(context: APIContext): Promise<SessionUser> {
