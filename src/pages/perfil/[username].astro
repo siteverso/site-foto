@@ -1,34 +1,31 @@
 ---
 import AppLayout from '../../layouts/AppLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
-import { currentUser } from '../../lib/server/session';
-import { getComments, getFriendPhotos, getLatestPhotos, getPublicProfile, getUserLatestPhoto, isFriend } from '../../lib/server/repositories/photos';
+import { requireUser } from '../../lib/server/session';
+import { getComments, getFriendPhotos, getLatestPhotos, getPublicProfile, getUserPhotos, isFriend } from '../../lib/server/repositories/photos';
 import { getMessages, normalizeLocale } from '../../i18n';
 import { MESSAGE_MAX_LENGTH } from '../../lib/message-limit';
 
-const user = await currentUser(Astro);
-if (!user) {
-  const next = `${Astro.url.pathname}${Astro.url.search}`;
-  return Astro.redirect(`/login?next=${encodeURIComponent(next)}`);
-}
+const user = await requireUser(Astro);
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
 const username = String(Astro.params.username || '').trim();
 const profile = username ? await getPublicProfile(username) : null;
 if (!profile) Astro.response.status = 404;
-const isOwner = Boolean(profile && user && profile.id === user.id);
-const photo = profile ? await getUserLatestPhoto(profile.username) : null;
-const alreadyFriend = profile && user && !isOwner ? await isFriend(user.id, profile.id) : false;
-const [friendPhotos, latestPhotos, comments] = await Promise.all([
+const isOwner = Boolean(profile && profile.id === user.id);
+const photos = profile ? await getUserPhotos(profile.username) : [];
+const alreadyFriend = profile && !isOwner ? await isFriend(user.id, profile.id) : false;
+const [friendPhotos, latestPhotos, commentsByPhoto] = await Promise.all([
   profile ? getFriendPhotos(profile.id) : Promise.resolve([]),
   profile ? getLatestPhotos(profile.id) : Promise.resolve([]),
-  photo ? getComments(photo.id) : Promise.resolve([]),
+  Promise.all(photos.map(async photo => ({ photoId: photo.id, comments: await getComments(photo.id) }))),
 ]);
+const commentsMap = new Map(commentsByPhoto.map(item => [item.photoId, item.comments]));
 const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
 ---
 <AppLayout title={profile ? `@${profile.username} — ${t.site.title}` : t.publicProfile.notFound}>
   <main class="flog-page">
-    <SiteHeader username={user?.username} />
+    <SiteHeader username={user.username} />
 
     {profile ? (
       <section class="flog-grid">
@@ -38,7 +35,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             <div><h1>@{profile.username}</h1>{profile.bio && <p>{profile.bio}</p>}</div>
           </div>
 
-          {user && !isOwner && (
+          {!isOwner && (
             <button
               class="friend-button"
               type="button"
@@ -68,21 +65,37 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             </button>
           )}
 
-          {photo ? (
-            <article class="daily-photo" data-daily-photo>
-              {isOwner && <button class="daily-photo-delete" type="button" data-delete-photo data-photo-id={photo.id} aria-label={t.home.deletePhoto} title={t.home.deletePhoto}>×</button>}
-              <img src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} />
-              {photo.caption && <p>{photo.caption}</p>}
-            </article>
-          ) : <p class="empty-state profile-no-photo">{isOwner ? t.home.noPhoto : t.publicProfile.noPhotos}</p>}
+          {photos.length ? (
+            <div class="profile-photo-feed">
+              {photos.map(photo => {
+                const comments = commentsMap.get(photo.id);
+                return (
+                  <article class="profile-photo-post">
+                    <div class="daily-photo" data-daily-photo>
+                      {isOwner && <button class="daily-photo-delete" type="button" data-delete-photo data-photo-id={photo.id} aria-label={t.home.deletePhoto} title={t.home.deletePhoto}>×</button>}
+                      <img src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} loading="lazy" />
+                      {photo.caption && <p>{photo.caption}</p>}
+                    </div>
 
-          <section class="comments-panel">
-            <h2>{t.home.comments}</h2>
-            {comments.length ? <div class="comment-list">{comments.map(comment => (
-              <article><a class="comment-user" href={`/perfil/${comment.username}`}><strong>@{comment.username}</strong></a><p>{comment.message}</p><time>{formatDate(comment.createdAt)}</time></article>
-            ))}</div> : <p class="empty-state">{t.home.noComments}</p>}
-            {photo && user && <form class="comment-form" data-comment-form data-post-id={photo.id}><input name="message" maxlength={MESSAGE_MAX_LENGTH} placeholder={t.home.commentPlaceholder} required /><button type="submit">{t.home.send}</button></form>}
-          </section>
+                    <section class="comments-panel" data-comments-panel>
+                      <h2>{t.home.comments}</h2>
+                      <div class="comment-list" data-comment-list hidden={!comments?.items.length}>{comments?.items.map(comment => (
+                        <article><a class="comment-user" href={`/perfil/${comment.username}`}><strong>@{comment.username}</strong></a><p>{comment.message}</p><time>{formatDate(comment.createdAt)}</time></article>
+                      ))}</div>
+                      <p class="empty-state comment-empty" data-comment-empty hidden={Boolean(comments?.items.length)}>{t.home.noComments}</p>
+                      <form class="comment-form" data-comment-form data-post-id={photo.id}>
+                        <input name="message" maxlength={MESSAGE_MAX_LENGTH} placeholder={t.home.commentPlaceholder} autocomplete="off" required />
+                        <button type="submit" aria-label={t.home.send} title={t.home.send}>
+                          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-5.5 16-3.1-6.4L4 12Zm7.4 1.6L20 4" /></svg>
+                        </button>
+                      </form>
+                      <p class="comment-form-message" data-comment-message hidden></p>
+                    </section>
+                  </article>
+                );
+              })}
+            </div>
+          ) : <p class="empty-state profile-no-photo">{isOwner ? t.home.noPhoto : t.publicProfile.noPhotos}</p>}
         </section>
 
         <aside class="flog-panel">
@@ -132,7 +145,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       if (response.ok) location.reload();
       else { button.disabled = false; alert(await response.text()); }
     });
-    document.querySelector<HTMLButtonElement>('[data-delete-photo]')?.addEventListener('click', async event => { const button = event.currentTarget; if (!confirm(button.title)) return; const response = await fetch(`/api/photos/${button.dataset.photoId}`, { method: 'DELETE' }); if (response.ok) location.reload(); else alert(await response.text()); });
+    document.querySelectorAll<HTMLButtonElement>('[data-delete-photo]').forEach(button => button.addEventListener('click', async event => { const current = event.currentTarget; if (!confirm(current.title)) return; const response = await fetch(`/api/photos/${current.dataset.photoId}`, { method: 'DELETE' }); if (response.ok) location.reload(); else alert(await response.text()); }));
     const postDialog = document.querySelector<HTMLElement>('[data-post-dialog]');
     const postForm = document.querySelector<HTMLFormElement>('[data-photo-form]');
     const input = document.querySelector<HTMLInputElement>('[data-photo-input]');
@@ -256,6 +269,89 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         showPostMessage(error instanceof Error ? error.message : 'Não foi possível publicar.');
       }
     });
-    document.querySelector<HTMLFormElement>('[data-comment-form]')?.addEventListener('submit', async event => { event.preventDefault(); const form=event.currentTarget; const field=form.elements.namedItem('message') as HTMLInputElement; const response=await fetch('/api/comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({postId:Number(form.dataset.postId),message:field.value})}); if(response.ok) location.reload(); else alert(await response.text()); });
+    const formatCommentDate = (value: string) => new Intl.DateTimeFormat(document.documentElement.lang || 'pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
+
+    document.querySelectorAll<HTMLFormElement>('[data-comment-form]').forEach(form => {
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const field = form.elements.namedItem('message') as HTMLInputElement;
+        const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        const panel = form.closest<HTMLElement>('[data-comments-panel]');
+        const list = panel?.querySelector<HTMLElement>('[data-comment-list]');
+        const empty = panel?.querySelector<HTMLElement>('[data-comment-empty]');
+        const messageBox = panel?.querySelector<HTMLElement>('[data-comment-message]');
+        const message = field.value.trim();
+        if (!message || form.dataset.sending === 'true') return;
+
+        form.dataset.sending = 'true';
+        field.disabled = true;
+        if (button) button.disabled = true;
+        if (messageBox) messageBox.hidden = true;
+
+        try {
+          const response = await fetch('/api/comments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ postId: Number(form.dataset.postId), message }),
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(String(data.error || 'Não foi possível enviar a mensagem.'));
+
+          if (list && data.comment) {
+            const article = document.createElement('article');
+            const userLink = document.createElement('a');
+            const strong = document.createElement('strong');
+            const text = document.createElement('p');
+            const time = document.createElement('time');
+            userLink.className = 'comment-user';
+            userLink.href = `/perfil/${encodeURIComponent(String(data.comment.username))}`;
+            strong.textContent = `@${data.comment.username}`;
+            text.textContent = String(data.comment.message || message);
+            time.textContent = formatCommentDate(String(data.comment.createdAt || new Date().toISOString()));
+            userLink.append(strong);
+            article.append(userLink, text, time);
+            list.append(article);
+            list.hidden = false;
+          }
+          if (empty) empty.hidden = true;
+          field.value = '';
+          field.focus();
+        } catch (error) {
+          if (messageBox) {
+            messageBox.textContent = error instanceof Error ? error.message : 'Não foi possível enviar a mensagem.';
+            messageBox.hidden = false;
+          }
+        } finally {
+          delete form.dataset.sending;
+          field.disabled = false;
+          if (button) button.disabled = false;
+        }
+      });
+    });
   </script>
 </AppLayout>
+
+<style>
+  .profile-photo-feed { display: grid; gap: 28px; }
+  .profile-photo-post + .profile-photo-post { border-top: 1px solid #ddd; padding-top: 28px; }
+  .profile-photo-post .comments-panel { margin-top: 18px; padding-top: 18px; }
+  .profile-photo-post .comments-panel h2 { margin-bottom: 10px; }
+  .profile-photo-post .comment-empty { padding: 6px 2px 2px; }
+  .profile-photo-post .comment-form { align-items: center; margin-top: 10px; }
+  .profile-photo-post .comment-form input { height: 46px; }
+  .profile-photo-post .comment-form button {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 50%;
+    background: #f0f0ec;
+    color: #111;
+    transition: background .15s ease, transform .15s ease;
+  }
+  .profile-photo-post .comment-form button:hover { background: #e5e5df; transform: translateY(-1px); }
+  .profile-photo-post .comment-form button:disabled { opacity: .55; transform: none; cursor: default; }
+  .profile-photo-post .comment-form button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .comment-form-message { margin: 7px 2px 0; color: #a12626; font-size: .76rem; }
+</style>
