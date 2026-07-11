@@ -1,10 +1,15 @@
 site-foto
+
+Instrucoes
 Faca cada coisa de uma vez com cuidado e teste e nao duplique codigo
 Se preferir vamos fazer uma alteracao por vez e eu confirma revisando para fazer a proxima
 Mas voce pode ter a visao de conjunto antes
+E antes de fazer resuam o que sera feito em linhas gerias
+Realize testes unitarios para garantir funcionamento
 
-- deve podec criar conta igual  murm
-- deve ter remover observado
+TODO:
+
+- deve ter remover observado do perfil proprio
 - deve ter opcao na conta se quer tornar lista de observados publica ou privada (nenhum)
 - deve ter opcao na conta se quer tornar lista de observados publica e bloquear alguns para nao aparecer
 - deve preencher os dados da conta e permitir alterar
@@ -16,3 +21,4 @@ Mas voce pode ter a visao de conjunto antes
 - deve ter um x nos observados para remover o observado da grade de observados direto e tambem dentro do perfil do amigo um x no botao amigo para remover ele
 - deve ter um clique no popup da imagem do perfil para ver imagem circular da pessoa
 - trocar o termo observados de forma geral 
+- passar edicao da conta pra dentro do perfil ali na esquerda, qd for o proprietario claro ![img.png](img.png)

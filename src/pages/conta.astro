@@ -64,6 +64,7 @@ const t = getMessages(locale);
 
   const api = async (url, options = {}) => {
     const response = await fetch(url, {
+      cache: 'no-store',
       ...options,
       headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
     });
@@ -115,6 +116,12 @@ const t = getMessages(locale);
   }
 
   function renderAccount(account) {
+    document.querySelectorAll('[data-user-name]').forEach(element => {
+      element.textContent = `@${account.username}`;
+    });
+    document.querySelectorAll('[data-user-profile-link]').forEach(element => {
+      element.href = `/perfil/${encodeURIComponent(account.username)}`;
+    });
     document.querySelector('[data-profile-avatar]').textContent = initials(account.username);
     document.querySelector('[data-profile-username]').textContent = `@${account.username}`;
     document.querySelector('[data-profile-email]').textContent = account.email;

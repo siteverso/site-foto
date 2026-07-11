@@ -17,7 +17,7 @@ const t = getMessages(locale);
     <nav class="site-header-actions" aria-label="Navegação principal">
       {username ? (
         <>
-          <a class="site-user-link" href={`/perfil/${username}`}><strong>@{username}</strong></a>
+          <a class="site-user-link" href={`/perfil/${username}`} data-user-profile-link><strong data-user-name>@{username}</strong></a>
           <a class="site-account-link" href="/conta">{locale === 'pt-BR' ? 'Conta' : 'Account'}</a>
           <LanguageSwitch locale={locale} />
           <button class="flog-logout" type="button" data-logout>{t.home.logout}</button>
@@ -33,6 +33,7 @@ const t = getMessages(locale);
 </header>
 
 <script>
+  // noinspection TypeScriptValidateTypes
   document.querySelector('[data-logout]')?.addEventListener('click', async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     location.href = '/login';
