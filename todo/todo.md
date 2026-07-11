@@ -23,4 +23,6 @@ TODO, um de cada vez:
 - passar edicao da conta pra dentro do perfil ali na esquerda, qd for o proprietario claro ![img.png](img.png)
 - quando o perfil for meu o termo é Observando e nao observadores ![img_2.png](img_2.png)
 - so deve aparecer a ultima atualizacao da pessoa ![img_1.png](img_1.png) para ter apenas uma entrada no grid
-- colocar isso na secao privicadade da conta e so listar pra marcar quem a pessoa esta observando
+- colcoar aqui total observando ![img_4.png](img_4.png)
+- alinhar imagem do perfil em cima ![img_5.png](img_5.png)
+- Na home nao deve ter mensagens nem enviar mensagem so colunas com as fotos e o usuario hover bonito nas votos, seguir regras e filtros de colunas por estado sexo igual murmurinho 

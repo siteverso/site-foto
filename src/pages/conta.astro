@@ -4,7 +4,9 @@ import SiteHeader from '../components/SiteHeader.astro';
 import { requireUser } from '../lib/server/session';
 import { getMessages, normalizeLocale } from '../i18n';
 import { MESSAGE_MAX_LENGTH } from '../lib/message-limit';
+import { getAccountProfile } from '../lib/server/repositories/account-profile';
 const user = await requireUser(Astro);
+const account = await getAccountProfile(user.id);
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
 ---
@@ -14,14 +16,14 @@ const t = getMessages(locale);
     <header class="account-heading"><h1>Conta</h1></header>
     <div class="profile-grid">
     <aside class="panel profile-card">
-      <div class="avatar" data-profile-avatar>MU</div>
-      <h1 data-profile-username>usuario</h1>
-      <span class="handle" data-profile-email>usuario@exemplo.com</span>
-      <p class="bio" data-profile-bio></p>
+      <div class="avatar" data-profile-avatar>{account.avatarUrl ? <img src={account.avatarUrl} alt="" /> : account.username.slice(0, 2).toUpperCase()}</div>
+      <h1 data-profile-username>@{account.username}</h1>
+      <span class="handle" data-profile-email>{account.email}</span>
+      <p class="bio" data-profile-bio>{account.bio || 'Sem bio ainda.'}</p>
       <div class="profile-stats">
-        <div><strong data-profile-posts>0</strong><span>{t.profile.murmurs}</span></div>
-        <div><strong data-profile-positive>0</strong><span>{t.profile.positives}</span></div>
-        <div><strong data-profile-shares>0</strong><span>{t.profile.shares}</span></div>
+        <div><strong data-profile-posts>{account.photoCount}</strong><span>{t.profile.murmurs}</span></div>
+        <div><strong data-profile-positive>{account.messageCount}</strong><span>{t.profile.positives}</span></div>
+        <div><strong data-profile-shares>{account.observerCount}</strong><span>{t.profile.shares}</span></div>
       </div>
     </aside>
 
@@ -29,14 +31,22 @@ const t = getMessages(locale);
       <section class="panel profile-edit">
         <h2>{t.profile.editTitle}</h2>
         <form data-profile-form>
-          <div class="field"><label for="username">{t.common.username}</label><input id="username" name="username" maxlength="30" required /></div>
-          <div class="field"><label for="email">{t.common.email}</label><input id="email" name="email" type="email" readonly /></div>
-          <div class="field"><label for="bio">{t.profile.bio}</label><textarea id="bio" name="bio" maxlength={MESSAGE_MAX_LENGTH} rows="5"></textarea></div>
+          <div class="field"><label for="username">{t.common.username}</label><input id="username" name="username" maxlength="30" value={account.username} autocomplete="username" required /></div>
+          <div class="field"><label for="email">{t.common.email}</label><input id="email" name="email" type="email" value={account.email} autocomplete="email" required /></div>
+          <div class="field"><label for="bio">{t.profile.bio}</label><textarea id="bio" name="bio" maxlength={MESSAGE_MAX_LENGTH} rows="5">{account.bio}</textarea></div>
+          <div class="field">
+            <label for="sexCode">Sexo</label>
+            <select id="sexCode" name="sexCode">
+              <option value="" selected={account.sexCode === ''}>Não informado</option>
+              <option value="M" selected={account.sexCode === 'M'}>Masculino</option>
+              <option value="F" selected={account.sexCode === 'F'}>Feminino</option>
+            </select>
+          </div>
           <div class="field">
             <label for="observerVisibility">{t.profile.observerVisibility}</label>
             <select id="observerVisibility" name="observerVisibility">
-              <option value="public">{t.profile.observerVisibilityPublic}</option>
-              <option value="private">{t.profile.observerVisibilityPrivate}</option>
+              <option value="public" selected={account.observerVisibility === 'public'}>{t.profile.observerVisibilityPublic}</option>
+              <option value="private" selected={account.observerVisibility === 'private'}>{t.profile.observerVisibilityPrivate}</option>
             </select>
             <small class="field-help">{t.profile.observerVisibilityHelp}</small>
           </div>
@@ -91,6 +101,8 @@ const t = getMessages(locale);
   const messages = {
     CONTA_EXISTENTE: 'Este usuário já está em uso.',
     USUARIO_INVALIDO: 'Use de 3 a 30 caracteres: letras, números ou sublinhado.',
+    EMAIL_INVALIDO: 'Informe um e-mail válido.',
+    SEXO_INVALIDO: 'Selecione uma opção de sexo válida.',
     SENHA_INVALIDA: 'A senha deve ter pelo menos 6 caracteres.',
     SENHAS_DIFERENTES: 'As senhas não conferem.',
     NAO_AUTENTICADO: 'Sua sessão expirou. Entre novamente.',
@@ -148,6 +160,7 @@ const t = getMessages(locale);
     profileForm.username.value = account.username;
     profileForm.email.value = account.email;
     profileForm.bio.value = account.bio || '';
+    profileForm.sexCode.value = account.sexCode || '';
     profileForm.observerVisibility.value = account.observerVisibility || 'public';
     if (observedPrivacyList) {
       observedPrivacyList.replaceChildren();
@@ -206,16 +219,18 @@ const t = getMessages(locale);
     showMessage(profileForm);
     setLoading(button, true, 'Salvando…');
     try {
-      await api('/api/auth/profile', {
+      const data = await api('/api/auth/profile', {
         method: 'PATCH',
         body: JSON.stringify({
           username: profileForm.username.value,
+          email: profileForm.email.value,
           bio: profileForm.bio.value,
+          sexCode: profileForm.sexCode.value,
           observerVisibility: profileForm.observerVisibility.value,
           hiddenObservedUserIds: [...profileForm.querySelectorAll('input[name="hiddenObservedUserIds"]:checked')].map(input => Number(input.value)),
         }),
       });
-      await loadAccount();
+      renderAccount(data.account);
       showMessage(profileForm, 'Dados da conta salvos com sucesso.', 'success');
       toast('Conta atualizada.');
     } catch (error) {
