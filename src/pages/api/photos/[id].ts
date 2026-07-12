@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { currentUser } from '../../../lib/server/session';
-import { deletePhoto, getPhotoImage } from '../../../lib/server/repositories/photos';
+import { deletePhoto, getPhotoImage, updatePhotoCaption } from '../../../lib/server/repositories/photos';
+import { normalizePhotoCaption } from '../../../lib/photo-caption';
 
 export const GET: APIRoute = async ({ params }) => {
     const id = Number(params.id);
@@ -28,4 +29,23 @@ export const DELETE: APIRoute = async context => {
     if (!deleted) return new Response('Foto não encontrada ou sem permissão', { status: 404 });
 
     return Response.json({ ok: true });
+};
+
+
+export const PUT: APIRoute = async context => {
+    const user = await currentUser(context);
+    if (!user) return new Response('Não autorizado', { status: 401 });
+
+    const id = Number(context.params.id);
+    if (!Number.isInteger(id) || id <= 0) return new Response('Foto inválida', { status: 400 });
+
+    try {
+        const input = await context.request.json() as { caption?: unknown };
+        const caption = normalizePhotoCaption(input.caption);
+        const updated = await updatePhotoCaption(id, user.id, caption);
+        if (!updated) return new Response('Foto não encontrada ou sem permissão', { status: 404 });
+        return Response.json({ ok: true, caption });
+    } catch (error) {
+        return new Response(error instanceof Error ? error.message : 'Legenda inválida', { status: 400 });
+    }
 };

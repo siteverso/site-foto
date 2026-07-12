@@ -435,6 +435,23 @@ export type PublicProfile = {
     observerVisibility: 'public' | 'private';
 };
 
+export async function updatePhotoCaption(postId: number, userId: number, caption: string): Promise<boolean> {
+    return withConnection(async connection => {
+        const result = await connection.execute(
+            `UPDATE murm_post
+             SET contents = :caption,
+                 updated_at = SYSTIMESTAMP
+             WHERE id = :id
+               AND user_id = :user_id
+               AND post_type = 'photo'
+               AND status = 'published'`,
+            { id: postId, user_id: userId, caption },
+            { autoCommit: true },
+        );
+        return Number(result.rowsAffected || 0) > 0;
+    });
+}
+
 export async function deletePhoto(postId: number, userId: number): Promise<boolean> {
     return withConnection(async connection => {
         const result = await connection.execute(

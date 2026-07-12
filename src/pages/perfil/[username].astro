@@ -92,9 +92,26 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                 return (
                   <article class="profile-photo-post" data-live-key={`photo-${photo.id}`}>
                     <div class="daily-photo" data-daily-photo>
-                      {isOwner && <button class="daily-photo-delete" type="button" data-delete-photo data-photo-id={photo.id} aria-label={t.home.deletePhoto} title={t.home.deletePhoto}>×</button>}
+                      {isOwner && (
+                        <div class="daily-photo-actions">
+                          <button class="daily-photo-edit" type="button" data-edit-caption aria-label="Editar legenda" title="Editar legenda">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V20h3.5L18 9.5 14.5 6 4 16.5Zm16.7-9.8a1 1 0 0 0 0-1.4l-2-2a1 1 0 0 0-1.4 0l-1.6 1.6 3.5 3.5 1.5-1.7Z" /></svg>
+                          </button>
+                          <button class="daily-photo-delete" type="button" data-delete-photo data-photo-id={photo.id} aria-label={t.home.deletePhoto} title={t.home.deletePhoto}>×</button>
+                        </div>
+                      )}
                       <img src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} loading="lazy" />
-                      {photo.caption && <p>{photo.caption}</p>}
+                      <p data-photo-caption hidden={!photo.caption}>{photo.caption}</p>
+                      {isOwner && (
+                        <form class="photo-caption-form" data-caption-form data-photo-id={photo.id} hidden>
+                          <textarea name="caption" maxlength={MESSAGE_MAX_LENGTH} aria-label="Legenda da foto">{photo.caption}</textarea>
+                          <div>
+                            <button type="button" data-cancel-caption>Cancelar</button>
+                            <button type="submit">Salvar</button>
+                          </div>
+                          <p data-caption-message hidden></p>
+                        </form>
+                      )}
                     </div>
 
                     <section class="comments-panel" data-comments-panel>
@@ -236,12 +253,68 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         return;
       }
 
+      const editCaptionButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-edit-caption]');
+      if (editCaptionButton) {
+        const photo = editCaptionButton.closest<HTMLElement>('[data-daily-photo]');
+        const form = photo?.querySelector<HTMLFormElement>('[data-caption-form]');
+        if (form) {
+          form.hidden = false;
+          form.querySelector<HTMLTextAreaElement>('textarea')?.focus();
+        }
+        return;
+      }
+
+      const cancelCaptionButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-cancel-caption]');
+      if (cancelCaptionButton) {
+        const form = cancelCaptionButton.closest<HTMLFormElement>('[data-caption-form]');
+        const caption = form?.closest<HTMLElement>('[data-daily-photo]')?.querySelector<HTMLElement>('[data-photo-caption]');
+        const textarea = form?.querySelector<HTMLTextAreaElement>('textarea');
+        if (textarea) textarea.value = caption?.textContent || '';
+        if (form) form.hidden = true;
+        return;
+      }
+
       const current = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-delete-photo]');
       if (!current) return;
       if (!confirm(current.title)) return;
       const response = await fetch(`/api/photos/${current.dataset.photoId}`, { method: 'DELETE' });
       if (!response.ok) alert(await response.text());
     });
+    document.querySelectorAll<HTMLFormElement>('[data-caption-form]').forEach(form => {
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const textarea = form.querySelector<HTMLTextAreaElement>('textarea');
+        const message = form.querySelector<HTMLElement>('[data-caption-message]');
+        const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        const caption = textarea?.value || '';
+        if (submit) submit.disabled = true;
+        if (message) message.hidden = true;
+        try {
+          const response = await fetch(`/api/photos/${form.dataset.photoId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ caption }),
+          });
+          if (!response.ok) throw new Error(await response.text());
+          const data = await response.json();
+          const captionElement = form.closest<HTMLElement>('[data-daily-photo]')?.querySelector<HTMLElement>('[data-photo-caption]');
+          if (captionElement) {
+            captionElement.textContent = String(data.caption || '');
+            captionElement.hidden = !data.caption;
+          }
+          if (textarea) textarea.value = String(data.caption || '');
+          form.hidden = true;
+        } catch (error) {
+          if (message) {
+            message.textContent = error instanceof Error ? error.message : 'Não foi possível salvar a legenda.';
+            message.hidden = false;
+          }
+        } finally {
+          if (submit) submit.disabled = false;
+        }
+      });
+    });
+
     const postDialog = document.querySelector<HTMLElement>('[data-post-dialog]');
     const postForm = document.querySelector<HTMLFormElement>('[data-photo-form]');
     const input = document.querySelector<HTMLInputElement>('[data-photo-input]');
