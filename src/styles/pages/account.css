@@ -1,7 +1,18 @@
 /* Página de conta: formulário, privacidade e composição responsiva. */
+.account-page .account-heading {
+  margin-bottom: 28px;
+}
+
+.account-heading h1 {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
 .account-page .profile-grid {
   grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
-  gap: 28px;
+  gap: 32px;
   align-items: start;
 }
 
@@ -33,8 +44,8 @@
 
 .account-page .field {
   display: grid;
-  gap: 8px;
-  margin-bottom: 18px;
+  gap: 9px;
+  margin-bottom: 20px;
 }
 
 .account-page .field > label,
@@ -42,57 +53,74 @@
   color: var(--text);
   font-size: .88rem;
   font-weight: 800;
+  letter-spacing: .01em;
 }
 
 .account-page .field input:not([type="checkbox"]):not([type="radio"]),
 .account-page .field textarea,
 .account-page .field select {
   width: 100%;
-  min-height: 48px;
-  padding: 12px 14px;
+  min-height: 52px;
+  padding: 13px 15px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 16px;
   color: var(--text);
-  background: color-mix(in srgb, var(--surface) 82%, var(--surface-2));
+  background: color-mix(in srgb, var(--surface) 84%, var(--surface-2));
   box-shadow: inset 0 1px 0 color-mix(in srgb, white 35%, transparent);
   font: inherit;
+  line-height: 1.35;
   outline: none;
-  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease, transform .16s ease;
 }
 
 .account-page .field textarea {
-  min-height: 132px;
+  min-height: 136px;
+  padding-top: 14px;
   resize: vertical;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .account-page .field select {
-  appearance: auto;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 48px;
   cursor: pointer;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.25L6 6.25L11 1.25' stroke='%2394979A' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 84%, var(--surface-2)), color-mix(in srgb, var(--surface) 92%, var(--surface-2)));
+  background-repeat: no-repeat, no-repeat;
+  background-position: right 16px center, center;
+  background-size: 12px 8px, auto;
 }
 
 .account-page .field input:focus,
 .account-page .field textarea:focus,
 .account-page .field select:focus {
   border-color: color-mix(in srgb, var(--strong) 48%, var(--line));
-  background: var(--surface);
+  background-color: var(--surface);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--strong) 10%, transparent);
+}
+
+.account-page .field input::placeholder,
+.account-page .field textarea::placeholder {
+  color: color-mix(in srgb, var(--muted) 82%, transparent);
 }
 
 .account-page .field-help {
   display: block;
   margin-top: -1px;
   color: var(--muted);
-  font-size: .78rem;
-  line-height: 1.45;
+  font-size: .79rem;
+  line-height: 1.5;
 }
 
 .account-page .observed-privacy {
   margin: 22px 0;
   padding: 18px;
   border: 1px solid var(--line);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--surface-2) 52%, var(--surface));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-2) 54%, var(--surface));
 }
 
 .account-page .observed-privacy legend {
@@ -114,7 +142,7 @@
   align-items: center;
   gap: 10px;
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: 14px;
   background: var(--surface);
   cursor: pointer;
   transition: border-color .16s ease, background .16s ease, transform .16s ease;
@@ -160,14 +188,18 @@
 
 .account-page .auth-methods {
   margin: 18px 0 24px;
-  padding: 15px 16px;
+  padding: 16px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--surface-2);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-2) 72%, var(--surface));
+}
+
+.account-page .auth-methods strong {
+  font-size: .9rem;
 }
 
 .account-page .auth-methods span,
@@ -178,7 +210,9 @@
 }
 
 .account-page .button.primary {
-  min-width: 112px;
+  min-width: 128px;
+  min-height: 48px;
+  padding-inline: 20px;
   box-shadow: 0 8px 20px color-mix(in srgb, var(--strong) 12%, transparent);
 }
 
@@ -193,6 +227,17 @@
 }
 
 @media (max-width: 560px) {
+  .account-page .account-heading {
+    margin-bottom: 22px;
+  }
+
+  .account-heading h1 {
+    justify-content: center;
+    width: 100%;
+    text-align: center;
+    font-size: 1.72rem;
+  }
+
   .account-page .profile-edit {
     padding: 20px 16px;
     border-radius: 18px;

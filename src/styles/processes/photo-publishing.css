@@ -55,19 +55,31 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 16px 18px;
   border-bottom: 1px solid var(--line);
   background: var(--surface);
 }
-.post-dialog-card h2 { margin: 0; font-size: 1rem; }
+.post-dialog-card h2 { margin: 0; font-size: 1rem; line-height: 1.25; }
 .post-dialog-card header button {
-  width: 34px;
-  height: 34px;
-  border: 0;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
   border-radius: 50%;
+  color: var(--text);
   background: var(--surface-2);
   font-size: 1.25rem;
+  line-height: 1;
   cursor: pointer;
+  transition: transform .16s ease, background .16s ease, border-color .16s ease;
+}
+.post-dialog-card header button:hover {
+  transform: translateY(-1px);
+  border-color: var(--line);
+  background: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
 }
 .post-dialog-form {
   margin: 0;

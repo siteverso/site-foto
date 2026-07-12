@@ -87,6 +87,9 @@
   z-index: 2;
   width: 42px;
   height: 42px;
+  display: grid;
+  place-items: center;
+  padding: 0;
   border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
   border-radius: 50%;
   color: var(--text);
@@ -94,6 +97,16 @@
   box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
   cursor: pointer;
   font-size: 1.4rem;
+  line-height: 1;
+  transition: transform .16s ease, background .16s ease, border-color .16s ease;
+}
+.profile-avatar-dialog-close:hover {
+  transform: translateY(-1px);
+  background: var(--surface-2);
+}
+.profile-avatar-dialog-close:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
 }
 html.has-open-dialog { overflow: hidden; }
 @media (max-width: 560px) {

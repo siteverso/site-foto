@@ -44,8 +44,8 @@ html.dialog-open body {
   position: absolute;
   top: 14px;
   right: 14px;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
   padding: 0;
@@ -56,6 +56,13 @@ html.dialog-open body {
   cursor: pointer;
   font: inherit;
   font-size: 1.25rem;
+  line-height: 1;
+  transition: transform .16s ease, background .16s ease, border-color .16s ease;
+}
+.avatar-crop-close:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--strong) 20%, var(--line));
+  background: color-mix(in srgb, var(--surface-2) 74%, var(--surface));
 }
 
 .avatar-crop-stage {
@@ -109,10 +116,11 @@ html.dialog-open body {
 }
 
 .avatar-crop-actions {
-  margin-top: 18px;
+  margin-top: 20px;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 560px) {
