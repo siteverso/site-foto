@@ -11,7 +11,7 @@ TODO, um de cada vez (verifique se ja existe o recurso e se precisa ser alterado
 - [x] deve permitir ao proprietario editar o caption da imagem enviada
 - [x] deve ter um x nos observados para remover o observado da grade de observados direto e tambem dentro do perfil do amigo um x no botao amigo para remover ele
 - [x] deve ter um clique no popup da imagem do perfil para ver imagem circular da pessoa
-- trocar o termo observados de forma geral 
+- [x] trocar o termo observados de forma geral 
 - passar edicao da conta pra dentro do perfil ali na esquerda, qd for o proprietario claro ![img.png](img.png)
 - quando o perfil for meu o termo é Observando e nao observadores ![img_2.png](img_2.png)
 - so deve aparecer a ultima atualizacao da pessoa ![img_1.png](img_1.png) para ter apenas uma entrada no grid

@@ -1553,7 +1553,7 @@ body:has(.login-shell) {
 .observed-privacy-empty { margin: 0; color: var(--muted); }
 .direct-photo-reference { display: inline-block; margin-top: 8px; font-size: .78rem; text-decoration: underline; opacity: .8; }
 
-/* Perfil: observadores à esquerda, observados à direita e atualizações abaixo */
+/* Perfil: observadores à esquerda, perfis observados à direita e atualizações abaixo */
 .profile-side-section + .profile-side-section {
   margin-top: 28px;
   padding-top: 24px;

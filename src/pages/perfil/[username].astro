@@ -6,6 +6,7 @@ import { getComments, getLatestPhotos, getObservedPhotos, getObserverPhotos, get
 import { getMessages, normalizeLocale } from '../../i18n';
 import { MESSAGE_MAX_LENGTH } from '../../lib/message-limit';
 import { canViewObservedList } from '../../lib/observer-visibility';
+import { getObservedSectionTitle, getObserverSectionTitle } from '../../lib/profile-observer-copy';
 
 const user = await requireUser(Astro);
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
@@ -24,6 +25,8 @@ const [observerPhotos, observedPhotos, latestPhotos, commentsByPhoto] = await Pr
   Promise.all(photos.map(async photo => ({ photoId: photo.id, comments: await getComments(photo.id, user.id, 50) }))),
 ]);
 const commentsMap = new Map(commentsByPhoto.map(item => [item.photoId, item.comments]));
+const observedSectionTitle = profile ? getObservedSectionTitle(isOwner, profile.sexCode) : 'Observando';
+const observerSectionTitle = profile ? getObserverSectionTitle(isOwner, profile.sexCode) : 'Observadores';
 const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
 ---
 <AppLayout title={profile ? `@${profile.username} — ${t.site.title}` : t.publicProfile.notFound}>
@@ -48,8 +51,8 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                 data-friend-toggle
                 data-user-id={profile.id}
                 data-observing={alreadyFriend ? "true" : "false"}
-                aria-label={alreadyFriend ? `Remover @${profile.username} dos observados` : `Observar @${profile.username}`}
-                title={alreadyFriend ? `Remover @${profile.username} dos observados` : `Observar @${profile.username}`}
+                aria-label={alreadyFriend ? `Deixar de observar @${profile.username}` : `Observar @${profile.username}`}
+                title={alreadyFriend ? `Deixar de observar @${profile.username}` : `Observar @${profile.username}`}
               >
                 {alreadyFriend && <span aria-hidden="true">×</span>}
                 {alreadyFriend ? t.publicProfile.alreadyFriend : t.publicProfile.addFriend}
@@ -57,8 +60,8 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             )}
           </section>
 
-          <section class="profile-side-section" data-profile-observed data-empty-message={`Ainda não há perfis observados por este usuário (@${profile.username}).`}>
-            <h2>Observados</h2>
+          <section class="profile-side-section" data-profile-observed data-empty-message={`@${profile.username} ainda não observa nenhum perfil.`}>
+            <h2>{observedSectionTitle}</h2>
             {showObservedList ? (
               observedPhotos.length ? (
                 <div class="photo-mini-grid" data-live-section="profile-observed" data-live-list>{observedPhotos.map(item => (
@@ -69,15 +72,15 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                         type="button"
                         data-remove-friend
                         data-user-id={item.userId}
-                        aria-label={`Remover @${item.username} dos observados`}
-                        title={`Remover @${item.username} dos observados`}
+                        aria-label={`Deixar de observar @${item.username}`}
+                        title={`Deixar de observar @${item.username}`}
                       >×</button>
                     )}
                     <a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a>
                     <div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div>
                   </article>
                 ))}</div>
-              ) : <p class="empty-state">Ainda não há perfis observados por este usuário (@{profile.username}).</p>
+              ) : <p class="empty-state">@{profile.username} ainda não observa nenhum perfil.</p>
             ) : <p class="empty-state">Esta lista é privada.</p>}
           </section>
         </aside>
@@ -174,7 +177,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
 
         <aside class="flog-panel">
           <section class="profile-side-section">
-            <h2>Observadores</h2>
+            <h2>{observerSectionTitle}</h2>
             {observerPhotos.length ? (
               <div class="photo-mini-grid" data-live-section="profile-observers" data-live-list>{observerPhotos.map(item => (
                 <article class="photo-mini-card" data-live-key={`observer-${item.userId}`}>
@@ -287,7 +290,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           grid.remove();
           const empty = document.createElement('p');
           empty.className = 'empty-state';
-          empty.textContent = section.dataset.emptyMessage || 'Ainda não há perfis observados por este usuário.';
+          empty.textContent = section.dataset.emptyMessage || 'Este usuário ainda não observa nenhum perfil.';
           section.append(empty);
         }
         return;

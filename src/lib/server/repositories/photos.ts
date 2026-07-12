@@ -2,6 +2,7 @@
 import { Buffer } from 'node:buffer';
 import oracledb from 'oracledb';
 import { withConnection } from '../oracle';
+import { normalizeSexCode } from '../../account-profile';
 
 type OracleRow = Record<string, unknown> & {
     ID?: unknown;
@@ -18,6 +19,7 @@ type OracleRow = Record<string, unknown> & {
     IMAGE_BLOB?: unknown;
     IMAGE_MIME_TYPE?: unknown;
     BIO?: unknown;
+    SEX_CODE?: unknown;
 };
 
 export type PhotoCard = {
@@ -432,6 +434,7 @@ export type PublicProfile = {
     username: string;
     bio: string;
     avatarUrl: string;
+    sexCode: '' | 'M' | 'F';
     observerVisibility: 'public' | 'private';
 };
 
@@ -476,6 +479,7 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
                     username,
                     NVL(bio, '') AS bio,
                     NVL(avatar_url, '') AS avatar_url,
+                    NVL(sex_code, '') AS sex_code,
                     NVL(observer_visibility_code, 'public') AS observer_visibility_code
              FROM murm_user
              WHERE LOWER(username) = LOWER(:username)
@@ -489,6 +493,7 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
             username: String(row.USERNAME),
             bio: String(row.BIO || ''),
             avatarUrl: String(row.AVATAR_URL || ''),
+            sexCode: normalizeSexCode(row.SEX_CODE),
             observerVisibility: String(row.OBSERVER_VISIBILITY_CODE || 'public') === 'private' ? 'private' : 'public',
         };
     });
