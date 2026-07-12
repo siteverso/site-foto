@@ -15,6 +15,11 @@
   --negative: #6f6f6f;
   --shadow: 0 18px 50px rgb(0 0 0 / 7%);
   --radius: 22px;
+  --surface-soft: #f4f4f1;
+  --button-secondary-bg: #f4f4f1;
+  --button-secondary-bg-hover: #ecece7;
+  --button-secondary-border: #d7d7d2;
+  --button-secondary-text: #151515;
   --site-max-width: 1400px;
   --site-gutter: 48px;
   --site-section-y: 38px;
@@ -34,6 +39,11 @@ html[data-theme="light-warm"] {
   --positive: #486344;
   --negative: #9b5f52;
   --shadow: 0 18px 50px rgb(91 61 38 / 12%);
+  --surface-soft: #f5ede1;
+  --button-secondary-bg: #f5ede1;
+  --button-secondary-bg-hover: #ede1d2;
+  --button-secondary-border: #d9ccbb;
+  --button-secondary-text: #2d2118;
 }
 
 :is(html[data-theme="dark"], html[data-theme="dark-blue"]) {
@@ -50,6 +60,11 @@ html[data-theme="light-warm"] {
   --positive: #f4f4f1;
   --negative: #9a9a96;
   --shadow: 0 20px 60px rgb(0 0 0 / 35%);
+  --surface-soft: #1d1d1d;
+  --button-secondary-bg: #1d1d1d;
+  --button-secondary-bg-hover: #252525;
+  --button-secondary-border: #424242;
+  --button-secondary-text: #f7f7f5;
 }
 
 html[data-theme="dark-blue"] {
@@ -66,6 +81,11 @@ html[data-theme="dark-blue"] {
   --positive: #93d8c0;
   --negative: #df9b9b;
   --shadow: 0 22px 65px rgb(0 0 0 / 42%);
+  --surface-soft: #16263a;
+  --button-secondary-bg: #16263a;
+  --button-secondary-bg-hover: #1d3149;
+  --button-secondary-border: #36506f;
+  --button-secondary-text: #edf4ff;
 }
 
 * { box-sizing: border-box; }
@@ -1454,16 +1474,18 @@ body:has(.login-shell) {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  border: 1px solid var(--strong);
+  border: 1px solid color-mix(in srgb, var(--strong) 55%, var(--line));
   border-radius: 14px;
   color: var(--inverse);
   background: var(--strong);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--strong) 14%, transparent);
   font: inherit;
   cursor: pointer;
+  transition: transform .16s ease, opacity .16s ease, box-shadow .16s ease, filter .16s ease;
 }
 .profile-new-post-button span { font-size: 1.35rem; line-height: 1; }
 .profile-new-post-button strong { font-size: .88rem; }
-.profile-new-post-button:hover { opacity: .86; }
+.profile-new-post-button:hover { transform: translateY(-1px); box-shadow: 0 12px 28px color-mix(in srgb, var(--strong) 18%, transparent); filter: brightness(1.02); }
 .profile-new-post-button:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
 
 .post-dialog[hidden] { display: none; }
@@ -1599,6 +1621,36 @@ body:has(.login-shell) {
   margin-top: 18px;
 }
 
+.profile-account-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 18px;
+  border: 1px solid var(--button-secondary-border, var(--line));
+  border-radius: 12px;
+  background: var(--button-secondary-bg, var(--surface-soft));
+  color: var(--button-secondary-text, var(--text));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--strong) 6%, transparent);
+  font-size: .84rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: border-color .18s ease, transform .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.profile-account-link:hover {
+  border-color: color-mix(in srgb, var(--button-secondary-text) 42%, var(--button-secondary-border));
+  background: var(--button-secondary-bg-hover, var(--surface-2));
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--strong) 8%, transparent);
+  transform: translateY(-1px);
+}
+
+.profile-account-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
 .profile-side-section + .profile-side-section {
   margin-top: 0;
   padding-top: 20px;
@@ -1721,8 +1773,7 @@ body:has(.login-shell) {
 .photo-comment-form input,
 .upload-drop,
 .flog-logout,
-.friend-button,
-.profile-new-post-button {
+.friend-button {
   color: var(--text);
   background: var(--surface);
   border-color: var(--line);
@@ -1760,6 +1811,77 @@ html[data-theme="light-warm"] .site-updates-panel {
   box-shadow: 0 12px 34px rgb(91 61 38 / 8%);
 }
 
+/* FotoLife: contraste revisado de controles secundários e primários no dark */
+.profile-account-link,
+.friend-button.friend-button-remove,
+.flog-logout,
+.upload-drop span,
+.photo-caption-form button:not([type="submit"]) {
+  color: var(--button-secondary-text);
+  background: var(--button-secondary-bg);
+  border-color: var(--button-secondary-border);
+}
+
+.profile-account-link:hover,
+.friend-button.friend-button-remove:hover:not(:disabled),
+.flog-logout:hover,
+.upload-drop:hover span,
+.photo-caption-form button:not([type="submit"]):hover {
+  background: var(--button-secondary-bg-hover);
+}
+
+.upload-drop span {
+  color: var(--button-secondary-text);
+  border-color: var(--button-secondary-border);
+  background: var(--button-secondary-bg);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--strong) 8%, transparent);
+  transition: border-color .16s ease, background .16s ease, color .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+
+.upload-drop:hover span {
+  border-color: color-mix(in srgb, var(--button-secondary-text) 34%, var(--button-secondary-border));
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--strong) 10%, transparent);
+  transform: translateY(-1px);
+}
+
+.photo-caption-form textarea {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.photo-caption-form button {
+  color: var(--button-secondary-text);
+  background: var(--button-secondary-bg);
+  border-color: var(--button-secondary-border);
+  transition: border-color .16s ease, background .16s ease, color .16s ease, transform .16s ease;
+}
+
+.photo-caption-form button:hover:not(:disabled) {
+  background: var(--button-secondary-bg-hover);
+  transform: translateY(-1px);
+}
+
+.photo-caption-form button[type="submit"] {
+  color: var(--inverse);
+  background: var(--strong);
+  border-color: color-mix(in srgb, var(--strong) 58%, var(--line));
+}
+
+.photo-caption-form button[type="submit"]:hover:not(:disabled) {
+  filter: brightness(1.03);
+}
+
+.profile-photo-post .comment-form button {
+  border: 1px solid var(--button-secondary-border);
+  color: var(--button-secondary-text);
+  background: var(--button-secondary-bg);
+}
+
+.profile-photo-post .comment-form button:hover {
+  background: var(--button-secondary-bg-hover);
+}
+
 :is(html[data-theme="dark"], html[data-theme="dark-blue"]) .daily-photo img {
   background: #050505;
 }
@@ -1769,7 +1891,7 @@ html[data-theme="light-warm"] .site-updates-panel {
 }
 
 /* Edição da legenda da foto */
-.daily-photo-actions{position:absolute;top:14px;right:14px;z-index:2;display:flex;gap:8px}.daily-photo-actions .daily-photo-delete{position:static}.daily-photo-edit{display:grid;width:42px;height:42px;place-items:center;padding:0;border:1px solid rgb(255 255 255 / 55%);border-radius:999px;color:#fff;background:rgb(0 0 0 / 58%);box-shadow:0 8px 24px rgb(0 0 0 / 22%);cursor:pointer;backdrop-filter:blur(8px)}.daily-photo-edit:hover{background:#000}.daily-photo-edit svg{width:18px;height:18px;fill:currentColor}.photo-caption-form{display:grid;gap:10px;margin-top:14px}.photo-caption-form[hidden]{display:none}.photo-caption-form textarea{min-height:86px;padding:12px 14px;border:1px solid #ccc;border-radius:12px;resize:vertical;font:inherit}.photo-caption-form>div{display:flex;justify-content:flex-end;gap:8px}.photo-caption-form button{border:1px solid #bbb;border-radius:10px;background:#fff;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer}.photo-caption-form button[type="submit"]{border-color:#111;background:#111;color:#fff}.photo-caption-form button:disabled{opacity:.55;cursor:default}.photo-caption-form>[data-caption-message]{margin:0;color:#a21b1b;font-size:.78rem}
+.daily-photo-actions{position:absolute;top:14px;right:14px;z-index:2;display:flex;gap:8px}.daily-photo-actions .daily-photo-delete{position:static}.daily-photo-edit{display:grid;width:42px;height:42px;place-items:center;padding:0;border:1px solid rgb(255 255 255 / 55%);border-radius:999px;color:#fff;background:rgb(0 0 0 / 58%);box-shadow:0 8px 24px rgb(0 0 0 / 22%);cursor:pointer;backdrop-filter:blur(8px)}.daily-photo-edit:hover{background:#000}.daily-photo-edit svg{width:18px;height:18px;fill:currentColor}.photo-caption-form{display:grid;gap:10px;margin-top:14px}.photo-caption-form[hidden]{display:none}.photo-caption-form textarea{min-height:86px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;resize:vertical;color:var(--text);background:var(--surface);font:inherit}.photo-caption-form>div{display:flex;justify-content:flex-end;gap:8px}.photo-caption-form button{border:1px solid var(--button-secondary-border);border-radius:10px;color:var(--button-secondary-text);background:var(--button-secondary-bg);padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;transition:border-color .16s ease,background .16s ease,color .16s ease,transform .16s ease}.photo-caption-form button:hover:not(:disabled){background:var(--button-secondary-bg-hover);transform:translateY(-1px)}.photo-caption-form button[type="submit"]{border-color:color-mix(in srgb,var(--strong) 58%,var(--line));background:var(--strong);color:var(--inverse)}.photo-caption-form button[type="submit"]:hover:not(:disabled){filter:brightness(1.03)}.photo-caption-form button:disabled{opacity:.55;cursor:default}.photo-caption-form>[data-caption-message]{margin:0;color:#a21b1b;font-size:.78rem}
 
 /* FotoLife: legenda editável pelo proprietário */
 [data-editable-caption="true"] { cursor: text; }

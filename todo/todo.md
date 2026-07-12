@@ -8,10 +8,6 @@ Realize testes unitarios para garantir funcionamento
 
 TODO, um de cada vez (verifique se ja existe o recurso e se precisa ser alterado melhorado ou corrigido e avise explique antes de gerar o zip):
 
-- [x] deve permitir ao proprietario editar o caption da imagem enviada
-- [x] deve ter um x nos observados para remover o observado da grade de observados direto e tambem dentro do perfil do amigo um x no botao amigo para remover ele
-- [x] deve ter um clique no popup da imagem do perfil para ver imagem circular da pessoa
-- [x] trocar o termo observados de forma geral 
 - passar edicao da conta pra dentro do perfil ali na esquerda, qd for o proprietario claro ![img.png](img.png)
 - quando o perfil for meu o termo é Observando e nao observadores ![img_2.png](img_2.png)
 - so deve aparecer a ultima atualizacao da pessoa ![img_1.png](img_1.png) para ter apenas uma entrada no grid
@@ -19,3 +15,4 @@ TODO, um de cada vez (verifique se ja existe o recurso e se precisa ser alterado
 - centralize ![img_8.png](img_8.png)
 - revisar isso aqui mensagem estranha e nao enviei foto nenhuma faz tempo ![img_9.png](img_9.png)
 - rever as cores do botao nos temas na questao do contraste ![img_10.png](img_10.png)
+- criar aqui pagina com mensagens que eu enviei (de acordo com o perfil) ![img_11.png](img_11.png)

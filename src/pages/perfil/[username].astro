@@ -44,6 +44,10 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
               <div><h1>@{profile.username}</h1>{profile.bio && <p>{profile.bio}</p>}</div>
             </div>
 
+            {isOwner && (
+              <a class="profile-account-link" href="/conta">Editar conta</a>
+            )}
+
             {!isOwner && (
               <button
                 class:list={["friend-button", { "friend-button-remove": alreadyFriend }]}
