@@ -1,0 +1,4 @@
+---
+const username = String(Astro.params.username || '').trim();
+return Astro.redirect(`/perfil/${encodeURIComponent(username)}`, 302);
+---
