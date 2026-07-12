@@ -8,6 +8,7 @@ const sentCard = readFileSync('src/components/SentPhotoMessageCard.astro', 'utf8
 const profile = readFileSync('src/pages/perfil/[username].astro', 'utf8');
 const composer = readFileSync('src/components/PhotoMessageComposer.astro', 'utf8');
 const detailCss = readFileSync('src/styles/pages/photo-detail.css', 'utf8');
+const detailShortcuts = readFileSync('public/js/pages/photo-detail-shortcuts.js', 'utf8');
 
 describe('public photo detail page', () => {
   it('loads one published photo through a cohesive repository function', () => {
@@ -44,4 +45,15 @@ describe('public photo detail page', () => {
     expect(sentCard).toContain('href={`/foto/${item.photoId}`}');
     expect(profile).toContain('href={`/foto/${photo.id}`}');
   });
+
+  it('uses Escape as a direct owner-profile shortcut without browser history or modal behavior', () => {
+    expect(detail).toContain('data-photo-owner-profile={photo ? `/perfil/${encodeURIComponent(photo.username)}` : undefined}');
+    expect(detail).toContain('/js/pages/photo-detail-shortcuts.js');
+    expect(detailShortcuts).toContain("event.key !== 'Escape'");
+    expect(detailShortcuts).toContain('window.location.assign(profileUrl)');
+    expect(detailShortcuts).toContain("{ capture: true }");
+    expect(detailShortcuts).not.toContain('history.back');
+    expect(detailShortcuts).not.toContain('.close()');
+  });
+
 });

@@ -38,7 +38,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
 }).format(new Date(value));
 ---
 <AppLayout title={photo ? `@${photo.username} — ${t.site.title}` : t.publicProfile.notFound}>
-  <main class="feed-page photo-detail-page">
+  <main class="feed-page photo-detail-page" data-photo-owner-profile={photo ? `/perfil/${encodeURIComponent(photo.username)}` : undefined}>
     <SiteHeader username={user.username} userId={user.id} avatarUrl={user.avatarUrl} />
 
     {photo ? (
@@ -160,4 +160,5 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
   })}></script>
   <script type="module" src="/js/pages/profile.js?v=20260712-2"></script>
   <script type="module" src="/js/pages/photo-lightbox.js?v=20260712-3"></script>
+  <script type="module" src="/js/pages/photo-detail-shortcuts.js?v=20260713-1"></script>
 </AppLayout>
