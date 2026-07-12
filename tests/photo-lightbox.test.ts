@@ -53,5 +53,8 @@ describe('visualizador avançado de foto', () => {
     expect(css).not.toContain('.photo-lightbox-image.effect-');
     expect(css).toContain('height: 100dvh');
     expect(css).toContain('object-fit: contain');
+    expect(css).toMatch(/\.photo-lightbox-image\s*\{[^}]*width:\s*100%[^}]*height:\s*100%/s);
+    expect(css).toMatch(/\.photo-lightbox-stage\s*\{[^}]*overflow:\s*hidden/s);
+    expect(css).toMatch(/\.photo-lightbox-shell\s*\{[^}]*box-sizing:\s*border-box/s);
   });
 });
