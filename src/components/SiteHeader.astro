@@ -5,10 +5,12 @@ import { getMessages, normalizeLocale } from '../i18n';
 
 interface Props {
   username?: string;
+  userId?: number;
   avatarUrl?: string;
 }
 
-const { username, avatarUrl = '' } = Astro.props;
+const { username, userId, avatarUrl = '' } = Astro.props;
+const resolvedAvatarUrl = avatarUrl || (Number.isSafeInteger(userId) && Number(userId) > 0 ? `/api/users/${userId}/avatar` : '');
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
 ---
@@ -21,7 +23,12 @@ const t = getMessages(locale);
         <>
           <a class="site-user-link" href={`/perfil/${username}`} data-user-profile-link>
             <span class="site-user-avatar" aria-hidden="true">
-              {avatarUrl ? <img src={avatarUrl} alt="" width="40" height="40" /> : <span class="site-user-avatar-placeholder"></span>}
+              {resolvedAvatarUrl ? (
+                <>
+                  <img src={resolvedAvatarUrl} alt="" width="40" height="40" data-site-user-avatar-image />
+                  <span class="site-user-avatar-placeholder" data-site-user-avatar-placeholder hidden></span>
+                </>
+              ) : <span class="site-user-avatar-placeholder"></span>}
             </span>
             <strong data-user-name>@{username}</strong>
           </a>
@@ -41,6 +48,15 @@ const t = getMessages(locale);
 </header>
 
 <script>
+  document.querySelectorAll('[data-site-user-avatar-image]').forEach(image => {
+    if (!(image instanceof HTMLImageElement)) return;
+    image.addEventListener('error', () => {
+      image.hidden = true;
+      const placeholder = image.parentElement?.querySelector('[data-site-user-avatar-placeholder]');
+      if (placeholder instanceof HTMLElement) placeholder.hidden = false;
+    }, { once: true });
+  });
+
   const themeLabels = JSON.parse(document.documentElement.dataset.themeLabels || '{}');
   const FOTO_THEMES = [
     { code: 'light', name: themeLabels.light || 'Claro', icon: '☀', scheme: 'light' },

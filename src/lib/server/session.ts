@@ -111,7 +111,11 @@ export async function currentUser(context: APIContext): Promise<SessionUser | nu
             `SELECT u.id,
                     u.username,
                     u.email,
-                    NVL(u.avatar_url, '') AS avatar_url
+                    CASE
+                        WHEN u.avatar_image IS NOT NULL THEN
+                            '/api/users/' || u.id || '/avatar?v=' || TO_CHAR(u.avatar_updated_at, 'YYYYMMDDHH24MISSFF3')
+                        ELSE NVL(u.avatar_url, '')
+                    END AS avatar_url
              FROM murm_session s
              JOIN murm_user u
                ON u.id = s.user_id
@@ -134,6 +138,13 @@ export async function currentUser(context: APIContext): Promise<SessionUser | nu
     locals.fotolifeAuthResolved = true;
     locals.fotolifeUser = user;
     return user;
+}
+
+
+export function invalidateCurrentUser(context: APIContext): void {
+    const locals = sessionLocals(context);
+    locals.fotolifeAuthResolved = false;
+    locals.fotolifeUser = null;
 }
 
 export async function requireUser(context: APIContext): Promise<SessionUser> {

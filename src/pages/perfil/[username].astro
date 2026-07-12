@@ -47,7 +47,7 @@ const formatPhotoDateTime = (value: string) => new Intl.DateTimeFormat(locale, {
 ---
 <AppLayout title={profile ? `@${profile.username} — ${t.site.title}` : t.publicProfile.notFound}>
     <main class="flog-page">
-        <SiteHeader username={user.username} avatarUrl={user.avatarUrl} />
+        <SiteHeader username={user.username} userId={user.id} avatarUrl={user.avatarUrl} />
 
         {profile ? (
                         <section class="flog-grid">

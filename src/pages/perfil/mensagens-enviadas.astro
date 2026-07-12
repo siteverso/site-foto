@@ -14,7 +14,7 @@ const messages = await getSentPhotoMessages(user.id);
 ---
 <AppLayout title={`${t.sentMessages.title} — ${t.site.title}`}>
     <main>
-        <SiteHeader username={user.username} avatarUrl={user.avatarUrl} />
+        <SiteHeader username={user.username} userId={user.id} avatarUrl={user.avatarUrl} />
         <section class="sent-photo-messages-page">
             <header class="sent-photo-messages-heading">
                 <div>

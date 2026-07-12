@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import oracledb from 'oracledb';
 import { errorResponse, json } from '../../../lib/server/http';
-import { currentUser, requireUser } from '../../../lib/server/session';
+import { currentUser, invalidateCurrentUser, requireUser } from '../../../lib/server/session';
 import { withConnection } from '../../../lib/server/oracle';
 
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
@@ -44,6 +44,7 @@ export const POST: APIRoute = async context => {
             );
         });
 
+        invalidateCurrentUser(context);
         return json({ ok: true, user: await currentUser(context) });
     } catch (error) {
         return errorResponse(error);

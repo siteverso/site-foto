@@ -23,7 +23,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
 ---
 <AppLayout title={`${t.home.feedTitle} — ${t.site.title}`}>
   <main class="feed-page">
-    <SiteHeader username={user.username} avatarUrl={user.avatarUrl} />
+    <SiteHeader username={user.username} userId={user.id} avatarUrl={user.avatarUrl} />
 
     <section class="home-feed-layout site-container site-section">
       <aside class="site-updates-panel">

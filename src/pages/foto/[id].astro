@@ -39,7 +39,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
 ---
 <AppLayout title={photo ? `@${photo.username} — ${t.site.title}` : t.publicProfile.notFound}>
   <main class="feed-page photo-detail-page">
-    <SiteHeader username={user.username} avatarUrl={user.avatarUrl} />
+    <SiteHeader username={user.username} userId={user.id} avatarUrl={user.avatarUrl} />
 
     {photo ? (
       <section class="site-container site-section photo-detail-layout">
