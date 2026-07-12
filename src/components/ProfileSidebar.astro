@@ -1,6 +1,7 @@
 ---
 import '../styles/components/profile-account-card.css';
 import '../styles/components/profile-avatar.css';
+import '../styles/processes/avatar-editing.css';
 import { getMessages, normalizeLocale } from '../i18n';
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
@@ -83,4 +84,4 @@ const avatarUrl = profile?.avatarUrl || '';
   {editableAvatar && <a class="profile-account-link profile-sidebar-external-action" href="/perfil">{t.profile.viewMyProfile}</a>}
 </div>
 
-{editableAvatar && <script type="module" src="/profile-avatar.js?v=20260712-3"></script>}
+{editableAvatar && <script type="module" src="/profile-avatar.js?v=20260712-4"></script>}

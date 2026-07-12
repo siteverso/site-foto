@@ -1,9 +1,21 @@
 .profile-photo-feed { display: grid; gap: 28px; }
   .profile-photo-post + .profile-photo-post { border-top: 1px solid #ddd; padding-top: 28px; }
   .profile-photo-post .comments-panel { margin-top: 18px; padding-top: 18px; }
-  .comment-form-unified { display: flex; gap: 10px; }
-  .comment-form-unified > input[name="message"] { flex: 1 1 auto; min-width: 0; }
-  .private-toggle { flex: 0 0 auto; cursor: pointer; user-select: none; }
+  .comment-form-unified {
+    width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .comment-form-unified > input[name="message"] { flex: 1 1 0; width: auto; min-width: 0; }
+  .comment-form-unified > button[type="submit"] {
+    flex: 0 0 44px;
+    width: 44px;
+    min-width: 44px;
+    max-width: 44px;
+  }
+  .private-toggle { flex: 0 0 auto; min-width: 0; cursor: pointer; user-select: none; }
   .private-toggle input { position: absolute; opacity: 0; pointer-events: none; }
   .private-toggle span {
     min-height: 38px;
@@ -283,4 +295,130 @@
 
 @media (max-width: 560px) {
   .profile-new-post-button { min-height: 54px; margin-bottom: 16px; border-radius: 15px; }
+}
+
+/* Perfil público: composição e espaçamento pertencem exclusivamente a esta página. */
+.flog-grid {
+  grid-template-columns: minmax(230px, 280px) minmax(0, 1fr) minmax(230px, 280px);
+  gap: 24px;
+}
+
+.flog-grid > .flog-center,
+.flog-grid > .flog-panel {
+  min-width: 0;
+}
+
+.flog-grid > .flog-panel {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.profile-summary-card,
+.profile-side-section {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--line, #deded9);
+  border-radius: 20px;
+  background: var(--surface, #fff);
+}
+
+.profile-side-section {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-side-section + .profile-side-section {
+  margin: 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--line, #deded9);
+}
+
+.profile-side-section h2,
+.flog-panel .profile-side-section h2 {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.profile-side-section .photo-mini-grid {
+  margin: 0;
+}
+
+.profile-side-section .photo-mini-card {
+  position: relative;
+  min-width: 0;
+}
+
+.profile-side-section .photo-mini-card a,
+.profile-side-section .photo-mini-card strong,
+.profile-side-section .photo-mini-card time {
+  min-width: 0;
+}
+
+.profile-summary-card .friend-button,
+.profile-summary-card .profile-account-link {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.profile-photo-feed {
+  gap: 30px;
+}
+
+.profile-photo-post {
+  min-width: 0;
+}
+
+.profile-photo-post + .profile-photo-post {
+  margin-top: 0;
+  padding-top: 30px;
+  border-top: 1px solid var(--line, #ddd);
+}
+
+.profile-photo-post .daily-photo > p {
+  margin: 14px 2px 0;
+}
+
+@media (max-width: 1180px) {
+  .flog-grid {
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  }
+
+  .flog-grid > .flog-panel:last-child {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .flog-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .flog-grid > .flog-panel:last-child {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .comment-form-unified {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  .comment-form-unified .private-toggle {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .comment-form-unified > button[type="submit"] {
+    grid-column: 2;
+    grid-row: 1;
+  }
 }

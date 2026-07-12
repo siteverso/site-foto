@@ -1,4 +1,7 @@
 const $ = (selector, root = document) => root?.querySelector(selector) ?? null;
+const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
+let activeCropperCleanup = null;
 
 function setMessage(element, text = '', type = 'info') {
   if (!element) return;
@@ -10,23 +13,19 @@ function setMessage(element, text = '', type = 'info') {
 function setLoading(button, loading, text = 'Salvando…') {
   if (!button) return;
   if (loading) {
-    button.dataset.originalLabel = button.textContent || '';
+    if (!button.dataset.originalLabel) button.dataset.originalLabel = button.textContent || '';
     button.textContent = text;
     button.disabled = true;
-  } else {
-    button.textContent = button.dataset.originalLabel || button.textContent;
-    button.disabled = false;
-    delete button.dataset.originalLabel;
+    return;
   }
+  button.textContent = button.dataset.originalLabel || button.textContent;
+  button.disabled = false;
+  delete button.dataset.originalLabel;
 }
 
-function closeCropper() {
-  const backdrop = $('[data-avatar-crop-modal]');
-  if (!backdrop) return;
-  const objectUrl = backdrop.dataset.objectUrl;
-  if (objectUrl) URL.revokeObjectURL(objectUrl);
-  backdrop.remove();
-  document.documentElement.classList.remove('dialog-open');
+function closeCropper({ clearInput = false } = {}) {
+  activeCropperCleanup?.({ clearInput });
+  activeCropperCleanup = null;
 }
 
 async function uploadAvatar(blob, message) {
@@ -44,19 +43,20 @@ async function uploadAvatar(blob, message) {
 }
 
 function openCropper(file, message, input) {
-  closeCropper();
+  closeCropper({ clearInput: true });
+
   const objectUrl = URL.createObjectURL(file);
   const backdrop = document.createElement('div');
-  backdrop.className = 'modal-backdrop';
+  backdrop.className = 'avatar-crop-backdrop';
   backdrop.dataset.avatarCropModal = '';
-  backdrop.dataset.objectUrl = objectUrl;
   backdrop.setAttribute('role', 'dialog');
   backdrop.setAttribute('aria-modal', 'true');
+  backdrop.setAttribute('aria-labelledby', 'avatarCropTitle');
   backdrop.innerHTML = `
-    <div class="panel modal-card avatar-crop-modal">
-      <button class="modal-close" type="button" data-avatar-crop-close aria-label="Fechar">×</button>
-      <h2>Posicionar foto</h2>
-      <p class="modal-subtitle">Arraste para enquadrar. Use a roda do mouse ou o controle para aproximar.</p>
+    <section class="avatar-crop-card" data-avatar-crop-card>
+      <button class="avatar-crop-close" type="button" data-avatar-crop-close aria-label="Fechar">×</button>
+      <h2 id="avatarCropTitle">Posicionar foto</h2>
+      <p class="avatar-crop-subtitle">Arraste para enquadrar. Use a roda do mouse ou o controle para aproximar.</p>
       <div class="avatar-crop-stage" data-avatar-crop-stage>
         <img src="${objectUrl}" alt="Imagem escolhida para recorte" draggable="false" data-avatar-crop-image>
         <span class="avatar-crop-mask" aria-hidden="true"></span>
@@ -65,11 +65,12 @@ function openCropper(file, message, input) {
         <span>Zoom</span>
         <input type="range" min="1" max="3" value="1" step="0.01" data-avatar-crop-zoom>
       </label>
-      <div class="modal-actions avatar-crop-actions">
+      <div class="avatar-crop-actions">
         <button class="button secondary" type="button" data-avatar-crop-close>Cancelar</button>
         <button class="button primary" type="button" data-avatar-crop-confirm>Usar esta foto</button>
       </div>
-    </div>`;
+    </section>`;
+
   document.body.append(backdrop);
   document.documentElement.classList.add('dialog-open');
 
@@ -77,14 +78,20 @@ function openCropper(file, message, input) {
   const image = $('[data-avatar-crop-image]', backdrop);
   const zoomInput = $('[data-avatar-crop-zoom]', backdrop);
   const confirm = $('[data-avatar-crop-confirm]', backdrop);
-  if (!stage || !image || !zoomInput || !confirm) {
-    closeCropper();
+  const closeButton = $('[data-avatar-crop-close]', backdrop);
+
+  if (!stage || !image || !zoomInput || !confirm || !closeButton) {
+    URL.revokeObjectURL(objectUrl);
+    backdrop.remove();
+    document.documentElement.classList.remove('dialog-open');
     setMessage(message, 'Não foi possível abrir o recorte.', 'error');
+    input.value = '';
     return;
   }
 
   const state = { x: 0, y: 0, zoom: 1, baseScale: 1, dragging: false, pointerX: 0, pointerY: 0 };
-  const stageSize = () => stage.clientWidth;
+  const stageSize = () => Math.max(1, stage.clientWidth);
+
   const clamp = () => {
     const size = stageSize();
     const width = image.naturalWidth * state.baseScale * state.zoom;
@@ -92,30 +99,59 @@ function openCropper(file, message, input) {
     state.x = Math.max((size - width) / 2, Math.min((width - size) / 2, state.x));
     state.y = Math.max((size - height) / 2, Math.min((height - size) / 2, state.y));
   };
+
   const render = () => {
     if (!image.naturalWidth) return;
     clamp();
     image.style.transform = `translate(calc(-50% + ${state.x}px), calc(-50% + ${state.y}px)) scale(${state.baseScale * state.zoom})`;
   };
+
   const initialize = () => {
     state.x = 0;
     state.y = 0;
     state.baseScale = Math.max(stageSize() / image.naturalWidth, stageSize() / image.naturalHeight);
     render();
   };
-  if (image.complete && image.naturalWidth) initialize();
-  else image.addEventListener('load', initialize, { once: true });
 
   const setZoom = value => {
     state.zoom = Math.max(Number(zoomInput.min), Math.min(Number(zoomInput.max), value));
     zoomInput.value = state.zoom.toFixed(2);
     render();
   };
+
+  const onResize = () => {
+    if (!image.naturalWidth) return;
+    const previousScale = state.baseScale;
+    state.baseScale = Math.max(stageSize() / image.naturalWidth, stageSize() / image.naturalHeight);
+    if (previousScale > 0) {
+      state.x *= state.baseScale / previousScale;
+      state.y *= state.baseScale / previousScale;
+    }
+    render();
+  };
+
+  const onEscape = event => {
+    if (event.key === 'Escape') closeCropper({ clearInput: true });
+  };
+
+  activeCropperCleanup = ({ clearInput = false } = {}) => {
+    window.removeEventListener('resize', onResize);
+    document.removeEventListener('keydown', onEscape);
+    URL.revokeObjectURL(objectUrl);
+    backdrop.remove();
+    document.documentElement.classList.remove('dialog-open');
+    if (clearInput) input.value = '';
+  };
+
+  if (image.complete && image.naturalWidth) initialize();
+  else image.addEventListener('load', initialize, { once: true });
+
   zoomInput.addEventListener('input', () => setZoom(Number(zoomInput.value)));
   stage.addEventListener('wheel', event => {
     event.preventDefault();
     setZoom(state.zoom + (event.deltaY < 0 ? 0.08 : -0.08));
   }, { passive: false });
+
   stage.addEventListener('pointerdown', event => {
     state.dragging = true;
     state.pointerX = event.clientX;
@@ -123,6 +159,7 @@ function openCropper(file, message, input) {
     stage.setPointerCapture(event.pointerId);
     stage.classList.add('is-dragging');
   });
+
   stage.addEventListener('pointermove', event => {
     if (!state.dragging) return;
     state.x += event.clientX - state.pointerX;
@@ -131,26 +168,22 @@ function openCropper(file, message, input) {
     state.pointerY = event.clientY;
     render();
   });
+
   const stopDragging = event => {
     state.dragging = false;
     stage.classList.remove('is-dragging');
     if (stage.hasPointerCapture?.(event.pointerId)) stage.releasePointerCapture(event.pointerId);
   };
+
   stage.addEventListener('pointerup', stopDragging);
   stage.addEventListener('pointercancel', stopDragging);
-  window.addEventListener('resize', render, { passive: true });
+  window.addEventListener('resize', onResize, { passive: true });
+  document.addEventListener('keydown', onEscape);
 
   backdrop.addEventListener('click', event => {
     if (event.target === backdrop || event.target.closest('[data-avatar-crop-close]')) {
-      input.value = '';
-      closeCropper();
+      closeCropper({ clearInput: true });
     }
-  });
-  document.addEventListener('keydown', function escape(event) {
-    if (event.key !== 'Escape' || !document.body.contains(backdrop)) return;
-    document.removeEventListener('keydown', escape);
-    input.value = '';
-    closeCropper();
   });
 
   confirm.addEventListener('click', async () => {
@@ -162,23 +195,26 @@ function openCropper(file, message, input) {
       canvas.height = 512;
       const context = canvas.getContext('2d');
       if (!context) throw new Error('Não foi possível preparar a imagem.');
+
       const size = stageSize();
       const scale = state.baseScale * state.zoom;
       const displayedWidth = image.naturalWidth * scale;
       const displayedHeight = image.naturalHeight * scale;
       const left = (size - displayedWidth) / 2 + state.x;
       const top = (size - displayedHeight) / 2 + state.y;
+
       context.drawImage(
         image,
         Math.max(0, -left / scale),
         Math.max(0, -top / scale),
-        size / scale,
-        size / scale,
+        Math.min(image.naturalWidth, size / scale),
+        Math.min(image.naturalHeight, size / scale),
         0,
         0,
         512,
         512,
       );
+
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
       if (!blob) throw new Error('Não foi possível recortar a imagem.');
       await uploadAvatar(blob, message);
@@ -189,7 +225,7 @@ function openCropper(file, message, input) {
     }
   });
 
-  confirm.focus({ preventScroll: true });
+  closeButton.focus({ preventScroll: true });
 }
 
 function bindAvatarEditor() {
@@ -197,6 +233,7 @@ function bindAvatarEditor() {
   const input = $('[data-avatar-input]', form);
   const trigger = $('[data-avatar-trigger]');
   if (!form || !input || !trigger || input.dataset.bound === 'true') return;
+
   input.dataset.bound = 'true';
   trigger.addEventListener('click', () => input.click());
   input.addEventListener('change', () => {
@@ -204,12 +241,13 @@ function bindAvatarEditor() {
     if (!file) return;
     const message = $('[data-form-message]', form);
     setMessage(message);
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+
+    if (!ALLOWED_TYPES.has(file.type)) {
       setMessage(message, 'Escolha uma imagem JPG, PNG ou WebP.', 'error');
       input.value = '';
       return;
     }
-    if (file.size > 3 * 1024 * 1024) {
+    if (file.size > MAX_AVATAR_BYTES) {
       setMessage(message, 'A imagem deve ter no máximo 3 MB.', 'error');
       input.value = '';
       return;
@@ -218,5 +256,8 @@ function bindAvatarEditor() {
   });
 }
 
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindAvatarEditor, { once: true });
-else bindAvatarEditor();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bindAvatarEditor, { once: true });
+} else {
+  bindAvatarEditor();
+}
