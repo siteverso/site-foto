@@ -24,7 +24,7 @@ export default {
     observerVisibilityHelp: 'You can always see your own list on your profile.', hiddenObservedTitle: 'Hide people from the public list',
     hiddenObservedHelp: 'Select who should not appear to other people. You will still see everyone on your own profile.', hiddenObservedEmpty: 'You are not following anyone yet.',
     sex: 'Sex', sexUnknown: 'Not specified', sexMale: 'Male', sexFemale: 'Female', changePhoto: 'Change photo', enlargePhoto: 'Enlarge profile photo',
-    closePhoto: 'Close profile photo', profilePhotoOf: 'Profile photo of', photoHelp: 'JPG, PNG, or WebP, up to 3 MB.', editAccount: 'Edit account', viewMyProfile: 'View my profile',
+    closePhoto: 'Close profile photo', profilePhotoOf: 'Profile photo of', ownerPhotoHint: 'To change your profile image, click here.', photoHelp: 'JPG, PNG, or WebP, up to 3 MB.', editAccount: 'Edit account', viewMyProfile: 'View my profile',
     sentMessages: 'Sent messages',
     stopObserving: 'Stop following', observe: 'Follow', observedLabel: 'Followed', accountUpdated: 'Account updated.', passwordUpdated: 'Password updated.',
   },

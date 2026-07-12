@@ -80,6 +80,36 @@
   font-size: clamp(3rem, 14vw, 7rem);
   font-weight: 800;
 }
+
+.profile-avatar-dialog-owner-link {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  max-width: min(250px, calc(100% - 24px));
+  padding: 10px 13px;
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  border-radius: 14px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 26%);
+  backdrop-filter: blur(12px);
+  font-size: .82rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+  text-decoration: none;
+  transition: transform .16s ease, background .16s ease, border-color .16s ease;
+}
+.profile-avatar-dialog-owner-link:hover {
+  transform: translateY(-1px);
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+}
+.profile-avatar-dialog-owner-link:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
 .profile-avatar-dialog-close {
   position: absolute;
   top: -8px;
@@ -111,5 +141,11 @@
 html.has-open-dialog { overflow: hidden; }
 @media (max-width: 560px) {
   .profile-avatar-dialog-image { width: min(84vw, 420px); }
+  .profile-avatar-dialog-owner-link {
+    right: 10px;
+    bottom: 10px;
+    max-width: calc(100% - 20px);
+    font-size: .76rem;
+  }
 }
 

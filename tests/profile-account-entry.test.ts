@@ -21,11 +21,10 @@ describe('navegação padronizada entre perfil e conta', () => {
     expect(profile).toContain('<ProfileSidebar');
     expect(account).toContain('<ProfileSidebar');
   });
-  it('leva o proprietário sem foto para a conta ao clicar no avatar', () => {
-    expect(sidebar).toContain('!avatarUrl && isOwner');
+  it('abre o visualizador do avatar mesmo quando o proprietário ainda não tem foto', () => {
+    expect(sidebar).not.toContain('!avatarUrl && isOwner');
     expect(sidebar).toContain('class="profile-avatar-button"');
-    expect(sidebar).toContain('href="/conta"');
-    expect(sidebar).toContain('aria-label={t.profile.changePhoto}');
+    expect(sidebar).toContain('data-open-avatar-dialog');
   });
 
 });

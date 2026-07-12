@@ -232,6 +232,11 @@ const formatPhotoDateTime = (value: string) => new Intl.DateTimeFormat(locale, {
                     <div class="profile-avatar-dialog-image">
                         {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`@${profile.username}`}/> : <span>{profile.username.slice(0, 2).toUpperCase()}</span>}
                     </div>
+                    {isOwner && (
+                            <a class="profile-avatar-dialog-owner-link" href="/conta">
+                                {t.profile.ownerPhotoHint}
+                            </a>
+                    )}
                 </section>
             </div>
     )}
