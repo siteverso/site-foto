@@ -59,7 +59,108 @@ function refreshVisibleAvatars(blob, serverAvatarUrl = '', userId = '') {
     element.hidden = true;
   });
 
+  const removeButton = $('[data-avatar-remove]');
+  if (removeButton instanceof HTMLButtonElement) removeButton.hidden = false;
+
   window.addEventListener('pagehide', () => URL.revokeObjectURL(previewUrl), { once: true });
+}
+
+
+function showAvatarFallback(userId = '') {
+  const normalizedUserId = String(userId || '');
+
+  document.querySelectorAll('[data-avatar-image]').forEach(element => {
+    if (!(element instanceof HTMLImageElement)) return;
+    if (normalizedUserId && element.getAttribute('data-avatar-user-id') !== normalizedUserId) return;
+    element.hidden = true;
+    element.removeAttribute('src');
+    delete element.dataset.avatarSources;
+    const placeholder = element.parentElement?.querySelector('[data-avatar-fallback]');
+    if (placeholder instanceof HTMLElement) placeholder.hidden = false;
+  });
+
+  document.querySelectorAll('[data-avatar-fallback], [data-profile-avatar-fallback]').forEach(element => {
+    if (!(element instanceof HTMLElement)) return;
+    const owner = element.closest('[data-avatar-user-id]');
+    if (normalizedUserId && owner?.getAttribute('data-avatar-user-id') !== normalizedUserId) return;
+    element.hidden = false;
+  });
+
+  const removeButton = $('[data-avatar-remove]');
+  if (removeButton instanceof HTMLButtonElement) removeButton.hidden = true;
+}
+
+function closeRemoveDialog(dialog) {
+  dialog?.remove();
+  document.documentElement.classList.remove('dialog-open');
+}
+
+function openRemoveDialog(removeButton, message, userId = '') {
+  const backdrop = document.createElement('div');
+  backdrop.className = 'avatar-remove-backdrop';
+  backdrop.dataset.avatarRemoveDialog = '';
+  backdrop.setAttribute('role', 'dialog');
+  backdrop.setAttribute('aria-modal', 'true');
+  backdrop.setAttribute('aria-labelledby', 'avatarRemoveTitle');
+  backdrop.innerHTML = `
+    <section class="avatar-remove-card">
+      <h2 id="avatarRemoveTitle">Remover foto de perfil?</h2>
+      <p>Sua foto atual será removida e o avatar padrão voltará a aparecer.</p>
+      <div class="avatar-remove-actions">
+        <button class="button secondary" type="button" data-avatar-remove-cancel>Cancelar</button>
+        <button class="button primary" type="button" data-avatar-remove-confirm>Remover foto</button>
+      </div>
+    </section>`;
+
+  document.body.append(backdrop);
+  document.documentElement.classList.add('dialog-open');
+
+  const cancel = $('[data-avatar-remove-cancel]', backdrop);
+  const confirm = $('[data-avatar-remove-confirm]', backdrop);
+  if (!(cancel instanceof HTMLButtonElement) || !(confirm instanceof HTMLButtonElement)) {
+    closeRemoveDialog(backdrop);
+    return;
+  }
+
+  const close = () => {
+    document.removeEventListener('keydown', onKeydown);
+    closeRemoveDialog(backdrop);
+    removeButton.focus({ preventScroll: true });
+  };
+  const onKeydown = event => {
+    if (event.key === 'Escape') close();
+  };
+
+  cancel.addEventListener('click', close);
+  backdrop.addEventListener('click', event => {
+    if (event.target === backdrop) close();
+  });
+  document.addEventListener('keydown', onKeydown);
+
+  confirm.addEventListener('click', async () => {
+    setLoading(confirm, true, 'Removendo…');
+    setMessage(message);
+    try {
+      const response = await fetch('/api/auth/avatar', {
+        method: 'DELETE',
+        credentials: 'same-origin',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Não foi possível remover a foto.');
+
+      showAvatarFallback(data.user?.id || userId);
+      window.dispatchEvent(new CustomEvent('fotolife:avatar-updated', {
+        detail: { userId: data.user?.id || userId, avatarUrl: '' },
+      }));
+      setMessage(message, 'Foto removida.', 'success');
+      close();
+    } catch (error) {
+      setMessage(message, error instanceof Error ? error.message : 'Não foi possível remover a foto.', 'error');
+      setLoading(confirm, false);
+    }
+  });
+
+  cancel.focus({ preventScroll: true });
 }
 
 async function uploadAvatar(blob, message) {
@@ -268,10 +369,15 @@ function bindAvatarEditor() {
   const form = $('[data-avatar-form]');
   const input = $('[data-avatar-input]', form);
   const trigger = $('[data-avatar-trigger]');
+  const removeButton = $('[data-avatar-remove]', form);
   if (!form || !input || !trigger || input.dataset.bound === 'true') return;
 
   input.dataset.bound = 'true';
   trigger.addEventListener('click', () => input.click());
+  removeButton?.addEventListener('click', () => {
+    const message = $('[data-form-message]', form);
+    openRemoveDialog(removeButton, message, form.dataset.avatarUserId || '');
+  });
   input.addEventListener('change', () => {
     const file = input.files?.[0];
     if (!file) return;

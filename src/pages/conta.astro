@@ -15,6 +15,7 @@ const account = await getAccountProfile(user.id);
 const publicProfile = await getPublicProfile(account.username);
 const accountSidebar = {
   ...account,
+  id: user.id,
   avatarUrl: publicProfile?.avatarUrl || account.avatarUrl,
 };
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);

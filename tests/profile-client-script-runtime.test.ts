@@ -40,7 +40,7 @@ describe('profile client scripts', () => {
   });
 
   it('loads the avatar editor as a normal public module', () => {
-    expect(sidebar).toContain('<script type="module" src="/profile-avatar.js?v=20260712-5"></script>');
+    expect(sidebar).toContain('<script type="module" src="/profile-avatar.js?v=20260712-6"></script>');
     expect(sidebar).not.toContain('type="module" is:inline src="/profile-avatar.js');
   });
 });

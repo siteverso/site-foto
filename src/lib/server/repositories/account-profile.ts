@@ -10,6 +10,7 @@ type AccountRow = {
     BIO: unknown;
     SEX_CODE: unknown;
     AVATAR_URL: unknown;
+    HAS_CUSTOM_AVATAR: unknown;
     HAS_PASSWORD: unknown;
     HAS_GOOGLE: unknown;
     PHOTO_COUNT: unknown;
@@ -39,6 +40,7 @@ export type AccountProfile = {
     bio: string;
     sexCode: '' | 'M' | 'F';
     avatarUrl: string;
+    hasCustomAvatar: boolean;
     hasPassword: boolean;
     hasGoogle: boolean;
     photoCount: number;
@@ -59,6 +61,7 @@ export async function getAccountProfile(userId: number): Promise<AccountProfile>
                         NVL(u.bio, '') AS bio,
                         NVL(u.sex_code, '') AS sex_code,
                         CASE WHEN u.avatar_image IS NOT NULL THEN '/api/users/' || u.id || '/avatar?v=' || TO_CHAR(u.avatar_updated_at, 'YYYYMMDDHH24MISSFF3') ELSE NVL(u.avatar_url, '') END AS avatar_url,
+                        CASE WHEN u.avatar_image IS NOT NULL OR TRIM(u.avatar_url) IS NOT NULL THEN 1 ELSE 0 END AS has_custom_avatar,
                         NVL(u.observer_visibility_code, 'public') AS observer_visibility_code,
                         NVL2(u.password_hash, 1, 0) AS has_password,
                         NVL2(u.google_sub, 1, 0) AS has_google,
@@ -107,6 +110,7 @@ export async function getAccountProfile(userId: number): Promise<AccountProfile>
             bio: String(row.BIO || ''),
             sexCode: normalizeSexCode(row.SEX_CODE),
             avatarUrl: String(row.AVATAR_URL || ''),
+            hasCustomAvatar: Number(row.HAS_CUSTOM_AVATAR) === 1,
             hasPassword: Number(row.HAS_PASSWORD) === 1,
             hasGoogle: Number(row.HAS_GOOGLE) === 1,
             photoCount: Number(row.PHOTO_COUNT || 0),

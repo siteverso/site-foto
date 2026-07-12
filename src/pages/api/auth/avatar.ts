@@ -50,3 +50,28 @@ export const POST: APIRoute = async context => {
         return errorResponse(error);
     }
 };
+
+export const DELETE: APIRoute = async context => {
+    try {
+        const user = await requireUser(context);
+
+        await withConnection(async connection => {
+            await connection.execute(
+                `UPDATE murm_user
+                 SET avatar_image = NULL,
+                     avatar_mime_type = NULL,
+                     avatar_url = NULL,
+                     avatar_updated_at = SYSTIMESTAMP,
+                     updated_at = SYSTIMESTAMP
+                 WHERE id = :id`,
+                { id: user.id },
+                { autoCommit: true },
+            );
+        });
+
+        invalidateCurrentUser(context);
+        return json({ ok: true, user: await currentUser(context) });
+    } catch (error) {
+        return errorResponse(error);
+    }
+};

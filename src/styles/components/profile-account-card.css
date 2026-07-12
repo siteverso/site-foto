@@ -149,3 +149,51 @@
   display: grid;
   gap: 10px;
 }
+
+.account-avatar-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.account-avatar-actions .profile-account-link { width: 100%; }
+
+.account-avatar-remove {
+  width: 46px;
+  min-height: 46px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: color-mix(in srgb, var(--text) 72%, var(--muted));
+  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--strong) 5%, transparent);
+  cursor: pointer;
+  transition: transform .16s ease, color .16s ease, border-color .16s ease, background .16s ease;
+}
+
+.account-avatar-remove svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.account-avatar-remove:hover {
+  color: #b43a3a;
+  border-color: color-mix(in srgb, #b43a3a 42%, var(--line));
+  background: color-mix(in srgb, #b43a3a 8%, var(--surface));
+  transform: translateY(-1px);
+}
+
+.account-avatar-remove:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
+.account-avatar-remove[hidden] { display: none; }
