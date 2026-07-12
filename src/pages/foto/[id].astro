@@ -4,7 +4,7 @@ import SiteHeader from '../../components/SiteHeader.astro';
 import PhotoMessageComposer from '../../components/PhotoMessageComposer.astro';
 import PhotoLightbox from '../../components/PhotoLightbox.astro';
 import { requireUser } from '../../lib/server/session';
-import { getAdjacentPhotoIds, getComments, getPhotoById } from '../../lib/server/repositories/photos';
+import { getComments, getPhotoById, getPhotoNavigation } from '../../lib/server/repositories/photos';
 import { getMessages, normalizeLocale } from '../../i18n';
 import { MESSAGE_MAX_LENGTH } from '../../lib/message-limit';
 
@@ -24,7 +24,12 @@ const photoId = Number.parseInt(String(Astro.params.id || ''), 10);
 const photo = await getPhotoById(photoId);
 if (!photo) Astro.response.status = 404;
 const isOwner = Boolean(photo && photo.userId === user.id);
-const adjacentPhotos = photo ? await getAdjacentPhotoIds(photo.id) : { previousId: null, nextId: null };
+const photoNavigation = photo
+  ? await getPhotoNavigation(photo.id, photo.userId)
+  : {
+      global: { previousId: null, nextId: null },
+      profile: { previousId: null, nextId: null },
+    };
 const comments = photo
   ? await getComments(photo.id, user.id, 50)
   : { items: [], total: 0 };
@@ -69,13 +74,21 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
 
             <PhotoLightbox
               photoId={photo.id}
+              username={photo.username}
+              caption={photo.caption}
               alt={photo.caption || t.home.today}
-              previousId={adjacentPhotos.previousId}
-              nextId={adjacentPhotos.nextId}
+              globalNavigation={photoNavigation.global}
+              profileNavigation={photoNavigation.profile}
               closeLabel={t.common.close}
               fullscreenLabel={t.home.fullscreenPhoto}
               previousLabel={t.home.previousPhoto}
               nextLabel={t.home.nextPhoto}
+              profileModeLabel={t.home.profilePhotos}
+              globalModeLabel={t.home.globalPhotos}
+              slideshowLabel={t.home.slideshow}
+              pauseLabel={t.home.pauseSlideshow}
+              intervalLabel={t.home.slideshowInterval}
+              effectLabel={t.home.slideshowEffect}
             />
 
             <section class="comments-panel photo-comments" data-comments-panel>
@@ -146,5 +159,5 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
     messageSendError: t.home.messageSendError
   })}></script>
   <script type="module" src="/js/pages/profile.js?v=20260712-2"></script>
-  <script type="module" src="/js/pages/photo-lightbox.js?v=20260712-1"></script>
+  <script type="module" src="/js/pages/photo-lightbox.js?v=20260712-2"></script>
 </AppLayout>

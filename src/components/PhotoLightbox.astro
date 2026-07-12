@@ -1,32 +1,59 @@
 ---
+type AdjacentIds = { previousId: number | null; nextId: number | null };
 type Props = {
   photoId: number;
+  username: string;
+  caption: string;
   alt: string;
-  previousId: number | null;
-  nextId: number | null;
+  globalNavigation: AdjacentIds;
+  profileNavigation: AdjacentIds;
   closeLabel: string;
   fullscreenLabel: string;
   previousLabel: string;
   nextLabel: string;
+  profileModeLabel: string;
+  globalModeLabel: string;
+  slideshowLabel: string;
+  pauseLabel: string;
+  intervalLabel: string;
+  effectLabel: string;
 };
 
 const {
-  photoId,
-  alt,
-  previousId,
-  nextId,
-  closeLabel,
-  fullscreenLabel,
-  previousLabel,
-  nextLabel,
+  photoId, username, caption, alt,
+  globalNavigation, profileNavigation,
+  closeLabel, fullscreenLabel, previousLabel, nextLabel,
+  profileModeLabel, globalModeLabel, slideshowLabel, pauseLabel,
+  intervalLabel, effectLabel,
 } = Astro.props;
 ---
 
-<dialog class="photo-lightbox" data-photo-lightbox aria-label={alt}>
+<dialog
+  class="photo-lightbox"
+  data-photo-lightbox
+  data-global-previous={globalNavigation.previousId ?? ''}
+  data-global-next={globalNavigation.nextId ?? ''}
+  data-profile-previous={profileNavigation.previousId ?? ''}
+  data-profile-next={profileNavigation.nextId ?? ''}
+  data-slideshow-label={slideshowLabel}
+  data-pause-label={pauseLabel}
+  aria-label={alt}
+>
   <div class="photo-lightbox-shell" data-photo-lightbox-shell>
-    <img class="photo-lightbox-image" src={`/api/photos/${photoId}`} alt={alt} />
+    <figure class="photo-lightbox-stage" data-photo-stage>
+      <img class="photo-lightbox-image" src={`/api/photos/${photoId}`} alt={alt} data-photo-lightbox-image />
+      <figcaption class="photo-lightbox-caption">
+        <strong>@{username}</strong>
+        {caption && <span>{caption}</span>}
+      </figcaption>
+      <span class="photo-lightbox-watermark" aria-hidden="true">@{username}</span>
+    </figure>
 
     <div class="photo-lightbox-toolbar">
+      <div class="photo-lightbox-segmented" role="group" aria-label={profileModeLabel}>
+        <button type="button" data-navigation-mode="profile">{profileModeLabel}</button>
+        <button type="button" data-navigation-mode="global">{globalModeLabel}</button>
+      </div>
       <button type="button" class="photo-lightbox-button" data-photo-fullscreen aria-label={fullscreenLabel} title={fullscreenLabel}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
       </button>
@@ -35,24 +62,30 @@ const {
       </button>
     </div>
 
-    {previousId ? (
-      <a class="photo-lightbox-nav photo-lightbox-nav--previous" href={`/foto/${previousId}?viewer=1`} aria-label={previousLabel} title={previousLabel} data-photo-previous>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-      </a>
-    ) : (
-      <button class="photo-lightbox-nav photo-lightbox-nav--previous" type="button" aria-label={previousLabel} disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-      </button>
-    )}
+    <a class="photo-lightbox-nav photo-lightbox-nav--previous" href="#" aria-label={previousLabel} title={previousLabel} data-photo-previous>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <a class="photo-lightbox-nav photo-lightbox-nav--next" href="#" aria-label={nextLabel} title={nextLabel} data-photo-next>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
 
-    {nextId ? (
-      <a class="photo-lightbox-nav photo-lightbox-nav--next" href={`/foto/${nextId}?viewer=1`} aria-label={nextLabel} title={nextLabel} data-photo-next>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-      </a>
-    ) : (
-      <button class="photo-lightbox-nav photo-lightbox-nav--next" type="button" aria-label={nextLabel} disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    <div class="photo-lightbox-slideshow" aria-label={slideshowLabel}>
+      <button type="button" class="photo-lightbox-play" data-slideshow-toggle>
+        <span aria-hidden="true" data-slideshow-icon>▶</span>
+        <span data-slideshow-text>{slideshowLabel}</span>
       </button>
-    )}
+      <label>{intervalLabel}
+        <select data-slideshow-interval>
+          <option value="2000">2s</option><option value="3000">3s</option>
+          <option value="5000" selected>5s</option><option value="8000">8s</option><option value="10000">10s</option>
+        </select>
+      </label>
+      <label>{effectLabel}
+        <select data-slideshow-effect>
+          <option value="fade">Fade</option><option value="slide">Slide</option>
+          <option value="zoom">Zoom</option><option value="dissolve">Dissolve</option>
+        </select>
+      </label>
+    </div>
   </div>
 </dialog>

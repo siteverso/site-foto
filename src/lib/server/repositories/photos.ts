@@ -86,12 +86,20 @@ export type AdjacentPhotoIds = {
     nextId: number | null;
 };
 
-export async function getAdjacentPhotoIds(photoId: number): Promise<AdjacentPhotoIds> {
-    if (!Number.isInteger(photoId) || photoId <= 0) {
-        return { previousId: null, nextId: null };
-    }
+export type PhotoNavigation = {
+    global: AdjacentPhotoIds;
+    profile: AdjacentPhotoIds;
+};
 
+async function getAdjacentPhotoIdsByScope(
+    photoId: number,
+    userId: number | null,
+): Promise<AdjacentPhotoIds> {
     return withConnection(async connection => {
+        const profileFilter = userId == null ? '' : 'AND p.user_id = :user_id';
+        const binds = userId == null
+            ? { photo_id: photoId }
+            : { photo_id: photoId, user_id: userId };
         const result = await connection.execute<OracleRow>(
             `SELECT previous_id, next_id
                FROM (
@@ -103,9 +111,10 @@ export async function getAdjacentPhotoIds(photoId: number): Promise<AdjacentPhot
                     WHERE p.post_type = 'photo'
                       AND p.status = 'published'
                       AND u.active = 1
+                      ${profileFilter}
                )
               WHERE id = :photo_id`,
-            { photo_id: photoId },
+            binds,
         );
         const row = result.rows?.[0];
         return {
@@ -113,6 +122,29 @@ export async function getAdjacentPhotoIds(photoId: number): Promise<AdjacentPhot
             nextId: row?.NEXT_ID == null ? null : Number(row.NEXT_ID),
         };
     });
+}
+
+export async function getPhotoNavigation(photoId: number, userId: number): Promise<PhotoNavigation> {
+    if (!Number.isInteger(photoId) || photoId <= 0 || !Number.isInteger(userId) || userId <= 0) {
+        return {
+            global: { previousId: null, nextId: null },
+            profile: { previousId: null, nextId: null },
+        };
+    }
+
+    const [global, profile] = await Promise.all([
+        getAdjacentPhotoIdsByScope(photoId, null),
+        getAdjacentPhotoIdsByScope(photoId, userId),
+    ]);
+    return { global, profile };
+}
+
+/** Mantido por compatibilidade com chamadas antigas: navegação global. */
+export async function getAdjacentPhotoIds(photoId: number): Promise<AdjacentPhotoIds> {
+    if (!Number.isInteger(photoId) || photoId <= 0) {
+        return { previousId: null, nextId: null };
+    }
+    return getAdjacentPhotoIdsByScope(photoId, null);
 }
 
 export async function getTodayPhoto(userId: number): Promise<PhotoCard | null> {
