@@ -2080,7 +2080,7 @@ html.has-open-dialog { overflow: hidden; }
 }
 .post-dialog.is-finalizing .photo-upload-progress {
   padding: 14px 16px;
-  border: 1px solid var(--line, #deded9);
+  border: 0;
   border-radius: 14px;
   background: color-mix(in srgb, var(--surface, #fff) 92%, transparent);
   box-shadow: 0 12px 34px rgb(0 0 0 / 7%);
@@ -2288,9 +2288,9 @@ img.media-loading {
 }
 
 .photo-post-caption {
-  margin: 18px;
+  margin: 6px;
   padding: 15px 17px;
-  border: 1px solid var(--line, #deded9);
+  border: 0;
   border-radius: 14px;
   color: var(--text, #111);
   background: var(--surface-2, #f7f7f4);
