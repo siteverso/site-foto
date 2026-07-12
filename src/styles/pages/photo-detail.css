@@ -313,6 +313,8 @@ html.photo-lightbox-open {
 
 .photo-lightbox-play { padding: 0 13px; cursor: pointer; }
 .photo-lightbox-slideshow label { display: flex; align-items: center; gap: 7px; font-size: .76rem; opacity: .9; }
+.photo-lightbox-checkbox { padding: 0 6px; }
+.photo-lightbox-checkbox input { accent-color: #75a7ff; }
 .photo-lightbox-slideshow select { padding: 0 9px; cursor: pointer; }
 .photo-lightbox-slideshow option { color: #111; background: #fff; }
 .photo-lightbox-nav[aria-disabled="true"] { opacity: .2; pointer-events: none; }

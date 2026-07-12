@@ -10,6 +10,7 @@ const slideshowText = dialog?.querySelector("[data-slideshow-text]");
 const slideshowIcon = dialog?.querySelector("[data-slideshow-icon]");
 const intervalSelect = dialog?.querySelector("[data-slideshow-interval]");
 const effectSelect = dialog?.querySelector("[data-slideshow-effect]");
+const loopToggle = dialog?.querySelector("[data-slideshow-loop]");
 const image = dialog?.querySelector("[data-photo-lightbox-image]");
 
 const STORAGE_KEY = "fotolife-photo-viewer";
@@ -29,9 +30,19 @@ function getMode() {
   return readPreferences().mode === "global" ? "global" : "profile";
 }
 
+function isLoopEnabled() {
+  return loopToggle instanceof HTMLInputElement ? loopToggle.checked : true;
+}
+
+function getScopedNavigationId(edge) {
+  if (!(dialog instanceof HTMLElement)) return "";
+  return dialog.dataset[`${getMode()}${edge}`] || "";
+}
+
 function buildPhotoUrl(id) {
   const params = new URLSearchParams({ viewer: "1", nav: getMode() });
   if (slideshowRunning) params.set("slideshow", "1");
+  if (isLoopEnabled()) params.set("loop", "1");
   params.set("effect", effectSelect?.value || "fade");
   return `/foto/${id}?${params.toString()}`;
 }
@@ -83,20 +94,34 @@ function stopSlideshow() {
   if (slideshowIcon) slideshowIcon.textContent = "▶";
 }
 
+function getNextSlideshowHref() {
+  if (nextLink instanceof HTMLAnchorElement && nextLink.getAttribute("aria-disabled") !== "true") {
+    return nextLink.href;
+  }
+  if (!isLoopEnabled()) return null;
+  const firstId = getScopedNavigationId("First");
+  return firstId ? buildPhotoUrl(firstId) : null;
+}
+
 function scheduleNext() {
-  if (!slideshowRunning || !(nextLink instanceof HTMLAnchorElement) || nextLink.getAttribute("aria-disabled") === "true") {
+  if (!slideshowRunning) {
+    stopSlideshow();
+    return;
+  }
+  const nextHref = getNextSlideshowHref();
+  if (!nextHref) {
     stopSlideshow();
     return;
   }
   const delay = Number(intervalSelect?.value || 5000);
-  slideshowTimer = window.setTimeout(() => { window.location.href = nextLink.href; }, delay);
+  slideshowTimer = window.setTimeout(() => { window.location.href = nextHref; }, delay);
 }
 
 function startSlideshow() {
   slideshowRunning = true;
   if (slideshowText) slideshowText.textContent = dialog?.dataset.pauseLabel || "Pause";
   if (slideshowIcon) slideshowIcon.textContent = "❚❚";
-  savePreferences({ interval: intervalSelect?.value, effect: effectSelect?.value });
+  savePreferences({ interval: intervalSelect?.value, effect: effectSelect?.value, loop: isLoopEnabled() });
   applyNavigationMode(getMode());
   scheduleNext();
 }
@@ -138,6 +163,13 @@ intervalSelect?.addEventListener("change", () => {
   if (slideshowRunning) { if (slideshowTimer) clearTimeout(slideshowTimer); scheduleNext(); }
 });
 effectSelect?.addEventListener("change", () => { savePreferences({ effect: effectSelect.value }); applyEffect(effectSelect.value); });
+loopToggle?.addEventListener("change", () => {
+  savePreferences({ loop: isLoopEnabled() });
+  if (slideshowRunning) {
+    if (slideshowTimer) clearTimeout(slideshowTimer);
+    scheduleNext();
+  }
+});
 
 document.addEventListener("keydown", event => {
   if (!(dialog instanceof HTMLDialogElement) || !dialog.open) return;
@@ -148,9 +180,13 @@ document.addEventListener("keydown", event => {
 });
 
 const preferences = readPreferences();
+const urlParams = new URLSearchParams(location.search);
 if (intervalSelect && preferences.interval) intervalSelect.value = preferences.interval;
-if (effectSelect) effectSelect.value = new URLSearchParams(location.search).get("effect") || preferences.effect || "fade";
+if (effectSelect) effectSelect.value = urlParams.get("effect") || preferences.effect || "fade";
+if (loopToggle instanceof HTMLInputElement) {
+  loopToggle.checked = urlParams.get("loop") === "1" || preferences.loop !== false;
+}
 applyEffect(effectSelect?.value || "fade");
-applyNavigationMode(new URLSearchParams(location.search).get("nav") || getMode());
-if (new URLSearchParams(location.search).get("viewer") === "1") openLightbox();
-if (new URLSearchParams(location.search).get("slideshow") === "1") startSlideshow();
+applyNavigationMode(urlParams.get("nav") || getMode());
+if (urlParams.get("viewer") === "1") openLightbox();
+if (urlParams.get("slideshow") === "1") startSlideshow();

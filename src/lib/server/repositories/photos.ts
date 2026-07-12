@@ -84,6 +84,8 @@ export async function getPhotoById(photoId: number): Promise<PhotoCard | null> {
 export type AdjacentPhotoIds = {
     previousId: number | null;
     nextId: number | null;
+    firstId: number | null;
+    lastId: number | null;
 };
 
 export type PhotoNavigation = {
@@ -101,11 +103,19 @@ async function getAdjacentPhotoIdsByScope(
             ? { photo_id: photoId }
             : { photo_id: photoId, user_id: userId };
         const result = await connection.execute<OracleRow>(
-            `SELECT previous_id, next_id
+            `SELECT previous_id, next_id, first_id, last_id
                FROM (
                    SELECT p.id,
                           LAG(p.id) OVER (ORDER BY p.created_at, p.id) AS previous_id,
-                          LEAD(p.id) OVER (ORDER BY p.created_at, p.id) AS next_id
+                          LEAD(p.id) OVER (ORDER BY p.created_at, p.id) AS next_id,
+                          FIRST_VALUE(p.id) OVER (
+                              ORDER BY p.created_at, p.id
+                              ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+                          ) AS first_id,
+                          LAST_VALUE(p.id) OVER (
+                              ORDER BY p.created_at, p.id
+                              ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+                          ) AS last_id
                      FROM murm_post p
                      JOIN murm_user u ON u.id = p.user_id
                     WHERE p.post_type = 'photo'
@@ -120,6 +130,8 @@ async function getAdjacentPhotoIdsByScope(
         return {
             previousId: row?.PREVIOUS_ID == null ? null : Number(row.PREVIOUS_ID),
             nextId: row?.NEXT_ID == null ? null : Number(row.NEXT_ID),
+            firstId: row?.FIRST_ID == null ? null : Number(row.FIRST_ID),
+            lastId: row?.LAST_ID == null ? null : Number(row.LAST_ID),
         };
     });
 }
@@ -127,8 +139,8 @@ async function getAdjacentPhotoIdsByScope(
 export async function getPhotoNavigation(photoId: number, userId: number): Promise<PhotoNavigation> {
     if (!Number.isInteger(photoId) || photoId <= 0 || !Number.isInteger(userId) || userId <= 0) {
         return {
-            global: { previousId: null, nextId: null },
-            profile: { previousId: null, nextId: null },
+            global: { previousId: null, nextId: null, firstId: null, lastId: null },
+            profile: { previousId: null, nextId: null, firstId: null, lastId: null },
         };
     }
 
@@ -142,7 +154,7 @@ export async function getPhotoNavigation(photoId: number, userId: number): Promi
 /** Mantido por compatibilidade com chamadas antigas: navegação global. */
 export async function getAdjacentPhotoIds(photoId: number): Promise<AdjacentPhotoIds> {
     if (!Number.isInteger(photoId) || photoId <= 0) {
-        return { previousId: null, nextId: null };
+        return { previousId: null, nextId: null, firstId: null, lastId: null };
     }
     return getAdjacentPhotoIdsByScope(photoId, null);
 }

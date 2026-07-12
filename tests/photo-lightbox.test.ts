@@ -23,21 +23,26 @@ describe('visualizador avançado de foto', () => {
     expect(script).toContain('applyNavigationMode');
   });
 
-  it('calcula as duas navegações sem duplicar a consulta base', () => {
+  it('calcula as duas navegações com bordas para suportar loop sem duplicar a consulta base', () => {
     expect(repository).toContain('getAdjacentPhotoIdsByScope');
     expect(repository).toContain('getPhotoNavigation');
     expect(repository).toContain('p.user_id = :user_id');
     expect(repository).toContain('LAG(p.id)');
     expect(repository).toContain('LEAD(p.id)');
+    expect(repository).toContain('FIRST_VALUE(p.id)');
+    expect(repository).toContain('LAST_VALUE(p.id)');
   });
 
-  it('inclui slideshow configurável, efeitos, caption e marca d’água', () => {
+  it('inclui slideshow configurável, loop padrão, efeitos, caption e marca d’água', () => {
     expect(component).toContain('data-slideshow-toggle');
     expect(component).toContain('data-slideshow-interval');
     expect(component).toContain('data-slideshow-effect');
+    expect(component).toContain('data-slideshow-loop');
     expect(component).toContain('photo-lightbox-watermark');
     expect(component).toContain('@{username}');
     expect(script).toContain('fotolife-photo-viewer');
+    expect(script).toContain('getNextSlideshowHref');
+    expect(script).toContain('isLoopEnabled');
     expect(css).toContain('@keyframes photoFade');
     expect(css).toContain('height: 100dvh');
     expect(css).toContain('object-fit: contain');

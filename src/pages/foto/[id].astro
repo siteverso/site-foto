@@ -27,8 +27,8 @@ const isOwner = Boolean(photo && photo.userId === user.id);
 const photoNavigation = photo
   ? await getPhotoNavigation(photo.id, photo.userId)
   : {
-      global: { previousId: null, nextId: null },
-      profile: { previousId: null, nextId: null },
+      global: { previousId: null, nextId: null, firstId: null, lastId: null },
+      profile: { previousId: null, nextId: null, firstId: null, lastId: null },
     };
 const comments = photo
   ? await getComments(photo.id, user.id, 50)
@@ -89,6 +89,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
               pauseLabel={t.home.pauseSlideshow}
               intervalLabel={t.home.slideshowInterval}
               effectLabel={t.home.slideshowEffect}
+              loopLabel={t.home.loopSlideshow}
             />
 
             <section class="comments-panel photo-comments" data-comments-panel>

@@ -1,5 +1,5 @@
 ---
-type AdjacentIds = { previousId: number | null; nextId: number | null };
+type AdjacentIds = { previousId: number | null; nextId: number | null; firstId: number | null; lastId: number | null };
 type Props = {
   photoId: number;
   username: string;
@@ -17,6 +17,7 @@ type Props = {
   pauseLabel: string;
   intervalLabel: string;
   effectLabel: string;
+  loopLabel: string;
 };
 
 const {
@@ -24,7 +25,7 @@ const {
   globalNavigation, profileNavigation,
   closeLabel, fullscreenLabel, previousLabel, nextLabel,
   profileModeLabel, globalModeLabel, slideshowLabel, pauseLabel,
-  intervalLabel, effectLabel,
+  intervalLabel, effectLabel, loopLabel,
 } = Astro.props;
 ---
 
@@ -33,8 +34,12 @@ const {
   data-photo-lightbox
   data-global-previous={globalNavigation.previousId ?? ''}
   data-global-next={globalNavigation.nextId ?? ''}
+  data-global-first={globalNavigation.firstId ?? ''}
+  data-global-last={globalNavigation.lastId ?? ''}
   data-profile-previous={profileNavigation.previousId ?? ''}
   data-profile-next={profileNavigation.nextId ?? ''}
+  data-profile-first={profileNavigation.firstId ?? ''}
+  data-profile-last={profileNavigation.lastId ?? ''}
   data-slideshow-label={slideshowLabel}
   data-pause-label={pauseLabel}
   aria-label={alt}
@@ -85,6 +90,10 @@ const {
           <option value="fade">Fade</option><option value="slide">Slide</option>
           <option value="zoom">Zoom</option><option value="dissolve">Dissolve</option>
         </select>
+      </label>
+      <label class="photo-lightbox-checkbox">
+        <input type="checkbox" data-slideshow-loop checked />
+        <span>{loopLabel}</span>
       </label>
     </div>
   </div>
