@@ -76,17 +76,23 @@ export async function getAccountProfile(userId: number): Promise<AccountProfile>
             db.execute<ObservedRow>(
                 `SELECT observed.id,
                         observed.username,
-                        NVL(observed.avatar_url, '') AS avatar_url,
-                        CASE WHEN hidden.hidden_user_id IS NULL THEN 0 ELSE 1 END AS is_hidden
-                   FROM murm_friend friendship
-                   JOIN murm_user observed
-                     ON observed.id = friendship.friend_user_id
-                    AND observed.active = 1
-                   LEFT JOIN murm_observer_hidden hidden
-                     ON hidden.owner_user_id = friendship.user_id
-                    AND hidden.hidden_user_id = friendship.friend_user_id
-                  WHERE friendship.user_id = :id
-                    AND friendship.status = 'A'
+                        CASE WHEN observed.avatar_image IS NOT NULL THEN '/api/users/' || observed.id || '/avatar?v=' || TO_CHAR(observed.avatar_updated_at, 'YYYYMMDDHH24MISSFF3') ELSE NVL(observed.avatar_url, '') END AS avatar_url,
+                        CASE WHEN EXISTS (
+                            SELECT 1
+                              FROM murm_observer_hidden hidden
+                             WHERE hidden.owner_user_id = :id
+                               AND hidden.hidden_user_id = observed.id
+                        ) THEN 1 ELSE 0 END AS is_hidden
+                   FROM murm_user observed
+                  WHERE observed.active = 1
+                    AND observed.id <> :id
+                    AND EXISTS (
+                        SELECT 1
+                          FROM murm_friend friendship
+                         WHERE friendship.user_id = :id
+                           AND friendship.friend_user_id = observed.id
+                           AND friendship.status = 'A'
+                    )
                   ORDER BY LOWER(observed.username)`,
                 { id: userId },
             ),
@@ -172,6 +178,7 @@ export async function updateAccountProfile(userId: number, input: {
                             FROM murm_friend f
                            WHERE f.user_id = :owner_user_id
                              AND f.friend_user_id = :hidden_user_id
+                             AND f.friend_user_id <> f.user_id
                              AND f.status = 'A'
                       )`,
                     { owner_user_id: userId, hidden_user_id: hiddenUserId },
