@@ -260,11 +260,11 @@ export async function saveTodayPhoto(input: {
     filename: string;
     mimeType: string;
     image: Buffer;
-}): Promise<void> {
+}): Promise<number> {
     const limit = positiveInteger(import.meta.env.PHOTO_POST_LIMIT, 1);
     const periodMinutes = positiveInteger(import.meta.env.PHOTO_POST_PERIOD_MINUTES, 1);
 
-    await withConnection(async connection => {
+    return withConnection(async connection => {
         try {
             await connection.execute(
                 `SELECT id
@@ -290,21 +290,24 @@ export async function saveTodayPhoto(input: {
             const total = Number(result.rows?.[0]?.TOTAL || 0);
             if (total >= limit) throw new PhotoLimitError(limit, periodMinutes);
 
-            await connection.execute(
+            const insertResult = await connection.execute(
                 `INSERT INTO murm_post
                     (user_id, contents, post_type, photo_day, image_blob, image_filename, image_mime_type)
                  VALUES
-                    (:user_id, :contents, 'photo', TRUNC(CURRENT_DATE), :image_blob, :image_filename, :image_mime_type)`,
+                    (:user_id, :contents, 'photo', TRUNC(CURRENT_DATE), :image_blob, :image_filename, :image_mime_type)
+                 RETURNING id INTO :id`,
                 {
                     user_id: input.userId,
                     contents: input.caption || 'Foto',
                     image_blob: { val: input.image, type: oracledb.BLOB },
                     image_filename: input.filename,
                     image_mime_type: input.mimeType,
+                    id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
                 },
             );
 
             await connection.commit();
+            return Number((insertResult.outBinds as { id?: number[] } | undefined)?.id?.[0] || 0);
         } catch (error) {
             await connection.rollback();
             throw error;

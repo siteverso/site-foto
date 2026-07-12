@@ -23,8 +23,9 @@ export const POST: APIRoute = async (context: APIContext) => {
 
     if (!stagedPhoto) return new Response('Envio expirado ou inválido. Escolha a foto novamente.', { status: 400 });
 
+    let photoId = 0;
     try {
-        await saveTodayPhoto({
+        photoId = await saveTodayPhoto({
             userId: user.id,
             caption,
             filename: stagedPhoto.filename,
@@ -60,5 +61,5 @@ export const POST: APIRoute = async (context: APIContext) => {
         throw error;
     }
 
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, photoId });
 };

@@ -382,6 +382,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     let uploadPromise: Promise<string> | null = null;
     let activeUpload: XMLHttpRequest | null = null;
     let previewReady = false;
+    let isPublishing = false;
 
     const updatePublishAvailability = () => {
       if (publishButton) publishButton.disabled = !(uploadToken && previewReady);
@@ -404,9 +405,28 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     };
 
     const setPostDialogOpen = (open: boolean) => {
-      if (!postDialog) return;
+      if (!postDialog || (!open && isPublishing)) return;
       postDialog.hidden = !open;
+      postDialog.classList.remove('is-closing');
       document.documentElement.classList.toggle('dialog-open', open);
+    };
+
+    const preloadPublishedPhoto = async (photoId: number) => {
+      if (!Number.isInteger(photoId) || photoId <= 0) throw new Error('A foto foi publicada, mas não foi possível confirmar seu carregamento.');
+      const image = new Image();
+      image.decoding = 'async';
+      image.src = `/api/photos/${photoId}?published=${Date.now()}`;
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error('A foto foi publicada, mas ainda não carregou. Tente novamente em instantes.'));
+      });
+      if (typeof image.decode === 'function') await image.decode().catch(() => undefined);
+    };
+
+    const fadeOutPublishedDialog = async () => {
+      if (!postDialog) return;
+      postDialog.classList.add('is-closing');
+      await new Promise(resolve => window.setTimeout(resolve, 420));
     };
 
     document.querySelector('[data-open-post-dialog]')?.addEventListener('click', () => setPostDialogOpen(true));
@@ -500,14 +520,35 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         if (!token || !previewReady) throw new Error('Aguarde a imagem terminar de carregar.');
         if (status) status.textContent = 'Publicando…';
         const caption = String(new FormData(postForm).get('caption') || '');
+        isPublishing = true;
+        postDialog?.classList.add('is-finalizing');
+        postDialog?.setAttribute('aria-busy', 'true');
+        if (status) status.textContent = 'Publicando sua foto…';
+        if (percent) percent.textContent = '100%';
+        if (fill) fill.style.width = '100%';
+
         const response = await fetch('/api/photos/today', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uploadToken: token, caption }),
         });
         if (!response.ok) throw new Error(await responseError(response));
+        const result = await response.json() as { photoId?: number };
+
+        if (status) status.textContent = 'Carregando no perfil…';
+        postDialog?.classList.add('is-loading-published-photo');
+        await preloadPublishedPhoto(Number(result.photoId || 0));
+
+        if (status) status.textContent = 'Foto publicada';
+        postDialog?.classList.remove('is-loading-published-photo');
+        postDialog?.classList.add('is-published');
+        await new Promise(resolve => window.setTimeout(resolve, 260));
+        await fadeOutPublishedDialog();
         location.reload();
       } catch (error) {
+        isPublishing = false;
+        postDialog?.classList.remove('is-finalizing', 'is-loading-published-photo', 'is-published', 'is-closing');
+        postDialog?.removeAttribute('aria-busy');
         updatePublishAvailability();
         showPostMessage(error instanceof Error ? error.message : 'Não foi possível publicar.');
       }
