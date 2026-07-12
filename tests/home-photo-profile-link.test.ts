@@ -8,9 +8,12 @@ const page = readFileSync(pagePath, 'utf8');
 const css = readFileSync(cssPath, 'utf8');
 
 describe('Home photo profile navigation', () => {
-  it('links both server-rendered and dynamically loaded photos to the photo detail', () => {
-    expect(page).toContain('class="photo-post-image-link" href={`/foto/${photo.id}`}');
-    expect(page).toContain('class="photo-post-image-link" href="/foto/${photo.id}"');
+  it('links server-rendered, dynamically loaded and update-list photos to the owner profile', () => {
+    expect(page).toContain('href={`/perfil/${photo.username}`} data-live-key={`update-${photo.id}`}');
+    expect(page).toContain('class="photo-post-image-link" href={`/perfil/${photo.username}`}');
+    expect(page).toContain('class="photo-post-image-link" href="/perfil/${encodeURIComponent(photo.username)}"');
+    expect(page).not.toContain('class="photo-post-image-link" href={`/foto/${photo.id}`}');
+    expect(page).not.toContain('class="photo-post-image-link" href="/foto/${photo.id}"');
   });
 
   it('gives the caption modern spacing without an inner border', () => {
