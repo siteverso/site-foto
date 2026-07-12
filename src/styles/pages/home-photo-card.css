@@ -1,0 +1,32 @@
+/* FotoLife: foto da Home como acesso ao perfil e legenda com respiro */
+.photo-post-image-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.photo-post-image-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -4px;
+}
+
+.photo-post-caption {
+  margin: 6px;
+  padding: 15px 17px;
+  border: 0;
+  border-radius: 14px;
+  color: var(--text, #111);
+  background: var(--surface-2, #f7f7f4);
+  font-size: 0.94rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .photo-post-caption {
+    margin: 14px;
+    padding: 13px 14px;
+    border-radius: 12px;
+  }
+}

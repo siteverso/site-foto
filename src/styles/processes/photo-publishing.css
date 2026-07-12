@@ -1,0 +1,75 @@
+/* FotoLife: finalização inteligente da publicação no perfil */
+.post-dialog,
+.post-dialog-backdrop,
+.post-dialog-card {
+  transition: opacity .38s ease, transform .38s ease, filter .38s ease;
+}
+.post-dialog.is-finalizing .post-dialog-card {
+  cursor: wait;
+}
+.post-dialog.is-finalizing .post-dialog-card > header button,
+.post-dialog.is-finalizing .upload-drop,
+.post-dialog.is-finalizing textarea,
+.post-dialog.is-finalizing [data-publish-button] {
+  pointer-events: none;
+}
+.post-dialog.is-finalizing .post-dialog-card > header button {
+  opacity: .24;
+}
+.post-dialog.is-finalizing .upload-drop,
+.post-dialog.is-finalizing textarea {
+  opacity: .48;
+  filter: saturate(.72);
+}
+.post-dialog.is-finalizing .photo-upload-progress {
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface, #fff) 92%, transparent);
+  box-shadow: 0 12px 34px rgb(0 0 0 / 7%);
+}
+.post-dialog.is-loading-published-photo .photo-upload-progress-track span {
+  width: 42% !important;
+  animation: published-photo-loading 1.05s ease-in-out infinite;
+}
+.post-dialog.is-published .photo-upload-progress-track span {
+  width: 100% !important;
+  animation: none;
+}
+.post-dialog.is-published .photo-upload-progress-head span::before {
+  content: '✓';
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  color: var(--surface, #fff);
+  font-size: .72rem;
+}
+.post-dialog.is-closing {
+  opacity: 0;
+  pointer-events: none;
+}
+.post-dialog.is-closing .post-dialog-backdrop {
+  opacity: 0;
+}
+.post-dialog.is-closing .post-dialog-card {
+  opacity: 0;
+  transform: translateY(12px) scale(.985);
+  filter: blur(2px);
+}
+@keyframes published-photo-loading {
+  0% { transform: translateX(-115%); }
+  55% { transform: translateX(85%); }
+  100% { transform: translateX(235%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .post-dialog,
+  .post-dialog-backdrop,
+  .post-dialog-card { transition-duration: .01ms; }
+  .post-dialog.is-loading-published-photo .photo-upload-progress-track span { animation: none; width: 100% !important; }
+}
+
+
