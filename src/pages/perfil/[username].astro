@@ -2,7 +2,7 @@
 import AppLayout from '../../layouts/AppLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import { requireUser } from '../../lib/server/session';
-import { getComments, getFriendPhotos, getLatestPhotos, getPublicProfile, getUserPhotos, isFriend } from '../../lib/server/repositories/photos';
+import { getComments, getLatestPhotos, getObservedPhotos, getObserverPhotos, getPublicProfile, getUserPhotos, isFriend } from '../../lib/server/repositories/photos';
 import { getMessages, normalizeLocale } from '../../i18n';
 import { MESSAGE_MAX_LENGTH } from '../../lib/message-limit';
 import { canViewObservedList } from '../../lib/observer-visibility';
@@ -17,8 +17,9 @@ const isOwner = Boolean(profile && profile.id === user.id);
 const photos = profile ? await getUserPhotos(profile.username) : [];
 const alreadyFriend = profile && !isOwner ? await isFriend(user.id, profile.id) : false;
 const showObservedList = Boolean(profile && canViewObservedList(profile.id, user.id, profile.observerVisibility));
-const [friendPhotos, latestPhotos, commentsByPhoto] = await Promise.all([
-  profile && showObservedList ? getFriendPhotos(profile.id, isOwner) : Promise.resolve([]),
+const [observerPhotos, observedPhotos, latestPhotos, commentsByPhoto] = await Promise.all([
+  profile ? getObserverPhotos(profile.id) : Promise.resolve([]),
+  profile && showObservedList ? getObservedPhotos(profile.id, isOwner) : Promise.resolve([]),
   profile ? getLatestPhotos(profile.id) : Promise.resolve([]),
   Promise.all(photos.map(async photo => ({ photoId: photo.id, comments: await getComments(photo.id, user.id, 50) }))),
 ]);
@@ -32,44 +33,48 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     {profile ? (
       <section class="flog-grid">
         <aside class="flog-panel">
-          <div class="user-profile-intro user-profile-intro-sidebar">
-            {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`@${profile.username}`} /> : <span>{profile.username.slice(0,2).toUpperCase()}</span>}
-            <div><h1>@{profile.username}</h1>{profile.bio && <p>{profile.bio}</p>}</div>
-          </div>
+          <section class="profile-summary-card">
+            <div class="user-profile-intro user-profile-intro-sidebar">
+              {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`@${profile.username}`} /> : <span>{profile.username.slice(0,2).toUpperCase()}</span>}
+              <div><h1>@{profile.username}</h1>{profile.bio && <p>{profile.bio}</p>}</div>
+            </div>
 
-          {!isOwner && (
-            <button
-              class="friend-button"
-              type="button"
-              data-add-friend
-              data-user-id={profile.id}
-              disabled={alreadyFriend}
-            >
-              {alreadyFriend ? t.publicProfile.alreadyFriend : t.publicProfile.addFriend}
-            </button>
-          )}
+            {!isOwner && (
+              <button
+                class="friend-button"
+                type="button"
+                data-add-friend
+                data-user-id={profile.id}
+                disabled={alreadyFriend}
+              >
+                {alreadyFriend ? t.publicProfile.alreadyFriend : t.publicProfile.addFriend}
+              </button>
+            )}
+          </section>
 
-          {showObservedList && friendPhotos.length > 0 && (
-            <section class="profile-friends" data-profile-friends>
-              <h2>{t.publicProfile.friends}</h2>
-              <div class="photo-mini-grid" data-live-section="profile-observers" data-live-list>{friendPhotos.map(item => (
-                <article class="photo-mini-card" data-live-key={`observer-${item.id}`} data-friend-user-id={item.userId}>
-                  {isOwner && (
-                    <button
-                      class="photo-mini-remove"
-                      type="button"
-                      data-remove-friend
-                      data-user-id={item.userId}
-                      aria-label={`Remover @${item.username} dos observados`}
-                      title={`Remover @${item.username} dos observados`}
-                    >×</button>
-                  )}
-                  <a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a>
-                  <div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div>
-                </article>
-              ))}</div>
-            </section>
-          )}
+          <section class="profile-side-section" data-profile-observed data-empty-message={`Ainda não há perfis observados por este usuário (@${profile.username}).`}>
+            <h2>Observados</h2>
+            {showObservedList ? (
+              observedPhotos.length ? (
+                <div class="photo-mini-grid" data-live-section="profile-observed" data-live-list>{observedPhotos.map(item => (
+                  <article class="photo-mini-card" data-live-key={`observed-${item.userId}`} data-observed-user-id={item.userId}>
+                    {isOwner && (
+                      <button
+                        class="photo-mini-remove"
+                        type="button"
+                        data-remove-friend
+                        data-user-id={item.userId}
+                        aria-label={`Remover @${item.username} dos observados`}
+                        title={`Remover @${item.username} dos observados`}
+                      >×</button>
+                    )}
+                    <a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a>
+                    <div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div>
+                  </article>
+                ))}</div>
+              ) : <p class="empty-state">Ainda não há perfis observados por este usuário (@{profile.username}).</p>
+            ) : <p class="empty-state">Esta lista é privada.</p>}
+          </section>
         </aside>
 
         <section class="flog-center">
@@ -95,13 +100,19 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                     <section class="comments-panel" data-comments-panel>
                       <h2>{t.home.comments}</h2>
                       <div class="comment-list" data-comment-list hidden={!comments?.items.length}>{comments?.items.map(comment => (
-                        <article class:list={["comment-item", { "comment-item-private": comment.isPrivate }]} data-comment-item data-comment-id={comment.id}>
+                        <article class:list={[
+                          "comment-item",
+                          {
+                            "comment-item-private-visible": comment.isPrivate && comment.canRead,
+                            "comment-item-private-hidden": comment.isPrivate && !comment.canRead,
+                          },
+                        ]} data-comment-item data-comment-id={comment.id}>
                           <div class="comment-content">
                             <a class="comment-user" href={`/perfil/${comment.username}`}><strong>@{comment.username}</strong></a>
                             {comment.isPrivate && !comment.canRead
-                              ? <p class="private-comment-placeholder"><span aria-hidden="true">🔒</span> Mensagem privada</p>
+                              ? <p class="private-comment-placeholder private-comment-placeholder-hidden"><span aria-hidden="true">🔒</span> Mensagem privada</p>
                               : <>
-                                  {comment.isPrivate && <div class="private-comment-badge"><span aria-hidden="true">🔒</span> Mensagem privada</div>}
+                                  {comment.isPrivate && <div class="private-comment-badge private-comment-badge-visible"><span aria-hidden="true">🔒</span> Mensagem privada</div>}
                                   <p class:list={[{ "private-comment-message": comment.isPrivate }]}>{comment.message}</p>
                                 </>}
                             <div class="comment-meta">
@@ -140,10 +151,24 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         </section>
 
         <aside class="flog-panel">
-          <h2>{t.home.updates}</h2>
-          {latestPhotos.length ? <div class="photo-mini-grid" data-live-section="profile-updates" data-live-list>{latestPhotos.map(item => (
-            <article class="photo-mini-card" data-live-key={`update-${item.id}`}><a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a><div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div></article>
-          ))}</div> : <p class="empty-state">{t.home.noUpdates}</p>}
+          <section class="profile-side-section">
+            <h2>Observadores</h2>
+            {observerPhotos.length ? (
+              <div class="photo-mini-grid" data-live-section="profile-observers" data-live-list>{observerPhotos.map(item => (
+                <article class="photo-mini-card" data-live-key={`observer-${item.userId}`}>
+                  <a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a>
+                  <div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div>
+                </article>
+              ))}</div>
+            ) : <p class="empty-state">Ainda não há observadores.</p>}
+          </section>
+
+          <section class="profile-side-section profile-updates-section">
+            <h2>{t.home.updates}</h2>
+            {latestPhotos.length ? <div class="photo-mini-grid" data-live-section="profile-updates" data-live-list>{latestPhotos.map(item => (
+              <article class="photo-mini-card" data-live-key={`update-${item.id}`}><a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a><div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div></article>
+            ))}</div> : <p class="empty-state">{t.home.noUpdates}</p>}
+          </section>
         </aside>
       </section>
     ) : <section class="public-profile-not-found"><h1>{t.publicProfile.notFound}</h1><a href="/">{t.publicProfile.back}</a></section>}
@@ -198,9 +223,16 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           alert(await response.text());
           return;
         }
-        document.querySelectorAll<HTMLElement>(`[data-friend-user-id="${CSS.escape(userId)}"]`).forEach(card => card.remove());
-        const section = document.querySelector<HTMLElement>('[data-profile-friends]');
-        if (section && !section.querySelector('[data-friend-user-id]')) section.remove();
+        document.querySelectorAll<HTMLElement>(`[data-observed-user-id="${CSS.escape(userId)}"]`).forEach(card => card.remove());
+        const section = document.querySelector<HTMLElement>('[data-profile-observed]');
+        const grid = section?.querySelector('[data-live-list]');
+        if (section && grid && !grid.querySelector('[data-observed-user-id]')) {
+          grid.remove();
+          const empty = document.createElement('p');
+          empty.className = 'empty-state';
+          empty.textContent = section.dataset.emptyMessage || 'Ainda não há perfis observados por este usuário.';
+          section.append(empty);
+        }
         return;
       }
 
@@ -430,6 +462,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         const empty = panel?.querySelector<HTMLElement>('[data-comment-empty]');
         const messageBox = panel?.querySelector<HTMLElement>('[data-comment-message]');
         const message = field.value.trim();
+        const isPrivate = Boolean(privateField?.checked);
         if (!message || form.dataset.sending === 'true') return;
 
         form.dataset.sending = 'true';
@@ -441,7 +474,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           const response = await fetch('/api/comments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ postId: Number(form.dataset.postId), message, private: Boolean(privateField?.checked) }),
+            body: JSON.stringify({ postId: Number(form.dataset.postId), message, private: isPrivate }),
           });
           const data = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(String(data.error || 'Não foi possível enviar a mensagem.'));
@@ -455,13 +488,12 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             const content = document.createElement('div');
             const deleteArea = document.createElement('div');
             const deleteButton = document.createElement('button');
-            const isPrivate = Boolean(privateField?.checked);
             userLink.className = 'comment-user';
             userLink.href = `/perfil/${encodeURIComponent(String(data.comment.username))}`;
             strong.textContent = `@${data.comment.username}`;
             text.textContent = String(data.comment.message || message);
             time.textContent = formatCommentDate(String(data.comment.createdAt || new Date().toISOString()));
-            article.className = isPrivate ? 'comment-item comment-item-private' : 'comment-item';
+            article.className = isPrivate ? 'comment-item comment-item-private-visible' : 'comment-item';
             article.dataset.commentItem = '';
             article.dataset.commentId = String(data.comment.id || '');
             content.className = 'comment-content';
@@ -481,7 +513,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             content.append(userLink);
             if (isPrivate) {
               const badge = document.createElement('div');
-              badge.className = 'private-comment-badge';
+              badge.className = 'private-comment-badge private-comment-badge-visible';
               badge.innerHTML = '<span aria-hidden="true">🔒</span> Mensagem privada';
               text.className = 'private-comment-message';
               content.append(badge);
@@ -557,42 +589,55 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
   }
   .private-toggle input:focus-visible + span { outline: 2px solid #35d6c1; outline-offset: 2px; }
 
-  .comment-item-private {
-    border: 1px solid rgb(46 202 180 / .42);
-    background: linear-gradient(135deg, rgb(240 252 250 / .82), rgb(242 248 255 / .9));
-    box-shadow: 0 8px 24px rgb(35 142 168 / .07);
+  :global(.comment-item-private-visible) {
+    border: 1px solid rgb(92 194 122 / .34);
+    background: linear-gradient(135deg, rgb(243 251 244 / .96), rgb(239 248 241 / .98));
+    box-shadow: 0 8px 22px rgb(74 145 95 / .06);
   }
-  .private-comment-badge {
+  :global(.comment-item-private-hidden) {
+    border: 1px solid rgb(226 151 151 / .34);
+    background: linear-gradient(135deg, rgb(253 245 245 / .98), rgb(252 241 241 / .98));
+    box-shadow: 0 8px 22px rgb(164 91 91 / .05);
+  }
+  :global(.private-comment-badge),
+  :global(.private-comment-placeholder) {
     width: fit-content;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    margin: 4px 0 8px;
-    padding: 5px 9px;
-    border: 1px solid rgb(44 205 177 / .4);
+    gap: 5px;
+    margin: 3px 0 7px;
+    padding: 4px 8px;
+    border: 1px solid #d9ddd7;
     border-radius: 999px;
-    background: linear-gradient(135deg, rgb(8 47 51 / .96), rgb(14 73 79 / .94));
-    color: #eafffb;
+    background: #f7f8f6;
+    color: #6f756d;
     font-size: .72rem;
-    font-weight: 800;
-    letter-spacing: .045em;
-    text-transform: uppercase;
-    box-shadow: 0 0 0 1px rgb(70 224 197 / .08), 0 0 14px rgb(40 180 255 / .13), 0 0 20px rgb(46 230 176 / .08);
-  }
-  .private-comment-badge span { filter: saturate(.75); }
-  .private-comment-message {
-    margin-top: 2px;
-  }
-  .private-comment-placeholder {
-    width: fit-content;
-    padding: 7px 11px;
-    border: 1px dashed #c9c9c2;
-    border-radius: 999px;
-    background: #f4f4f0;
-    color: #777;
-    font-size: .78rem;
-    font-style: italic;
+    font-weight: 600;
+    line-height: 1.2;
     letter-spacing: .01em;
+    text-transform: none;
+    box-shadow: none;
+  }
+  :global(.private-comment-badge span),
+  :global(.private-comment-placeholder span) {
+    font-size: .78rem;
+    filter: grayscale(.2) saturate(.7);
+  }
+  :global(.private-comment-badge-visible) {
+    border-color: rgb(164 212 175 / .72);
+    background: rgb(244 250 244 / .95);
+    color: rgb(70 111 79 / .96);
+  }
+  :global(.private-comment-placeholder-hidden) {
+    border-color: rgb(233 193 193 / .84);
+    background: rgb(253 245 245 / .98);
+    color: rgb(152 91 91 / .98);
+  }
+  :global(.private-comment-placeholder) {
+    font-style: italic;
+  }
+  :global(.private-comment-message) {
+    margin-top: 2px;
   }
   .comment-form-message[data-type="success"] { color: #2f6b3a; }
   .profile-photo-post .comments-panel h2 { margin-bottom: 10px; }
@@ -633,7 +678,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     font-size: .72rem;
   }
   .comment-meta time { white-space: nowrap; }
-  .comment-delete-area {
+  :global(.comment-delete-area) {
     min-height: 26px;
     display: inline-flex;
     align-items: center;
@@ -641,14 +686,14 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     gap: 5px;
     font-size: .72rem;
   }
-  .comment-delete-area button {
+  :global(.comment-delete-area button) {
     border: 1px solid transparent;
     cursor: pointer;
     font: inherit;
     transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease, opacity .18s ease;
   }
-  .comment-delete-trigger,
-  .comment-action-button {
+  :global(.comment-delete-trigger),
+  :global(.comment-action-button) {
     width: 26px;
     height: 26px;
     display: grid;
@@ -659,17 +704,17 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     color: #777;
     opacity: .55;
   }
-  .comment-item:hover .comment-delete-trigger,
-  .comment-delete-trigger:focus-visible { opacity: 1; }
-  .comment-delete-trigger:hover {
+  :global(.comment-item:hover .comment-delete-trigger),
+  :global(.comment-delete-trigger:focus-visible) { opacity: 1; }
+  :global(.comment-delete-trigger:hover) {
     background: #fff0f0;
     border-color: #f1d2d2;
     color: #a12626;
     transform: translateY(-1px);
   }
-  .comment-delete-trigger svg,
-  .comment-action-button svg,
-  .comment-undo-button svg {
+  :global(.comment-delete-trigger svg),
+  :global(.comment-action-button svg),
+  :global(.comment-undo-button svg) {
     width: 16px;
     height: 16px;
     fill: none;
@@ -678,27 +723,27 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .comment-delete-confirm,
-  .comment-deleted-label {
+  :global(.comment-delete-confirm),
+  :global(.comment-deleted-label) {
     color: #777;
     white-space: nowrap;
   }
-  .comment-action-button {
+  :global(.comment-action-button) {
     opacity: 1;
     background: #f3f3ef;
     color: #555;
   }
-  .comment-action-button:hover {
+  :global(.comment-action-button:hover) {
     background: #e8e8e2;
     color: #111;
     transform: translateY(-1px);
   }
-  .comment-action-button.is-confirm {
+  :global(.comment-action-button.is-confirm) {
     background: #111;
     color: #fff;
   }
-  .comment-action-button.is-confirm:hover { background: #2a2a2a; }
-  .comment-undo-button {
+  :global(.comment-action-button.is-confirm:hover) { background: #2a2a2a; }
+  :global(.comment-undo-button) {
     min-height: 32px;
     display: inline-flex;
     align-items: center;
@@ -708,34 +753,34 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     background: #111;
     color: #fff;
   }
-  .comment-undo-button:hover {
+  :global(.comment-undo-button:hover) {
     background: #2a2a2a;
     transform: translateY(-1px);
   }
-  .comment-delete-error {
+  :global(.comment-delete-error) {
     color: #a12626;
     padding: 5px 8px;
     border-radius: 9px;
     background: #fff0f0;
   }
-  .comment-item.is-comment-deleted {
+  :global(.comment-item.is-comment-deleted) {
     min-height: 44px;
     background: #f6f6f2;
     transform: scale(.995);
   }
-  .comment-item.is-comment-deleted .comment-user,
-  .comment-item.is-comment-deleted .comment-content > p,
-  .comment-item.is-comment-deleted .comment-meta > time {
+  :global(.comment-item.is-comment-deleted .comment-user),
+  :global(.comment-item.is-comment-deleted .comment-content > p),
+  :global(.comment-item.is-comment-deleted .comment-meta > time) {
     opacity: .16;
     filter: grayscale(1);
   }
-  .comment-item.is-comment-deleted .comment-delete-area,
-  .comment-item.is-comment-deleted .comment-undo-button {
+  :global(.comment-item.is-comment-deleted .comment-delete-area),
+  :global(.comment-item.is-comment-deleted .comment-undo-button) {
     opacity: 1;
     filter: none;
   }
   @media (prefers-reduced-motion: reduce) {
     .comment-item,
-    .comment-delete-area button { transition: none; }
+    :global(.comment-delete-area button) { transition: none; }
   }
 </style>

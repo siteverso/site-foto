@@ -80,7 +80,7 @@ export async function getTodayPhoto(userId: number): Promise<PhotoCard | null> {
     });
 }
 
-export async function getFriendPhotos(userId: number, includeHidden = true): Promise<PhotoCard[]> {
+export async function getObservedPhotos(userId: number, includeHidden = true): Promise<PhotoCard[]> {
     return withConnection(async connection => {
         const result = await connection.execute<OracleRow>(
             `SELECT *
@@ -90,7 +90,8 @@ export async function getFriendPhotos(userId: number, includeHidden = true): Pro
                         u.username,
                         NVL(u.avatar_url, '') AS avatar_url,
                         NVL(p.contents, '') AS caption,
-                        TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
+                        TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at,
+                        ROW_NUMBER() OVER (PARTITION BY f.friend_user_id ORDER BY p.created_at DESC, p.id DESC) AS user_photo_order
                  FROM murm_friend f
                  JOIN murm_post p ON p.user_id = f.friend_user_id
                  JOIN murm_user u ON u.id = p.user_id
@@ -107,10 +108,40 @@ export async function getFriendPhotos(userId: number, includeHidden = true): Pro
                    )
                    AND p.post_type = 'photo'
                    AND p.status = 'published'
-                 ORDER BY p.created_at DESC
              )
-             WHERE ROWNUM <= 8`,
+             WHERE user_photo_order = 1
+               AND ROWNUM <= 8
+             ORDER BY published_at DESC`,
             { user_id: userId, include_hidden: includeHidden ? 1 : 0 },
+        );
+        return (result.rows || []).map(card);
+    });
+}
+
+export async function getObserverPhotos(userId: number): Promise<PhotoCard[]> {
+    return withConnection(async connection => {
+        const result = await connection.execute<OracleRow>(
+            `SELECT *
+             FROM (
+                 SELECT p.id,
+                        p.user_id,
+                        u.username,
+                        NVL(u.avatar_url, '') AS avatar_url,
+                        NVL(p.contents, '') AS caption,
+                        TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at,
+                        ROW_NUMBER() OVER (PARTITION BY f.user_id ORDER BY p.created_at DESC, p.id DESC) AS user_photo_order
+                 FROM murm_friend f
+                 JOIN murm_post p ON p.user_id = f.user_id
+                 JOIN murm_user u ON u.id = f.user_id
+                 WHERE f.friend_user_id = :user_id
+                   AND f.status = 'A'
+                   AND p.post_type = 'photo'
+                   AND p.status = 'published'
+             )
+             WHERE user_photo_order = 1
+               AND ROWNUM <= 8
+             ORDER BY published_at DESC`,
+            { user_id: userId },
         );
         return (result.rows || []).map(card);
     });
@@ -558,8 +589,8 @@ export async function removeFriendWithConnection(
 
     const result = await connection.execute(
         `DELETE FROM murm_friend
-         WHERE (user_id = :user_id AND friend_user_id = :friend_user_id)
-            OR (user_id = :friend_user_id AND friend_user_id = :user_id)`,
+         WHERE user_id = :user_id
+           AND friend_user_id = :friend_user_id`,
         { user_id: userId, friend_user_id: friendUserId },
     );
 
@@ -601,27 +632,52 @@ export async function addFriend(userId: number, friendUserId: number): Promise<v
              VALUES
                  (:user_id, :friend_user_id, 'A')`,
             { user_id: userId, friend_user_id: friendUserId },
-        );
-
-        await connection.execute(
-            `MERGE INTO murm_friend f
-             USING (
-                 SELECT :friend_user_id AS user_id,
-                        :user_id AS friend_user_id
-                 FROM dual
-             ) x
-             ON (
-                 f.user_id = x.user_id
-                 AND f.friend_user_id = x.friend_user_id
-             )
-             WHEN MATCHED THEN UPDATE SET
-                 f.status = 'A'
-             WHEN NOT MATCHED THEN INSERT
-                 (user_id, friend_user_id, status)
-             VALUES
-                 (:friend_user_id, :user_id, 'A')`,
-            { user_id: userId, friend_user_id: friendUserId },
             { autoCommit: true },
         );
+    });
+}
+
+export async function addPrivatePhotoPost(input: {
+    photoId: number;
+    senderUserId: number;
+    recipientUserId: number;
+    message: string;
+}): Promise<number> {
+    return withConnection(async connection => {
+        try {
+            const photoResult = await connection.execute<OracleRow>(
+                `SELECT user_id
+                   FROM murm_post
+                  WHERE id = :photo_id
+                    AND post_type = 'photo'
+                    AND status = 'published'`,
+                { photo_id: input.photoId },
+            );
+            const ownerUserId = Number(photoResult.rows?.[0]?.USER_ID || 0);
+            if (!ownerUserId || ownerUserId !== input.recipientUserId || ownerUserId === input.senderUserId) {
+                throw new Error('MENSAGEM_PRIVADA_INVALIDA');
+            }
+
+            const result = await connection.execute(
+                `INSERT INTO murm_post
+                    (user_id, parent_post_id, recipient_user_id, contents, post_type, visibility_code)
+                 VALUES
+                    (:sender_user_id, :photo_id, :recipient_user_id, :contents, 'comment', 'private')
+                 RETURNING id INTO :post_id`,
+                {
+                    sender_user_id: input.senderUserId,
+                    photo_id: input.photoId,
+                    recipient_user_id: input.recipientUserId,
+                    contents: input.message,
+                    post_id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
+                },
+            );
+            await connection.commit();
+            const outBinds = result.outBinds as { post_id?: number[] } | undefined;
+            return Number(outBinds?.post_id?.[0] || 0);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        }
     });
 }

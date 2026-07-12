@@ -8,7 +8,8 @@ Realize testes unitarios para garantir funcionamento
 
 TODO, um de cada vez:
 
-- deve ter remover observado do perfil proprio
+- [x] deve ter remover observado do perfil proprio
+- [x] na esquerda sao os observadores (quem observa o perfil), na direita sao os observados (quem o perfil observa) e na esquerda embaixo entao as ultimas atualizacoes ![img_6.png](img_6.png)
 - deve ter opcao na conta se quer tornar lista de observados publica ou privada (nenhum)
 - deve ter opcao na conta se quer tornar lista de observados publica e bloquear alguns para nao aparecer
 - deve preencher os dados da conta e permitir alterar
@@ -23,3 +24,4 @@ TODO, um de cada vez:
 - passar edicao da conta pra dentro do perfil ali na esquerda, qd for o proprietario claro ![img.png](img.png)
 - quando o perfil for meu o termo é Observando e nao observadores ![img_2.png](img_2.png)
 - so deve aparecer a ultima atualizacao da pessoa ![img_1.png](img_1.png) para ter apenas uma entrada no grid
+- pertmir que /@nomeusuario acesso o perfil do usuario 
