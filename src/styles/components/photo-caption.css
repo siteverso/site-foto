@@ -9,10 +9,11 @@
 }
 
 .photo-action-button {
-    display: grid;
+    display: inline-flex;
     width: 42px;
     height: 42px;
-    place-items: center;
+    align-items: center;
+    justify-content: center;
     padding: 0;
     border: 1px solid rgb(255 255 255 / 55%);
     border-radius: 50%;
@@ -29,8 +30,10 @@
 
 .photo-action-button svg {
     display: block;
+    flex: 0 0 18px;
     width: 18px;
     height: 18px;
+    margin: 0;
     fill: currentColor;
 }
 
