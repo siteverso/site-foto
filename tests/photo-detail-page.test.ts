@@ -29,6 +29,15 @@ describe('public photo detail page', () => {
     expect(detailCss).toContain('padding: 18px');
   });
 
+  it('uses the full content width without the latest-updates sidebar', () => {
+    expect(detail).not.toContain('site-updates-panel');
+    expect(detail).not.toContain('getFeedPhotos');
+    expect(detail).toContain('class="site-container site-section photo-detail-layout"');
+    expect(detailCss).toContain('display: block');
+    expect(detailCss).toContain('max-height: none');
+    expect(detailCss).toContain('margin: 14px 0 0');
+  });
+
   it('routes feed photos and sent-message thumbnails to the detail page', () => {
     expect(home).toContain('href={`/foto/${photo.id}`}');
     expect(home).toContain('href="/foto/${photo.id}"');
