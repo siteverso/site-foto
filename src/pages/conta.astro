@@ -21,7 +21,7 @@ const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
 ---
 <AppLayout title={`${t.profile.title} — ${t.site.title}`}>
-  <SiteHeader username={user.username} />
+  <SiteHeader username={user.username} avatarUrl={user.avatarUrl} />
   <main class="site-container site-section account-page">
     <header class="account-heading"><h1>{t.profile.title}</h1></header>
     <div class="profile-grid">
