@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-    formatPhotoPostRetry,
     getPhotoPostCutoffSql,
     getPhotoPostIntervalLabel,
-    getPhotoPostRetrySql,
     normalizePhotoPostIntervalType,
     normalizePhotoPostLimit,
 } from '../src/lib/photo-post-limit';
@@ -27,11 +25,8 @@ describe('photo post limit configuration', () => {
     it('gera textos naturais e SQL fechado por tipo validado', () => {
         expect(getPhotoPostIntervalLabel('minute')).toBe('minuto');
         expect(getPhotoPostIntervalLabel('month')).toBe('mês');
-        expect(formatPhotoPostRetry(60)).toBe('1 minuto');
-        expect(formatPhotoPostRetry(3601)).toBe('2 horas');
-        expect(getPhotoPostCutoffSql('week')).toContain("NUMTODSINTERVAL(7, 'DAY')");
+        expect(getPhotoPostCutoffSql('week')).toContain("INTERVAL '7' DAY");
         expect(getPhotoPostCutoffSql('month')).toContain('ADD_MONTHS');
-        expect(getPhotoPostCutoffSql('minute')).toContain('CURRENT_TIMESTAMP');
-        expect(getPhotoPostRetrySql('minute')).toContain('CURRENT_TIMESTAMP');
+        expect(getPhotoPostCutoffSql('minute')).toContain('SYS_EXTRACT_UTC(SYSTIMESTAMP)');
     });
 });

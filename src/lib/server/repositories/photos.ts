@@ -3,7 +3,7 @@ import { Buffer } from 'node:buffer';
 import oracledb from 'oracledb';
 import { withConnection } from '../oracle';
 import { normalizeSexCode } from '../../account-profile';
-import { getPhotoPostCutoffSql, getPhotoPostRetrySql, normalizePhotoPostIntervalType, normalizePhotoPostLimit, type PhotoPostIntervalType } from '../../photo-post-limit';
+import { getPhotoPostCutoffSql, getPhotoPostIntervalSeconds, normalizePhotoPostIntervalType, normalizePhotoPostLimit, type PhotoPostIntervalType } from '../../photo-post-limit';
 
 type OracleRow = Record<string, unknown> & {
     ID?: unknown;
@@ -251,90 +251,106 @@ export class PhotoLimitError extends Error {
     }
 }
 
-export async function saveTodayPhoto(input: {
+export type SaveTodayPhotoInput = {
     userId: number;
     caption: string;
     filename: string;
     mimeType: string;
     image: Buffer;
-}): Promise<number> {
-    const limit = normalizePhotoPostLimit(import.meta.env.PHOTO_POST_LIMIT, 1);
-    const intervalType = normalizePhotoPostIntervalType(import.meta.env.PHOTO_POST_INTERVAL_TYPE);
-    const cutoffSql = getPhotoPostCutoffSql(intervalType);
-    const retrySql = getPhotoPostRetrySql(intervalType);
+};
 
-    return withConnection(async connection => {
-        try {
-            await connection.execute(
-                `SELECT id
-                 FROM murm_user
-                 WHERE id = :user_id
-                 FOR UPDATE`,
-                { user_id: input.userId },
-            );
+type PhotoPostLimitConfig = {
+    limit: number;
+    intervalType: PhotoPostIntervalType;
+};
 
-            const countResult = await connection.execute<OracleRow>(
-                `SELECT COUNT(*) AS total
-                 FROM murm_post
-                 WHERE user_id = :user_id
-                   AND post_type = 'photo'
-                   AND status = 'published'
-                   AND created_at >= ${cutoffSql}`,
-                { user_id: input.userId },
-            );
+type PhotoConnection = {
+    execute<T = OracleRow>(sql: string, binds?: Record<string, unknown>): Promise<{
+        rows?: T[];
+        outBinds?: unknown;
+    }>;
+    commit(): Promise<void>;
+    rollback(): Promise<void>;
+};
 
-            const total = Number(countResult.rows?.[0]?.TOTAL || 0);
-            if (total >= limit) {
-                const retryResult = await connection.execute<OracleRow>(
-                    `SELECT ${retrySql} AS retry_after_seconds
-                     FROM murm_post
-                     WHERE user_id = :user_id
-                       AND post_type = 'photo'
-                       AND status = 'published'
-                       AND created_at >= ${cutoffSql}`,
-                    { user_id: input.userId },
-                );
-                const rawRetryAfterSeconds = Number(retryResult.rows?.[0]?.RETRY_AFTER_SECONDS);
-                const retryAfterSeconds = Number.isFinite(rawRetryAfterSeconds)
-                    ? Math.max(0, Math.ceil(rawRetryAfterSeconds))
-                    : 0;
+export function getPhotoPostLimitConfig(): PhotoPostLimitConfig {
+    const runtimeLimit = process.env.PHOTO_POST_LIMIT ?? import.meta.env.PHOTO_POST_LIMIT;
+    const runtimeInterval = process.env.PHOTO_POST_INTERVAL_TYPE ?? import.meta.env.PHOTO_POST_INTERVAL_TYPE;
+    return {
+        limit: normalizePhotoPostLimit(runtimeLimit, 1),
+        intervalType: normalizePhotoPostIntervalType(runtimeInterval),
+    };
+}
 
-                console.info('[photo-limit]', {
-                    userId: input.userId,
-                    total,
-                    limit,
-                    intervalType,
-                    retryAfterSeconds,
-                });
+export async function saveTodayPhotoWithConnection(
+    connection: PhotoConnection,
+    input: SaveTodayPhotoInput,
+    config: PhotoPostLimitConfig,
+): Promise<number> {
+    const cutoffSql = getPhotoPostCutoffSql(config.intervalType);
 
-                if (retryAfterSeconds > 0) {
-                    throw new PhotoLimitError(limit, intervalType, retryAfterSeconds);
-                }
-            }
+    try {
+        // Serializa publicações do mesmo usuário para impedir duas requisições simultâneas
+        // de passarem pela contagem antes de qualquer uma inserir.
+        await connection.execute(
+            `SELECT id
+             FROM murm_user
+             WHERE id = :user_id
+             FOR UPDATE`,
+            { user_id: input.userId },
+        );
 
-            const insertResult = await connection.execute(
-                `INSERT INTO murm_post
-                    (user_id, contents, post_type, photo_day, image_blob, image_filename, image_mime_type)
-                 VALUES
-                    (:user_id, :contents, 'photo', TRUNC(CURRENT_DATE), :image_blob, :image_filename, :image_mime_type)
-                 RETURNING id INTO :id`,
-                {
-                    user_id: input.userId,
-                    contents: input.caption || 'Foto',
-                    image_blob: { val: input.image, type: oracledb.BLOB },
-                    image_filename: input.filename,
-                    image_mime_type: input.mimeType,
-                    id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
-                },
-            );
+        const limitResult = await connection.execute<OracleRow>(
+            `SELECT COUNT(*) AS total
+             FROM murm_post
+             WHERE user_id = :user_id
+               AND post_type = 'photo'
+               AND status = 'published'
+               AND created_at >= ${cutoffSql}`,
+            { user_id: input.userId },
+        );
 
-            await connection.commit();
-            return Number((insertResult.outBinds as { id?: number[] } | undefined)?.id?.[0] || 0);
-        } catch (error) {
-            await connection.rollback();
-            throw error;
+        const total = Number(limitResult.rows?.[0]?.TOTAL || 0);
+
+        console.info('[photo-limit-check]', {
+            userId: input.userId,
+            total,
+            limit: config.limit,
+            intervalType: config.intervalType,
+            cutoffSql,
+        });
+
+        if (total >= config.limit) {
+            throw new PhotoLimitError(config.limit, config.intervalType, getPhotoPostIntervalSeconds(config.intervalType));
         }
-    });
+
+        const insertResult = await connection.execute(
+            `INSERT INTO murm_post
+                (user_id, contents, post_type, photo_day, image_blob, image_filename, image_mime_type)
+             VALUES
+                (:user_id, :contents, 'photo', TRUNC(CURRENT_DATE), :image_blob, :image_filename, :image_mime_type)
+             RETURNING id INTO :id`,
+            {
+                user_id: input.userId,
+                contents: input.caption || 'Foto',
+                image_blob: { val: input.image, type: oracledb.BLOB },
+                image_filename: input.filename,
+                image_mime_type: input.mimeType,
+                id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
+            },
+        );
+
+        await connection.commit();
+        return Number((insertResult.outBinds as { id?: number[] } | undefined)?.id?.[0] || 0);
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    }
+}
+
+export async function saveTodayPhoto(input: SaveTodayPhotoInput): Promise<number> {
+    const config = getPhotoPostLimitConfig();
+    return withConnection(connection => saveTodayPhotoWithConnection(connection as PhotoConnection, input, config));
 }
 
 export async function addComment(

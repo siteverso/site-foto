@@ -18,6 +18,8 @@ const INTERVAL_LABELS: Record<PhotoPostIntervalType, string> = {
     month: 'mês',
 };
 
+const UTC_NOW_SQL = 'CAST(SYS_EXTRACT_UTC(SYSTIMESTAMP) AS TIMESTAMP)';
+
 export function normalizePhotoPostIntervalType(value: unknown): PhotoPostIntervalType {
     const normalized = String(value || '').trim().toLowerCase();
     return PHOTO_POST_INTERVAL_TYPES.includes(normalized as PhotoPostIntervalType)
@@ -38,52 +40,10 @@ export function getPhotoPostIntervalSeconds(type: PhotoPostIntervalType): number
     return INTERVAL_SECONDS[type];
 }
 
-export function formatPhotoPostRetry(seconds: number): string {
-    const safeSeconds = Math.max(1, Math.ceil(Number(seconds) || 1));
-    if (safeSeconds < 60) return `${safeSeconds} segundo${safeSeconds === 1 ? '' : 's'}`;
-
-    const minutes = Math.ceil(safeSeconds / 60);
-    if (minutes < 60) return `${minutes} minuto${minutes === 1 ? '' : 's'}`;
-
-    const hours = Math.ceil(minutes / 60);
-    if (hours < 24) return `${hours} hora${hours === 1 ? '' : 's'}`;
-
-    const days = Math.ceil(hours / 24);
-    if (days < 7) return `${days} dia${days === 1 ? '' : 's'}`;
-
-    const weeks = Math.ceil(days / 7);
-    return `${weeks} semana${weeks === 1 ? '' : 's'}`;
-}
-
 export function getPhotoPostCutoffSql(type: PhotoPostIntervalType): string {
-    if (type === 'month') return 'ADD_MONTHS(CURRENT_TIMESTAMP, -1)';
-
-    const oracleUnit = {
-        minute: 'MINUTE',
-        hour: 'HOUR',
-        day: 'DAY',
-        week: 'DAY',
-    }[type];
-    const amount = type === 'week' ? 7 : 1;
-    return `CURRENT_TIMESTAMP - NUMTODSINTERVAL(${amount}, '${oracleUnit}')`;
-}
-
-export function getPhotoPostRetrySql(type: PhotoPostIntervalType): string {
-    if (type === 'month') {
-        return `CEIL(GREATEST(0,
-            (CAST(ADD_MONTHS(CAST(MIN(created_at) AS DATE), 1) AS DATE)
-             - CAST(CURRENT_TIMESTAMP AS DATE)) * 86400))`;
-    }
-
-    const oracleUnit = {
-        minute: 'MINUTE',
-        hour: 'HOUR',
-        day: 'DAY',
-        week: 'DAY',
-    }[type];
-    const amount = type === 'week' ? 7 : 1;
-
-    return `CEIL(GREATEST(0,
-        (CAST(MIN(created_at) + NUMTODSINTERVAL(${amount}, '${oracleUnit}') AS DATE)
-         - CAST(CURRENT_TIMESTAMP AS DATE)) * 86400))`;
+    if (type === 'month') return `ADD_MONTHS(${UTC_NOW_SQL}, -1)`;
+    if (type === 'week') return `${UTC_NOW_SQL} - INTERVAL '7' DAY`;
+    if (type === 'day') return `${UTC_NOW_SQL} - INTERVAL '1' DAY`;
+    if (type === 'hour') return `${UTC_NOW_SQL} - INTERVAL '1' HOUR`;
+    return `${UTC_NOW_SQL} - INTERVAL '1' MINUTE`;
 }

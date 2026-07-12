@@ -3,7 +3,7 @@ import { currentUser } from '../../../lib/server/session';
 import { PhotoLimitError, saveTodayPhoto } from '../../../lib/server/repositories/photos';
 import { readStagedPhoto, removeStagedPhoto } from '../../../lib/server/photo-upload';
 import { validateMessageLength } from '../../../lib/message-limit';
-import { formatPhotoPostRetry, getPhotoPostIntervalLabel } from '../../../lib/photo-post-limit';
+import { getPhotoPostIntervalLabel } from '../../../lib/photo-post-limit';
 
 export const POST: APIRoute = async (context: APIContext) => {
     const user = await currentUser(context);
@@ -37,12 +37,10 @@ export const POST: APIRoute = async (context: APIContext) => {
     } catch (error) {
         if (error instanceof PhotoLimitError) {
             const intervalLabel = getPhotoPostIntervalLabel(error.intervalType);
-            const retryText = formatPhotoPostRetry(error.retryAfterSeconds);
-
             return Response.json(
                 {
                     ok: false,
-                    error: `Você atingiu o limite de ${error.limit} foto(s) por ${intervalLabel}. Tente novamente em aproximadamente ${retryText}.`,
+                    error: `Limite de ${error.limit} foto(s) por ${intervalLabel}. Aguarde o fim desse intervalo após a última publicação.`,
                     limit: error.limit,
                     intervalType: error.intervalType,
                     retryAfterSeconds: error.retryAfterSeconds,
