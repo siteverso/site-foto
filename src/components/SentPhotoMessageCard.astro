@@ -1,0 +1,61 @@
+---
+import type { SentPhotoMessage } from '../lib/server/repositories/sent-photo-messages';
+
+const { item, labels, locale } = Astro.props as {
+    item: SentPhotoMessage;
+    labels: {
+        sentTo: string;
+        relatedPhoto: string;
+        unavailablePhoto: string;
+        profileOf: string;
+        publicMessage: string;
+        privateMessage: string;
+    };
+    locale: string;
+};
+
+const initials = item.recipient.username.slice(0, 2).toUpperCase();
+const formattedDate = new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+}).format(new Date(item.createdAt));
+const profileHref = `/perfil/${encodeURIComponent(item.recipient.username)}`;
+---
+<article class="sent-photo-message-card">
+    <header class="sent-photo-message-recipient">
+        <a class="sent-photo-message-avatar" href={profileHref} aria-label={`${labels.profileOf} @${item.recipient.username}`}>
+            {item.recipient.avatarUrl
+                ? <img src={item.recipient.avatarUrl} alt={`@${item.recipient.username}`} loading="lazy" />
+                : <span>{initials}</span>}
+        </a>
+        <div class="sent-photo-message-recipient-copy">
+            <span>{labels.sentTo}</span>
+            <a href={profileHref}>@{item.recipient.username}</a>
+        </div>
+        <span class:list={['sent-photo-message-kind', `sent-photo-message-kind--${item.visibility}`]}>{item.visibility === 'private' ? labels.privateMessage : labels.publicMessage}</span>
+        <time datetime={item.createdAt}>{formattedDate}</time>
+    </header>
+
+    <div class="sent-photo-message-content">
+        {item.photo.available ? (
+            <a
+                class="sent-photo-message-photo"
+                href={`/api/photos/${item.photoId}`}
+                target="_blank"
+                rel="noopener"
+                aria-label={labels.relatedPhoto}
+            >
+                <img src={`/api/photos/${item.photoId}`} alt={item.photo.caption || labels.relatedPhoto} loading="lazy" />
+            </a>
+        ) : (
+            <div class="sent-photo-message-photo sent-photo-message-photo--unavailable" aria-label={labels.unavailablePhoto}>
+                <span aria-hidden="true">×</span>
+            </div>
+        )}
+
+        <p class="sent-photo-message-text">{item.message}</p>
+    </div>
+</article>

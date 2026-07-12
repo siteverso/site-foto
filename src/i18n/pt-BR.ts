@@ -25,6 +25,7 @@ export default {
     hiddenObservedHelp: 'Marque quem não deve aparecer para outras pessoas. Você continuará vendo todos no seu próprio perfil.', hiddenObservedEmpty: 'Você ainda não observa ninguém.',
     sex: 'Sexo', sexUnknown: 'Não informado', sexMale: 'Masculino', sexFemale: 'Feminino', changePhoto: 'Alterar foto', enlargePhoto: 'Ampliar foto de perfil',
     closePhoto: 'Fechar foto de perfil', profilePhotoOf: 'Foto de perfil de', photoHelp: 'JPG, PNG ou WebP, até 3 MB.', editAccount: 'Editar conta', viewMyProfile: 'Ver meu perfil',
+    sentMessages: 'Mensagens enviadas',
     stopObserving: 'Deixar de observar', observe: 'Observar', observedLabel: 'Observado', accountUpdated: 'Conta atualizada.', passwordUpdated: 'Senha atualizada.',
   },
   login: {
@@ -48,6 +49,9 @@ export default {
   publicProfile: {
     title: 'Perfil do usuário', photos: 'Fotos publicadas', latestPosts: 'Últimas postagens', noPhotos: 'Este usuário ainda não publicou fotos.', notFound: 'Perfil não encontrado',
     back: 'Voltar ao FotoLife', friends: 'Observadores', addFriend: 'Observar', alreadyFriend: 'Observando', noObserved: 'ainda não observa nenhum perfil.', noObservedFull: 'Este usuário ainda não observa nenhum perfil.', privateList: 'Esta lista é privada.', noObservers: 'Ainda não há observadores.',
+  },
+  sentMessages: {
+    title: 'Mensagens enviadas', privateNotice: 'Somente você pode visualizar esta página.', timelineNotice: 'Sua linha do tempo privada de mensagens públicas e privadas enviadas em fotos.', backToProfile: 'Voltar ao perfil', sentTo: 'Enviada para', publicMessage: 'Pública', privateMessage: 'Privada', relatedPhoto: 'Ver foto relacionada', unavailablePhoto: 'A foto relacionada não está mais disponível.', profileOf: 'Abrir perfil de', emptyTitle: 'Você ainda não enviou mensagens.', emptyText: 'Comentários públicos e mensagens privadas enviados nas fotos aparecerão aqui.'
   },
   directs: {
     title: 'Bilhetes', subtitle: 'Directs', choose: 'Escolha um bilhete', intro: 'As conversas chegam como correspondência, sem cara de chat.', replyPlaceholder: 'Responder com outro bilhete…',

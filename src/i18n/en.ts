@@ -25,6 +25,7 @@ export default {
     hiddenObservedHelp: 'Select who should not appear to other people. You will still see everyone on your own profile.', hiddenObservedEmpty: 'You are not following anyone yet.',
     sex: 'Sex', sexUnknown: 'Not specified', sexMale: 'Male', sexFemale: 'Female', changePhoto: 'Change photo', enlargePhoto: 'Enlarge profile photo',
     closePhoto: 'Close profile photo', profilePhotoOf: 'Profile photo of', photoHelp: 'JPG, PNG, or WebP, up to 3 MB.', editAccount: 'Edit account', viewMyProfile: 'View my profile',
+    sentMessages: 'Sent messages',
     stopObserving: 'Stop following', observe: 'Follow', observedLabel: 'Followed', accountUpdated: 'Account updated.', passwordUpdated: 'Password updated.',
   },
   login: {
@@ -48,6 +49,9 @@ export default {
   publicProfile: {
     title: 'User profile', photos: 'Published photos', latestPosts: 'Latest posts', noPhotos: 'This user has not posted any photos yet.', notFound: 'Profile not found',
     back: 'Back to FotoLife', friends: 'Observers', addFriend: 'Follow', alreadyFriend: 'Following', noObserved: 'is not following any profiles yet.', noObservedFull: 'This user is not following any profiles yet.', privateList: 'This list is private.', noObservers: 'There are no observers yet.',
+  },
+  sentMessages: {
+    title: 'Sent messages', privateNotice: 'Only you can view this page.', timelineNotice: 'Your private timeline of public and private messages sent on photos.', backToProfile: 'Back to profile', sentTo: 'Sent to', publicMessage: 'Public', privateMessage: 'Private', relatedPhoto: 'View related photo', unavailablePhoto: 'The related photo is no longer available.', profileOf: 'Open profile of', emptyTitle: 'You have not sent any messages yet.', emptyText: 'Public comments and private messages sent on photos will appear here.'
   },
   directs: {
     title: 'Notes', subtitle: 'Directs', choose: 'Choose a note', intro: 'Conversations arrive like correspondence, without looking like a chat.', replyPlaceholder: 'Reply with another note…',

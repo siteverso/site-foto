@@ -144,3 +144,8 @@
     padding-bottom: 16px;
   }
 }
+
+.profile-sidebar-owner-actions {
+  display: grid;
+  gap: 10px;
+}

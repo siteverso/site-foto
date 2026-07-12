@@ -80,7 +80,12 @@ const avatarUrl = profile?.avatarUrl || '';
     )}
   </section>
 
-  {isOwner && !editableAvatar && <a class="profile-account-link profile-sidebar-external-action" href="/conta">{t.profile.editAccount}</a>}
+  {isOwner && !editableAvatar && (
+    <div class="profile-sidebar-owner-actions">
+      <a class="profile-account-link profile-sidebar-external-action" href="/conta">{t.profile.editAccount}</a>
+      <a class="profile-account-link profile-sidebar-external-action" href="/perfil/mensagens-enviadas">{t.profile.sentMessages}</a>
+    </div>
+  )}
   {editableAvatar && <a class="profile-account-link profile-sidebar-external-action" href="/perfil">{t.profile.viewMyProfile}</a>}
 </div>
 

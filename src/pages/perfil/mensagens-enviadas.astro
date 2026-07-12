@@ -1,0 +1,52 @@
+---
+import '../../styles/pages/sent-photo-messages.css';
+import AppLayout from '../../layouts/AppLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import SentPhotoMessageCard from '../../components/SentPhotoMessageCard.astro';
+import { requireUser } from '../../lib/server/session';
+import { getSentPhotoMessages } from '../../lib/server/repositories/sent-photo-messages';
+import { getMessages, normalizeLocale } from '../../i18n';
+
+const user = await requireUser(Astro);
+const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
+const t = getMessages(locale);
+const messages = await getSentPhotoMessages(user.id);
+---
+<AppLayout title={`${t.sentMessages.title} — ${t.site.title}`}>
+    <main>
+        <SiteHeader username={user.username} />
+        <section class="sent-photo-messages-page">
+            <header class="sent-photo-messages-heading">
+                <div>
+                    <h1>{t.sentMessages.title}</h1>
+                    <p>{t.sentMessages.timelineNotice}</p>
+                </div>
+                <a class="profile-account-link sent-photo-messages-back" href="/perfil">← {t.sentMessages.backToProfile}</a>
+            </header>
+
+            {messages.length ? (
+                <div class="sent-photo-messages-list">
+                    {messages.map(item => (
+                        <SentPhotoMessageCard
+                            item={item}
+                            locale={locale}
+                            labels={{
+                                sentTo: t.sentMessages.sentTo,
+                                relatedPhoto: t.sentMessages.relatedPhoto,
+                                unavailablePhoto: t.sentMessages.unavailablePhoto,
+                                profileOf: t.sentMessages.profileOf,
+                                publicMessage: t.sentMessages.publicMessage,
+                                privateMessage: t.sentMessages.privateMessage,
+                            }}
+                        />
+                    ))}
+                </div>
+            ) : (
+                <div class="sent-photo-messages-empty">
+                    <strong>{t.sentMessages.emptyTitle}</strong>
+                    <span>{t.sentMessages.emptyText}</span>
+                </div>
+            )}
+        </section>
+    </main>
+</AppLayout>

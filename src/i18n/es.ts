@@ -25,6 +25,7 @@ export default {
     hiddenObservedHelp: 'Marca quién no debe aparecer para otras personas. Seguirás viendo a todos en tu perfil.', hiddenObservedEmpty: 'Aún no sigues a nadie.',
     sex: 'Sexo', sexUnknown: 'No especificado', sexMale: 'Masculino', sexFemale: 'Femenino', changePhoto: 'Cambiar foto', enlargePhoto: 'Ampliar foto de perfil',
     closePhoto: 'Cerrar foto de perfil', profilePhotoOf: 'Foto de perfil de', photoHelp: 'JPG, PNG o WebP, hasta 3 MB.', editAccount: 'Editar cuenta', viewMyProfile: 'Ver mi perfil',
+    sentMessages: 'Mensajes enviados',
     stopObserving: 'Dejar de seguir', observe: 'Seguir', observedLabel: 'Siguiendo', accountUpdated: 'Cuenta actualizada.', passwordUpdated: 'Contraseña actualizada.',
   },
   login: {
@@ -48,6 +49,9 @@ export default {
   publicProfile: {
     title: 'Perfil del usuario', photos: 'Fotos publicadas', latestPosts: 'Últimas publicaciones', noPhotos: 'Este usuario aún no publicó fotos.', notFound: 'Perfil no encontrado',
     back: 'Volver a FotoLife', friends: 'Siguiendores', addFriend: 'Seguir', alreadyFriend: 'Siguiendo', noObserved: 'aún no sigue ningún perfil.', noObservedFull: 'Este usuario aún no sigue ningún perfil.', privateList: 'Esta lista es privada.', noObservers: 'Aún no hay observadores.',
+  },
+  sentMessages: {
+    title: 'Mensajes enviados', privateNotice: 'Solo tú puedes ver esta página.', timelineNotice: 'Tu línea de tiempo privada de mensajes públicos y privados enviados en fotos.', backToProfile: 'Volver al perfil', sentTo: 'Enviado a', publicMessage: 'Público', privateMessage: 'Privado', relatedPhoto: 'Ver foto relacionada', unavailablePhoto: 'La foto relacionada ya no está disponible.', profileOf: 'Abrir perfil de', emptyTitle: 'Aún no has enviado mensajes.', emptyText: 'Los comentarios públicos y mensajes privados enviados en fotos aparecerán aquí.'
   },
   directs: {
     title: 'Notas', subtitle: 'Directs', choose: 'Elige una nota', intro: 'Las conversaciones llegan como correspondencia, sin aspecto de chat.', replyPlaceholder: 'Responder con otra nota…',
