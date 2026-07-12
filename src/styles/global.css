@@ -20,7 +20,23 @@
   --site-section-y: 38px;
 }
 
-html[data-theme="dark"] {
+html[data-theme="light-warm"] {
+  color: #2d2118;
+  background: #f5efe4;
+  --bg: #f5efe4;
+  --surface: #fffaf1;
+  --surface-2: #eee2d0;
+  --text: #2d2118;
+  --muted: #796758;
+  --line: #dacbb7;
+  --strong: #6c3f22;
+  --inverse: #fffaf2;
+  --positive: #486344;
+  --negative: #9b5f52;
+  --shadow: 0 18px 50px rgb(91 61 38 / 12%);
+}
+
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) {
   color: #f7f7f5;
   background: #0c0c0c;
   --bg: #0c0c0c;
@@ -34,6 +50,22 @@ html[data-theme="dark"] {
   --positive: #f4f4f1;
   --negative: #9a9a96;
   --shadow: 0 20px 60px rgb(0 0 0 / 35%);
+}
+
+html[data-theme="dark-blue"] {
+  color: #edf4ff;
+  background: #08111f;
+  --bg: #08111f;
+  --surface: #101d2e;
+  --surface-2: #192a40;
+  --text: #edf4ff;
+  --muted: #9fb1c8;
+  --line: #2b405b;
+  --strong: #cfe4ff;
+  --inverse: #07101d;
+  --positive: #93d8c0;
+  --negative: #df9b9b;
+  --shadow: 0 22px 65px rgb(0 0 0 / 42%);
 }
 
 * { box-sizing: border-box; }
@@ -66,6 +98,10 @@ button { color: inherit; }
 .nav-link { padding: 9px 11px; border-radius: 999px; color: var(--muted); font-size: .92rem; font-weight: 700; }
 .nav-link:hover { color: var(--text); background: var(--surface-2); }
 .icon-button { width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); cursor: pointer; }
+.theme-toggle { position: relative; overflow: hidden; display: grid; place-items: center; box-shadow: 0 8px 24px rgb(0 0 0 / 8%); transition: transform .18s ease, background .18s ease, border-color .18s ease; }
+.theme-toggle:hover { transform: translateY(-2px) rotate(8deg); background: var(--surface-2); }
+.theme-toggle span { font-size: 1.15rem; line-height: 1; transition: transform .2s ease; }
+.theme-toggle:active span { transform: scale(.82) rotate(25deg); }
 
 .button { min-height: 44px; padding: 0 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: 999px; font-weight: 800; cursor: pointer; transition: transform .16s ease, background .16s ease, border-color .16s ease; }
 .button:hover { transform: translateY(-1px); }
@@ -163,10 +199,10 @@ button { color: inherit; }
 .form-message[data-type="warning"] { color: #8a5a00; border-color: color-mix(in srgb, #d89a24 32%, transparent); background: color-mix(in srgb, #d89a24 11%, var(--surface)); }
 .form-message[data-type="warning"]::before { content: '!'; }
 .form-message[data-type="info"] { color: #2e5f9c; border-color: color-mix(in srgb, #4f86c6 30%, transparent); background: color-mix(in srgb, #4f86c6 10%, var(--surface)); }
-html[data-theme="dark"] .form-message[data-type="success"] { color: #79d9a3; }
-html[data-theme="dark"] .form-message[data-type="error"] { color: #ff8f8f; }
-html[data-theme="dark"] .form-message[data-type="warning"] { color: #f2c66d; }
-html[data-theme="dark"] .form-message[data-type="info"] { color: #91baf0; }
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .form-message[data-type="success"] { color: #79d9a3; }
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .form-message[data-type="error"] { color: #ff8f8f; }
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .form-message[data-type="warning"] { color: #f2c66d; }
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .form-message[data-type="info"] { color: #91baf0; }
 .button.is-loading { cursor: wait; transform: none; opacity: .9; }
 .button.is-loading:hover { transform: none; }
 .button-spinner { width: 17px; height: 17px; flex: 0 0 auto; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: button-spin .7s linear infinite; }
@@ -1536,4 +1572,167 @@ body:has(.login-shell) {
   margin-top: 0;
   padding-top: 20px;
   border-top: 1px solid var(--line, #deded9);
+}
+
+/* FotoLife: cobertura do tema escuro para áreas antigas ainda com cores fixas */
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) {
+  color-scheme: dark;
+}
+
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .flog-page,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .flog-header,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .flog-panel,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .flog-center,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .site-updates-panel,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .photo-post,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .comments-dialog-card,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .comments-dialog-card > header,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .profile-post-card {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .flog-page { background: var(--bg); }
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .flog-user,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .wordmark.dark,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .site-updates-list a,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .photo-post-header a,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .photo-comment-list a,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .comments-dialog-list a { color: var(--text); }
+
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .flog-logout,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .comments-dialog-card header button,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .photo-comment-list article,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .comments-dialog-list article,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .profile-post-card,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .upload-drop {
+  color: var(--text);
+  background: var(--surface-2);
+  border-color: var(--line);
+}
+
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .site-updates-list a:hover { background: var(--surface-2); }
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .photo-mini-card img,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .profile-post-card img,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .site-updates-list img { background: var(--surface-2); }
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .photo-comment-form input,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .daily-upload textarea,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .comment-form input {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--line);
+}
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .photo-comment-form button,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .feed-load-more,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .daily-upload button,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .comment-form button {
+  color: var(--inverse);
+  background: var(--strong);
+}
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .profile-posts,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .comments-panel { border-color: var(--line); }
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .profile-post-card time,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .site-updates-list small,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .photo-post-header time,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .photo-comments-title span,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .photo-comment-list time,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .comments-dialog-list time,
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .empty-state { color: var(--muted); }
+
+/* FotoLife: quatro temas aplicados ao layout realmente usado */
+.site-theme-toggle {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 9%);
+  cursor: pointer;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+.site-theme-toggle:hover { transform: translateY(-1px) rotate(8deg); background: var(--surface-2); }
+.site-theme-toggle:active { transform: scale(.92) rotate(18deg); }
+.site-theme-toggle span { font-size: 1rem; line-height: 1; }
+
+.site-header,
+.flog-header { background: var(--surface); color: var(--text); }
+.site-user-link,
+.site-account-link,
+.flog-user,
+.wordmark.dark { color: var(--text); }
+.feed-page,
+.flog-page { background: var(--bg); color: var(--text); }
+
+.flog-panel,
+.flog-center,
+.profile-summary-card,
+.profile-side-section,
+.site-updates-panel,
+.photo-post,
+.profile-photo-post,
+.comments-dialog-card,
+.account-card,
+.profile-card,
+.panel { background: var(--surface); color: var(--text); border-color: var(--line); }
+
+.user-profile-intro,
+.comment-list article,
+.photo-comment-list article,
+.comments-dialog-list article,
+.profile-post-card,
+.daily-upload textarea,
+.comment-form input,
+.photo-comment-form input,
+.upload-drop,
+.flog-logout,
+.friend-button,
+.profile-new-post-button {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.comment-list article,
+.photo-comment-list article,
+.comments-dialog-list article { box-shadow: none; }
+
+.comment-list time,
+.photo-comment-list time,
+.comments-dialog-list time,
+.photo-mini-card time,
+.site-updates-list small,
+.empty-state,
+.user-profile-intro p { color: var(--muted); }
+
+.comment-form input::placeholder,
+.photo-comment-form input::placeholder,
+.daily-upload textarea::placeholder { color: var(--muted); opacity: .8; }
+
+.photo-mini-card img,
+.site-updates-list img,
+.profile-post-card img { background: var(--surface-2); }
+
+.comments-panel,
+.profile-side-section,
+.user-profile-intro-sidebar { border-color: var(--line); }
+
+html[data-theme="light-warm"] .site-header,
+html[data-theme="light-warm"] .flog-panel,
+html[data-theme="light-warm"] .flog-center,
+html[data-theme="light-warm"] .profile-side-section,
+html[data-theme="light-warm"] .site-updates-panel {
+  box-shadow: 0 12px 34px rgb(91 61 38 / 8%);
+}
+
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .daily-photo img {
+  background: #050505;
+}
+
+@media (max-width: 760px) {
+  .site-theme-toggle { width: 32px; height: 32px; flex-basis: 32px; }
 }

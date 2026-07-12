@@ -2,9 +2,12 @@
 import '../styles/global.css';
 import { getMessages, normalizeLocale, type Locale } from '../i18n';
 import { currentUser } from '../lib/server/session';
+import { normalizeTheme, themeColorScheme } from '../lib/theme';
 
 const locale: Locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const messages = getMessages(locale);
+const theme = normalizeTheme(Astro.cookies.get('fotolife-theme')?.value ?? Astro.cookies.get('murmurinho-theme')?.value);
+const colorScheme = themeColorScheme(theme);
 const { title = messages.site.title, description = messages.site.description, auth = true } = Astro.props;
 
 if (auth && !await currentUser(Astro)) {
@@ -12,12 +15,12 @@ if (auth && !await currentUser(Astro)) {
 }
 ---
 <!doctype html>
-<html lang={locale}>
+<html lang={locale} data-theme={theme}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={description} />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content={colorScheme} />
     <title>{title}</title>
   </head>
   <body>

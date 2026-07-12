@@ -565,10 +565,35 @@ function bindUi() {
     closeModal();
   });
   window.addEventListener('scroll', () => $('[data-scroll-top]')?.classList.toggle('visible', scrollY > 500), { passive: true });
-  $('[data-theme-toggle]')?.addEventListener('click', () => {
-    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    document.cookie = `murmurinho-theme=${next};path=/;max-age=31536000`;
+  const themeToggle = $('[data-theme-toggle]');
+  const themes = [
+    { code: 'light', name: 'Claro', icon: '☀', scheme: 'light' },
+    { code: 'light-warm', name: 'Claro quente', icon: '◒', scheme: 'light' },
+    { code: 'dark', name: 'Escuro', icon: '☾', scheme: 'dark' },
+    { code: 'dark-blue', name: 'Escuro azulado', icon: '◐', scheme: 'dark' },
+  ];
+  const currentThemeIndex = () => {
+    const index = themes.findIndex(theme => theme.code === document.documentElement.dataset.theme);
+    return index >= 0 ? index : 0;
+  };
+  const syncThemeToggle = () => {
+    if (!themeToggle) return;
+    const currentIndex = currentThemeIndex();
+    const current = themes[currentIndex];
+    const next = themes[(currentIndex + 1) % themes.length];
+    const icon = themeToggle.querySelector('span') || themeToggle;
+    icon.textContent = current.icon;
+    themeToggle.dataset.currentTheme = current.code;
+    themeToggle.setAttribute('aria-label', `Tema ${current.name}. Ativar ${next.name}`);
+    themeToggle.setAttribute('title', `${current.name} · próximo: ${next.name}`);
+  };
+  syncThemeToggle();
+  themeToggle?.addEventListener('click', () => {
+    const next = themes[(currentThemeIndex() + 1) % themes.length];
+    document.documentElement.dataset.theme = next.code;
+    document.cookie = `fotolife-theme=${next.code};path=/;max-age=31536000;samesite=lax`;
+    document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', next.scheme);
+    syncThemeToggle();
   });
   $('[data-logout]')?.addEventListener('click', async () => { await api('/api/auth/logout', { method: 'POST' }); location.href = '/login'; });
 }

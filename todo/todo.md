@@ -11,10 +11,10 @@ TODO, um de cada vez (verifique se ja existe o recurso e se precisa ser alterado
 - [x] deve ter remover observado do perfil proprio
 - [x] na esquerda sao os observadores (quem observa o perfil), na direita sao os observados (quem o perfil observa) e na esquerda embaixo entao as ultimas atualizacoes ![img_6.png](img_6.png)
 - [x] deve ter opcao na conta se quer tornar lista de observados publica ou privada (nenhum)
-- deve ter opcao na conta se quer tornar lista de observados publica e bloquear alguns para nao aparecer
-- deve preencher os dados da conta e permitir alterar
-- deve ter opcao de mandar msg privada na foto só que ve é o dono do perfil
-- deve ter modo dark
+- [x] deve ter opcao na conta se quer tornar lista de observados publica e bloquear alguns para nao aparecer
+- [x] deve preencher os dados da conta e permitir alterar
+- [x] deve ter opcao de mandar msg privada na foto só que ve é o dono do perfil
+- [x] deve ter modo dark
 - deve ter clica na foto e ver em tela cheia com botoes de proxima e anterior usando pre carga com assincrono
 - deve ser possivel enviar foto pelo perfil onde escolhe a foto, assincrona, permite marcar o circulo do local da foto e atualiza no banco coluna blob
 - deve permitir ao proprietario editar o caption da imagem enviada
@@ -25,3 +25,4 @@ TODO, um de cada vez (verifique se ja existe o recurso e se precisa ser alterado
 - quando o perfil for meu o termo é Observando e nao observadores ![img_2.png](img_2.png)
 - so deve aparecer a ultima atualizacao da pessoa ![img_1.png](img_1.png) para ter apenas uma entrada no grid
 - pertmir que /@nomeusuario acesso o perfil do usuario 
+- centralize ![img_8.png](img_8.png)
