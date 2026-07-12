@@ -388,7 +388,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     let previewReady = false;
     let isPublishing = false;
     const updatePublishAvailability = () => {
-      if (publishButton) publishButton.disabled = isPublishing || !(uploadToken && previewReady);
+      if (publishButton) publishButton.disabled = isPublishing || !previewReady;
     };
 
     const showPostMessage = (message = '', type = 'error') => {
@@ -464,13 +464,18 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             reject(new Error(xhr.responseText || clientMessages.uploadError));
             return;
           }
-          const data = JSON.parse(xhr.responseText);
-          uploadToken = String(data.uploadToken || '');
-          if (status) status.textContent = clientMessages.imageReady;
-          if (percent) percent.textContent = '100%';
-          if (fill) fill.style.width = '100%';
-          updatePublishAvailability();
-          resolve(uploadToken);
+          try {
+            const responseData = JSON.parse(xhr.responseText) as { uploadToken?: string };
+            uploadToken = String(responseData.uploadToken || '');
+            if (!uploadToken) throw new Error(clientMessages.uploadError);
+            if (status) status.textContent = clientMessages.imageReady;
+            if (percent) percent.textContent = '100%';
+            if (fill) fill.style.width = '100%';
+            updatePublishAvailability();
+            resolve(uploadToken);
+          } catch (error) {
+            reject(error instanceof Error ? error : new Error(clientMessages.uploadError));
+          }
         };
         xhr.onerror = () => { activeUpload = null; reject(new Error(clientMessages.uploadError)); };
         xhr.onabort = () => reject(new Error(clientMessages.uploadReplaced));
@@ -479,6 +484,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
 
       uploadPromise.catch(error => {
         if (activeUpload) return;
+        uploadToken = '';
         if (status) status.textContent = clientMessages.uploadFailed;
         updatePublishAvailability();
         if (error.message !== clientMessages.uploadReplaced) showPostMessage(error.message);
@@ -519,7 +525,9 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       if (publishButton) publishButton.disabled = true;
       try {
         if (!previewReady) throw new Error(clientMessages.waitImage);
-        const token = uploadToken || await uploadPromise;
+        const pendingUpload = uploadPromise;
+        if (!pendingUpload && !uploadToken) throw new Error(clientMessages.waitImage);
+        const token = uploadToken || await pendingUpload;
         if (!token || !previewReady) throw new Error(clientMessages.waitImage);
         if (status) status.textContent = clientMessages.publishing;
         const caption = String(new FormData(postForm).get('caption') || '');
