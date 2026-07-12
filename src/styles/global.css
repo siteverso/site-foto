@@ -1349,16 +1349,47 @@ body:has(.login-shell) {
   min-height: 42px;
   margin-top: 14px;
   padding: 10px 14px;
-  border: 1px solid var(--strong);
+  border: 1px solid color-mix(in srgb, var(--strong) 38%, var(--line));
   border-radius: 999px;
-  color: var(--inverse);
-  background: var(--strong);
+  color: var(--strong);
+  background: color-mix(in srgb, var(--strong) 9%, var(--surface));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--strong) 8%, transparent);
   font-weight: 800;
   cursor: pointer;
+  transition: background .16s ease, border-color .16s ease, box-shadow .16s ease, opacity .16s ease, transform .16s ease;
 }
 
 .friend-button:hover:not(:disabled) {
-  opacity: .82;
+  border-color: color-mix(in srgb, var(--strong) 52%, var(--line));
+  background: color-mix(in srgb, var(--strong) 14%, var(--surface));
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--strong) 12%, transparent);
+  transform: translateY(-1px);
+}
+
+.friend-button-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--muted);
+  border-color: color-mix(in srgb, var(--line) 82%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 58%, transparent);
+  box-shadow: none;
+  font-weight: 700;
+}
+
+.friend-button-remove:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--line);
+  background: var(--surface-2);
+  box-shadow: none;
+  transform: none;
+}
+
+.friend-button-remove span {
+  font-size: 1.05rem;
+  line-height: 1;
+  opacity: .72;
 }
 
 .friend-button:disabled {
@@ -1739,3 +1770,62 @@ html[data-theme="light-warm"] .site-updates-panel {
 
 /* Edição da legenda da foto */
 .daily-photo-actions{position:absolute;top:14px;right:14px;z-index:2;display:flex;gap:8px}.daily-photo-actions .daily-photo-delete{position:static}.daily-photo-edit{display:grid;width:42px;height:42px;place-items:center;padding:0;border:1px solid rgb(255 255 255 / 55%);border-radius:999px;color:#fff;background:rgb(0 0 0 / 58%);box-shadow:0 8px 24px rgb(0 0 0 / 22%);cursor:pointer;backdrop-filter:blur(8px)}.daily-photo-edit:hover{background:#000}.daily-photo-edit svg{width:18px;height:18px;fill:currentColor}.photo-caption-form{display:grid;gap:10px;margin-top:14px}.photo-caption-form[hidden]{display:none}.photo-caption-form textarea{min-height:86px;padding:12px 14px;border:1px solid #ccc;border-radius:12px;resize:vertical;font:inherit}.photo-caption-form>div{display:flex;justify-content:flex-end;gap:8px}.photo-caption-form button{border:1px solid #bbb;border-radius:10px;background:#fff;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer}.photo-caption-form button[type="submit"]{border-color:#111;background:#111;color:#fff}.photo-caption-form button:disabled{opacity:.55;cursor:default}.photo-caption-form>[data-caption-message]{margin:0;color:#a21b1b;font-size:.78rem}
+
+/* FotoLife: legenda editável pelo proprietário */
+[data-editable-caption="true"] { cursor: text; }
+
+/* Estado passivo de observação: neutro e separado da ação principal "Observar". */
+.friend-button.friend-button-remove {
+  color: #66645f;
+  border-color: #d5d3cd;
+  background: #f2f1ee;
+  box-shadow: none;
+  font-weight: 650;
+}
+
+.friend-button.friend-button-remove:hover:not(:disabled) {
+  color: #4f4d49;
+  border-color: #c8c6c0;
+  background: #ebeae6;
+  box-shadow: none;
+  transform: none;
+}
+
+html[data-theme="light-warm"] .friend-button.friend-button-remove {
+  color: #766c61;
+  border-color: #d8cdbf;
+  background: #f1e9dd;
+}
+
+html[data-theme="light-warm"] .friend-button.friend-button-remove:hover:not(:disabled) {
+  color: #5f564e;
+  border-color: #cdbfac;
+  background: #e9dece;
+}
+
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .friend-button.friend-button-remove {
+  color: #aaa9a5;
+  border-color: #3a3a38;
+  background: #222220;
+  box-shadow: none;
+}
+
+:is(html[data-theme="dark"], html[data-theme="dark-blue"]) .friend-button.friend-button-remove:hover:not(:disabled) {
+  color: #c6c5c1;
+  border-color: #4a4a47;
+  background: #292927;
+  box-shadow: none;
+  transform: none;
+}
+
+html[data-theme="dark-blue"] .friend-button.friend-button-remove {
+  color: #a9afb7;
+  border-color: #35404d;
+  background: #202832;
+}
+
+html[data-theme="dark-blue"] .friend-button.friend-button-remove:hover:not(:disabled) {
+  color: #c1c6cc;
+  border-color: #45515f;
+  background: #28323d;
+}

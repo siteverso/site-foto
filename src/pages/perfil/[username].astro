@@ -41,12 +41,15 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
 
             {!isOwner && (
               <button
-                class="friend-button"
+                class:list={["friend-button", { "friend-button-remove": alreadyFriend }]}
                 type="button"
-                data-add-friend
+                data-friend-toggle
                 data-user-id={profile.id}
-                disabled={alreadyFriend}
+                data-observing={alreadyFriend ? "true" : "false"}
+                aria-label={alreadyFriend ? `Remover @${profile.username} dos observados` : `Observar @${profile.username}`}
+                title={alreadyFriend ? `Remover @${profile.username} dos observados` : `Observar @${profile.username}`}
               >
+                {alreadyFriend && <span aria-hidden="true">×</span>}
                 {alreadyFriend ? t.publicProfile.alreadyFriend : t.publicProfile.addFriend}
               </button>
             )}
@@ -101,7 +104,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                         </div>
                       )}
                       <img src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} loading="lazy" />
-                      <p data-photo-caption hidden={!photo.caption}>{photo.caption}</p>
+                      <p data-photo-caption data-editable-caption={isOwner ? "true" : undefined} title={isOwner ? "Duplo clique para editar a legenda" : undefined} hidden={!photo.caption}>{photo.caption}</p>
                       {isOwner && (
                         <form class="photo-caption-form" data-caption-form data-photo-id={photo.id} hidden>
                           <textarea name="caption" maxlength={MESSAGE_MAX_LENGTH} aria-label="Legenda da foto">{photo.caption}</textarea>
@@ -221,12 +224,19 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
   )}
 
   <script>
-    document.querySelector<HTMLButtonElement>('[data-add-friend]')?.addEventListener('click', async event => {
+    document.querySelector<HTMLButtonElement>('[data-friend-toggle]')?.addEventListener('click', async event => {
       const button = event.currentTarget;
+      const userId = button.dataset.userId;
+      if (!userId || button.disabled) return;
+
       button.disabled = true;
-      const response = await fetch(`/api/friends/${button.dataset.userId}`, { method: 'POST' });
+      const method = button.dataset.observing === 'true' ? 'DELETE' : 'POST';
+      const response = await fetch(`/api/friends/${userId}`, { method });
       if (response.ok) location.reload();
-      else { button.disabled = false; alert(await response.text()); }
+      else {
+        button.disabled = false;
+        alert(await response.text());
+      }
     });
     document.addEventListener('click', async event => {
       const removeFriendButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-remove-friend]');
@@ -255,12 +265,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
 
       const editCaptionButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-edit-caption]');
       if (editCaptionButton) {
-        const photo = editCaptionButton.closest<HTMLElement>('[data-daily-photo]');
-        const form = photo?.querySelector<HTMLFormElement>('[data-caption-form]');
-        if (form) {
-          form.hidden = false;
-          form.querySelector<HTMLTextAreaElement>('textarea')?.focus();
-        }
+        openCaptionEditor(editCaptionButton.closest<HTMLElement>('[data-daily-photo]'));
         return;
       }
 
@@ -280,6 +285,19 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       const response = await fetch(`/api/photos/${current.dataset.photoId}`, { method: 'DELETE' });
       if (!response.ok) alert(await response.text());
     });
+    const openCaptionEditor = (photo: HTMLElement | null) => {
+      const form = photo?.querySelector<HTMLFormElement>('[data-caption-form]');
+      if (!form) return;
+      form.hidden = false;
+      const textarea = form.querySelector<HTMLTextAreaElement>('textarea');
+      textarea?.focus();
+      textarea?.setSelectionRange(textarea.value.length, textarea.value.length);
+    };
+
+    document.querySelectorAll<HTMLElement>('[data-editable-caption="true"]').forEach(caption => {
+      caption.addEventListener('dblclick', () => openCaptionEditor(caption.closest<HTMLElement>('[data-daily-photo]')));
+    });
+
     document.querySelectorAll<HTMLFormElement>('[data-caption-form]').forEach(form => {
       form.addEventListener('submit', async event => {
         event.preventDefault();
@@ -330,6 +348,11 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     let uploadToken = '';
     let uploadPromise: Promise<string> | null = null;
     let activeUpload: XMLHttpRequest | null = null;
+    let previewReady = false;
+
+    const updatePublishAvailability = () => {
+      if (publishButton) publishButton.disabled = !(uploadToken && previewReady);
+    };
 
     const showPostMessage = (message = '', type = 'error') => {
       if (!postMessage) return;
@@ -360,7 +383,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       activeUpload?.abort();
       uploadToken = '';
       showPostMessage();
-      if (publishButton) publishButton.disabled = true;
+      updatePublishAvailability();
       progress?.removeAttribute('hidden');
       if (status) status.textContent = 'Enviando foto…';
       if (percent) percent.textContent = '0%';
@@ -390,7 +413,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           if (status) status.textContent = 'Imagem pronta';
           if (percent) percent.textContent = '100%';
           if (fill) fill.style.width = '100%';
-          if (publishButton) publishButton.disabled = !uploadToken;
+          updatePublishAvailability();
           resolve(uploadToken);
         };
         xhr.onerror = () => { activeUpload = null; reject(new Error('Não foi possível enviar a imagem.')); };
@@ -401,7 +424,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       uploadPromise.catch(error => {
         if (activeUpload) return;
         if (status) status.textContent = 'Falha no envio';
-        if (publishButton) publishButton.disabled = true;
+        updatePublishAvailability();
         if (error.message !== 'Envio substituído.') showPostMessage(error.message);
       });
       return uploadPromise;
@@ -409,9 +432,26 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
 
     input?.addEventListener('change', () => {
       const file = input.files?.[0];
-      if (!file || !file.type.startsWith('image/') || !preview) return;
+      previewReady = false;
+      uploadToken = '';
+      updatePublishAvailability();
+      if (!file || !file.type.startsWith('image/') || !preview) {
+        showPostMessage('Escolha um arquivo de imagem válido.');
+        return;
+      }
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       previewUrl = URL.createObjectURL(file);
+      preview.onload = () => {
+        previewReady = true;
+        updatePublishAvailability();
+      };
+      preview.onerror = () => {
+        previewReady = false;
+        uploadToken = '';
+        activeUpload?.abort();
+        updatePublishAvailability();
+        showPostMessage('Não foi possível carregar a imagem selecionada.');
+      };
       preview.src = previewUrl;
       preview.hidden = false;
       if (label) label.hidden = true;
@@ -422,8 +462,9 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       event.preventDefault();
       if (publishButton) publishButton.disabled = true;
       try {
+        if (!previewReady) throw new Error('Aguarde a imagem terminar de carregar.');
         const token = uploadToken || await uploadPromise;
-        if (!token) throw new Error('Escolha uma foto.');
+        if (!token || !previewReady) throw new Error('Aguarde a imagem terminar de carregar.');
         if (status) status.textContent = 'Publicando…';
         const caption = String(new FormData(postForm).get('caption') || '');
         const response = await fetch('/api/photos/today', {
@@ -434,7 +475,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         if (!response.ok) throw new Error(await responseError(response));
         location.reload();
       } catch (error) {
-        if (publishButton) publishButton.disabled = !uploadToken;
+        updatePublishAvailability();
         showPostMessage(error instanceof Error ? error.message : 'Não foi possível publicar.');
       }
     });
