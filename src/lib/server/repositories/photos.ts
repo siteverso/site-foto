@@ -58,6 +58,28 @@ function card(row: OracleRow): PhotoCard {
     };
 }
 
+export async function getPhotoById(photoId: number): Promise<PhotoCard | null> {
+    if (!Number.isInteger(photoId) || photoId <= 0) return null;
+    return withConnection(async connection => {
+        const result = await connection.execute<OracleRow>(
+            `SELECT p.id,
+                    p.user_id,
+                    u.username,
+                    NVL(u.avatar_url, '') AS avatar_url,
+                    NVL(p.contents, '') AS caption,
+                    TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
+               FROM murm_post p
+               JOIN murm_user u ON u.id = p.user_id
+              WHERE p.id = :photo_id
+                AND p.post_type = 'photo'
+                AND p.status = 'published'
+                AND u.active = 1`,
+            { photo_id: photoId },
+        );
+        return result.rows?.[0] ? card(result.rows[0]) : null;
+    });
+}
+
 export async function getTodayPhoto(userId: number): Promise<PhotoCard | null> {
     return withConnection(async connection => {
         const result = await connection.execute<OracleRow>(
@@ -391,7 +413,6 @@ export async function addComment(
             );
             const ownerUserId = Number(photoResult.rows?.[0]?.USER_ID || 0);
             if (!ownerUserId) throw new Error('FOTO_INVALIDA');
-            if (isPrivate && ownerUserId == userId) throw new Error('MENSAGEM_PRIVADA_INVALIDA');
 
             const result = await connection.execute(
                 `INSERT INTO murm_post

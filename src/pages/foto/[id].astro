@@ -1,0 +1,152 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import PhotoMessageComposer from '../../components/PhotoMessageComposer.astro';
+import { requireUser } from '../../lib/server/session';
+import { getComments, getFeedPhotos, getPhotoById } from '../../lib/server/repositories/photos';
+import { getMessages, normalizeLocale } from '../../i18n';
+import { MESSAGE_MAX_LENGTH } from '../../lib/message-limit';
+
+import '../../styles/pages/home-profile.css';
+import '../../styles/pages/home-photo-card.css';
+import '../../styles/pages/profile-detail.css';
+import '../../styles/components/photo-workspace.css';
+import '../../styles/components/photo-caption.css';
+import '../../styles/components/feed-actions.css';
+import '../../styles/pages/photo-detail.css';
+import '../../styles/themes/theme-overrides.css';
+
+const user = await requireUser(Astro);
+const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
+const t = getMessages(locale);
+const photoId = Number.parseInt(String(Astro.params.id || ''), 10);
+const photo = await getPhotoById(photoId);
+if (!photo) Astro.response.status = 404;
+const isOwner = Boolean(photo && photo.userId === user.id);
+const [comments, updates] = await Promise.all([
+  photo ? getComments(photo.id, user.id, 50) : Promise.resolve({ items: [], total: 0 }),
+  getFeedPhotos(10, 0),
+]);
+const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
+  day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+}).format(new Date(value));
+---
+<AppLayout title={photo ? `@${photo.username} — ${t.site.title}` : t.publicProfile.notFound}>
+  <main class="feed-page photo-detail-page">
+    <SiteHeader username={user.username} />
+
+    {photo ? (
+      <section class="home-feed-layout site-container site-section photo-detail-layout">
+        <aside class="site-updates-panel">
+          <h1>{t.home.updates}</h1>
+          <div class="site-updates-list">
+            {updates.map(item => (
+              <a href={`/foto/${item.id}`} aria-current={item.id === photo.id ? 'page' : undefined}>
+                <img src={`/api/photos/${item.id}`} alt="" loading="lazy" />
+                <span>
+                  <strong>@{item.username}</strong>
+                  <small>{formatDate(item.publishedAt)}</small>
+                </span>
+              </a>
+            ))}
+          </div>
+        </aside>
+
+        <section class="photo-feed-column" aria-label={t.home.comments}>
+          <article class="photo-post profile-photo-post photo-detail-thread" data-live-key={`photo-${photo.id}`}>
+            <header class="photo-post-header">
+              <a href={`/perfil/${photo.username}`}><strong>@{photo.username}</strong></a>
+              <time datetime={photo.publishedAt}>{formatDate(photo.publishedAt)}</time>
+            </header>
+
+            <div class="daily-photo" data-daily-photo>
+              {isOwner && (
+                <div class="photo-action-buttons">
+                  <button class="photo-action-button photo-action-button--edit" type="button" data-edit-caption aria-label={t.home.editCaption} title={t.home.editCaption}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V20h3.5L18 9.5 14.5 6 4 16.5Zm16.7-9.8a1 1 0 0 0 0-1.4l-2-2a1 1 0 0 0-1.4 0l-1.6 1.6 3.5 3.5 1.5-1.7Z"/></svg>
+                  </button>
+                  <button class="photo-action-button photo-action-button--delete" type="button" data-delete-photo data-photo-id={photo.id} aria-label={t.home.deletePhoto} title={t.home.deletePhoto}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.7 5.3 12 10.6l5.3-5.3 1.4 1.4-5.3 5.3 5.3 5.3-1.4 1.4-5.3-5.3-5.3 5.3-1.4-1.4 5.3-5.3-5.3-5.3 1.4-1.4Z"/></svg>
+                  </button>
+                </div>
+              )}
+              <img class="photo-post-image" src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} />
+              <p class="photo-post-caption" data-photo-caption data-editable-caption={isOwner ? 'true' : undefined} title={isOwner ? t.home.doubleClickCaption : undefined} hidden={!photo.caption}>{photo.caption}</p>
+              {isOwner && (
+                <form class="photo-caption-form" data-caption-form data-photo-id={photo.id} hidden>
+                  <textarea name="caption" maxlength={MESSAGE_MAX_LENGTH} aria-label={t.home.photoCaption}>{photo.caption}</textarea>
+                  <div><button type="button" data-cancel-caption>{t.common.cancel}</button><button type="submit">{t.common.save}</button></div>
+                  <p data-caption-message hidden></p>
+                </form>
+              )}
+            </div>
+
+            <section class="comments-panel photo-comments" data-comments-panel>
+              <h2>{t.home.comments}</h2>
+              <div class="comment-list" data-comment-list hidden={!comments.items.length}>
+                {comments.items.map(comment => (
+                  <article class:list={['comment-item', {
+                    'comment-item-private-visible': comment.isPrivate && comment.canRead,
+                    'comment-item-private-hidden': comment.isPrivate && !comment.canRead,
+                  }]} data-comment-item data-comment-id={comment.id}>
+                    <div class="comment-content">
+                      <a class="comment-user" href={`/perfil/${comment.username}`}><strong>@{comment.username}</strong></a>
+                      {comment.isPrivate && !comment.canRead
+                        ? <p class="private-comment-placeholder private-comment-placeholder-hidden"><span aria-hidden="true">🔒</span> {t.home.privateMessage}</p>
+                        : <>
+                            {comment.isPrivate && <div class="private-comment-badge private-comment-badge-visible"><span aria-hidden="true">🔒</span> {t.home.privateMessage}</div>}
+                            <p class:list={[{'private-comment-message': comment.isPrivate}]}>{comment.message}</p>
+                          </>}
+                      <div class="comment-meta">
+                        {(comment.userId === user.id || isOwner) && (
+                          <div class="comment-delete-area" data-comment-delete-area>
+                            <button class="comment-delete-trigger" type="button" data-comment-delete-trigger aria-label={t.home.deleteMessage} title={t.home.deleteMessage}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"/></svg>
+                            </button>
+                          </div>
+                        )}
+                        <time datetime={comment.createdAt}>{formatDate(comment.createdAt)}</time>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <p class="empty-state comment-empty" data-comment-empty hidden={Boolean(comments.items.length)}>{t.home.noComments}</p>
+              <PhotoMessageComposer
+                                                                postId={photo.id}
+                                                                recipientUsername={photo.username}
+                                                                placeholder={t.home.commentPlaceholder}
+                                                                publicLabel={t.common.public}
+                                                                privateLabel={t.common.private}
+                                                                privateTitle={t.home.onlyUserCanRead}
+                                                                sendLabel={t.home.send}
+                                                            />
+              <p class="comment-form-message" data-comment-message hidden></p>
+            </section>
+          </article>
+        </section>
+      </section>
+    ) : (
+      <section class="photo-detail-not-found site-container site-section">
+        <h1>{t.publicProfile.notFound}</h1>
+        <a href="/">{t.publicProfile.back}</a>
+      </section>
+    )}
+  </main>
+
+  <script id="profile-client-messages" type="application/json" set:html={JSON.stringify({
+    noObserved: t.publicProfile.noObservedFull, captionSaveError: t.home.captionSaveError,
+    operationError: t.home.operationError, loadConfirmationError: t.home.loadConfirmationError,
+    imageStillLoading: t.home.imageStillLoading, uploading: t.home.uploading,
+    processing: t.home.processing, imageReady: t.home.imageReady, uploadError: t.home.uploadError,
+    uploadReplaced: t.home.uploadReplaced, uploadFailed: t.home.uploadFailed,
+    waitImage: t.home.waitImage, publishing: t.home.publishing, publishingPhoto: t.home.publishingPhoto,
+    temporaryLimit: t.home.temporaryLimit, loadingProfile: t.home.loadingProfile,
+    photoPublished: t.home.photoPublished, deleteMessage: t.home.deleteMessage,
+    deleteQuestion: t.home.deleteQuestion, confirmDeletion: t.home.confirmDeletion,
+    cancelDeletion: t.home.cancelDeletion, messageDeleted: t.home.messageDeleted,
+    undo: t.common.undo, privateMessage: t.home.privateMessage,
+    messageSendError: t.home.messageSendError
+  })}></script>
+  <script type="module" src="/js/pages/profile.js?v=20260712-2"></script>
+</AppLayout>

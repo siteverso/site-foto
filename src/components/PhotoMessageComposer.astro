@@ -1,0 +1,37 @@
+---
+import { MESSAGE_MAX_LENGTH } from '../lib/message-limit';
+
+interface Props {
+  postId: number;
+  recipientUsername: string;
+  placeholder: string;
+  publicLabel: string;
+  privateLabel: string;
+  privateTitle: string;
+  sendLabel: string;
+}
+
+const {
+  postId,
+  recipientUsername,
+  placeholder,
+  publicLabel,
+  privateLabel,
+  privateTitle,
+  sendLabel,
+} = Astro.props;
+---
+<form class="comment-form comment-form-unified" data-comment-form data-post-id={postId}>
+  <input name="message" maxlength={MESSAGE_MAX_LENGTH} placeholder={placeholder} autocomplete="off" required />
+  <label class="private-toggle" title={`${privateTitle}: @${recipientUsername}`}>
+    <input type="checkbox" name="private" />
+    <span>
+      <i aria-hidden="true"></i>
+      <b class="private-toggle-public">{publicLabel}</b>
+      <b class="private-toggle-private">{privateLabel}</b>
+    </span>
+  </label>
+  <button type="submit" aria-label={sendLabel} title={sendLabel}>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-5.5 16-3.1-6.4L4 12Zm7.4 1.6L20 4" /></svg>
+  </button>
+</form>

@@ -50,7 +50,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
                 <time>{formatDate(photo.publishedAt)}</time>
               </header>
 
-              <a class="photo-post-image-link" href={`/perfil/${photo.username}`} aria-label={`${t.home.viewProfile} @${photo.username}`}>
+              <a class="photo-post-image-link" href={`/foto/${photo.id}`} aria-label={`${t.home.comments}: @${photo.username}`}>
                 <img class="photo-post-image" src={`/api/photos/${photo.id}`} alt={photo.caption || `@${photo.username}`} loading="lazy" />
               </a>
               {photo.caption && <p class="photo-post-caption">{photo.caption}</p>}
@@ -64,7 +64,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
     </section>
   </main>
 
-  <script define:vars={{ locale, feedLabels: { loading: t.home.loadingMore, retry: t.common.retry, loadMore: t.home.loadMore, viewProfile: t.home.viewProfile, feedLoad: t.errors.feedLoad } }}>
+  <script define:vars={{ locale, feedLabels: { loading: t.home.loadingMore, retry: t.common.retry, loadMore: t.home.loadMore, viewProfile: t.home.viewProfile, viewPhoto: t.home.comments, feedLoad: t.errors.feedLoad } }}>
     const feed = document.querySelector('[data-photo-feed]');
     const loadMoreButton = document.querySelector('[data-load-more]');
     let feedOffset = document.querySelectorAll('.photo-post').length;
@@ -80,7 +80,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
     function postHtml(photo) {
       return `<article class="photo-post" id="foto-${photo.id}" data-photo-id="${photo.id}" data-live-key="photo-${photo.id}">
         <header class="photo-post-header"><a href="/perfil/${encodeURIComponent(photo.username)}"><strong>@${escapeHtml(photo.username)}</strong></a><time>${formatDate(photo.publishedAt)}</time></header>
-        <a class="photo-post-image-link" href="/perfil/${encodeURIComponent(photo.username)}" aria-label="${feedLabels.viewProfile} @${escapeHtml(photo.username)}"><img class="photo-post-image" src="/api/photos/${photo.id}" alt="${escapeHtml(photo.caption || `@${photo.username}`)}" loading="lazy"></a>
+        <a class="photo-post-image-link" href="/foto/${photo.id}" aria-label="${feedLabels.viewPhoto} @${escapeHtml(photo.username)}"><img class="photo-post-image" src="/api/photos/${photo.id}" alt="${escapeHtml(photo.caption || `@${photo.username}`)}" loading="lazy"></a>
         ${photo.caption ? `<p class="photo-post-caption">${escapeHtml(photo.caption)}</p>` : ''}
       </article>`;
     }

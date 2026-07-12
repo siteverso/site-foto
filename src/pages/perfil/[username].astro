@@ -2,6 +2,7 @@
 import '../../styles/pages/profile-detail.css';
 import AppLayout from '../../layouts/AppLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
+import PhotoMessageComposer from '../../components/PhotoMessageComposer.astro';
 import ProfileSidebar from '../../components/ProfileSidebar.astro';
 import {requireUser} from '../../lib/server/session';
 import {getComments, getLatestPhotos, getObservedPhotos, getObserverPhotos, getPublicProfile, getUserPhotos, isFriend} from '../../lib/server/repositories/photos';
@@ -108,7 +109,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {day: '2-d
                                                                         </button>
                                                                     </div>
                                                             )}
-                                                            <img src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} loading="lazy"/>
+                                                            <a class="profile-photo-detail-link" href={`/foto/${photo.id}`} aria-label={`${t.home.comments}: @${profile.username}`}><img src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} loading="lazy"/></a>
                                                             <p data-photo-caption data-editable-caption={isOwner ? "true" : undefined} title={isOwner ? t.home.doubleClickCaption : undefined} hidden={!photo.caption}>{photo.caption}</p>
                                                             {isOwner && (
                                                                     <form class="photo-caption-form" data-caption-form data-photo-id={photo.id} hidden>
@@ -158,20 +159,15 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {day: '2-d
                                                                     </article>
                                                             ))}</div>
                                                             <p class="empty-state comment-empty" data-comment-empty hidden={Boolean(comments?.items.length)}>{t.home.noComments}</p>
-                                                            <form class="comment-form comment-form-unified" data-comment-form data-post-id={photo.id}>
-                                                                <input name="message" maxlength={MESSAGE_MAX_LENGTH} placeholder={t.home.commentPlaceholder} autocomplete="off" required/>
-                                                                {!isOwner && (
-                                                                        <label class="private-toggle" title={`${t.home.onlyUserCanRead}: @${profile.username}`}>
-                                                                            <input type="checkbox" name="private"/>
-                                                                            <span><i aria-hidden="true"></i><b class="private-toggle-public">{t.common.public}</b><b class="private-toggle-private">{t.common.private}</b></span>
-                                                                        </label>
-                                                                )}
-                                                                <button type="submit" aria-label={t.home.send} title={t.home.send}>
-                                                                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                                                                        <path d="M4 12 20 4l-5.5 16-3.1-6.4L4 12Zm7.4 1.6L20 4"/>
-                                                                    </svg>
-                                                                </button>
-                                                            </form>
+                                                            <PhotoMessageComposer
+                                                                postId={photo.id}
+                                                                recipientUsername={profile.username}
+                                                                placeholder={t.home.commentPlaceholder}
+                                                                publicLabel={t.common.public}
+                                                                privateLabel={t.common.private}
+                                                                privateTitle={t.home.onlyUserCanRead}
+                                                                sendLabel={t.home.send}
+                                                            />
                                                             <p class="comment-form-message" data-comment-message hidden></p>
                                                         </section>
                                                     </article>

@@ -43,9 +43,7 @@ const profileHref = `/perfil/${encodeURIComponent(item.recipient.username)}`;
         {item.photo.available ? (
             <a
                 class="sent-photo-message-photo"
-                href={`/api/photos/${item.photoId}`}
-                target="_blank"
-                rel="noopener"
+                href={`/foto/${item.photoId}`}
                 aria-label={labels.relatedPhoto}
             >
                 <img src={`/api/photos/${item.photoId}`} alt={item.photo.caption || labels.relatedPhoto} loading="lazy" />

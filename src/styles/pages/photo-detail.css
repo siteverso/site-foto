@@ -1,0 +1,93 @@
+.photo-detail-layout {
+  width: min(var(--site-max-width), calc(100% - var(--site-gutter)));
+  align-items: start;
+}
+
+.photo-detail-layout .photo-feed-column,
+.photo-detail-thread {
+  min-width: 0;
+  width: 100%;
+}
+
+/* O detalhe usa o mesmo respiro interno do painel central do perfil. */
+.photo-detail-thread {
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line, #deded9);
+  border-radius: 20px;
+  background: var(--surface, #fff);
+}
+
+.photo-detail-thread .photo-post-header {
+  padding: 0 0 14px;
+}
+
+.photo-detail-thread .daily-photo {
+  margin: 0;
+}
+
+.photo-detail-thread .daily-photo > img {
+  display: block;
+  width: 100%;
+  max-height: 820px;
+  object-fit: contain;
+  border-radius: 16px;
+  background: #111;
+}
+
+.photo-detail-thread .daily-photo > .photo-post-caption {
+  margin: 6px 0 0;
+  padding: 15px 17px;
+  border: 0;
+  border-radius: 14px;
+  line-height: 1.55;
+}
+
+.photo-detail-thread .comments-panel {
+  margin: 18px 0 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--line, #deded9);
+}
+
+.photo-detail-thread .comments-panel h2 {
+  margin: 0 0 12px;
+}
+
+.photo-detail-thread .comment-list {
+  display: grid;
+  gap: 10px;
+}
+
+.photo-detail-thread .comment-item {
+  border: 1px solid var(--line, #e3e3de);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.photo-detail-thread .comment-form-unified {
+  margin-top: 14px;
+}
+
+.site-updates-list a[aria-current="page"] {
+  background: var(--surface-2, #f3f3ef);
+}
+
+.photo-detail-not-found {
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .photo-detail-thread {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .photo-detail-thread .daily-photo > img {
+    border-radius: 12px;
+  }
+
+  .photo-detail-thread .daily-photo > .photo-post-caption {
+    padding: 13px 14px;
+    border-radius: 12px;
+  }
+}
