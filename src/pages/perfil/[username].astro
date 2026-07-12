@@ -20,7 +20,7 @@ const showObservedList = Boolean(profile && canViewObservedList(profile.id, user
 const [friendPhotos, latestPhotos, commentsByPhoto] = await Promise.all([
   profile && showObservedList ? getFriendPhotos(profile.id, isOwner) : Promise.resolve([]),
   profile ? getLatestPhotos(profile.id) : Promise.resolve([]),
-  Promise.all(photos.map(async photo => ({ photoId: photo.id, comments: await getComments(photo.id) }))),
+  Promise.all(photos.map(async photo => ({ photoId: photo.id, comments: await getComments(photo.id, user.id, 50) }))),
 ]);
 const commentsMap = new Map(commentsByPhoto.map(item => [item.photoId, item.comments]));
 const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
@@ -95,10 +95,15 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                     <section class="comments-panel" data-comments-panel>
                       <h2>{t.home.comments}</h2>
                       <div class="comment-list" data-comment-list hidden={!comments?.items.length}>{comments?.items.map(comment => (
-                        <article class="comment-item" data-comment-item data-comment-id={comment.id}>
+                        <article class:list={["comment-item", { "comment-item-private": comment.isPrivate }]} data-comment-item data-comment-id={comment.id}>
                           <div class="comment-content">
                             <a class="comment-user" href={`/perfil/${comment.username}`}><strong>@{comment.username}</strong></a>
-                            <p>{comment.message}</p>
+                            {comment.isPrivate && !comment.canRead
+                              ? <p class="private-comment-placeholder"><span aria-hidden="true">🔒</span> Mensagem privada</p>
+                              : <>
+                                  {comment.isPrivate && <div class="private-comment-badge"><span aria-hidden="true">🔒</span> Mensagem privada</div>}
+                                  <p class:list={[{ "private-comment-message": comment.isPrivate }]}>{comment.message}</p>
+                                </>}
                             <div class="comment-meta">
                               {(comment.userId === user.id || isOwner) && (
                                 <div class="comment-delete-area" data-comment-delete-area>
@@ -113,8 +118,14 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                         </article>
                       ))}</div>
                       <p class="empty-state comment-empty" data-comment-empty hidden={Boolean(comments?.items.length)}>{t.home.noComments}</p>
-                      <form class="comment-form" data-comment-form data-post-id={photo.id}>
+                      <form class="comment-form comment-form-unified" data-comment-form data-post-id={photo.id}>
                         <input name="message" maxlength={MESSAGE_MAX_LENGTH} placeholder={t.home.commentPlaceholder} autocomplete="off" required />
+                        {!isOwner && (
+                          <label class="private-toggle" title={`Somente @${profile.username} poderá ler`}>
+                            <input type="checkbox" name="private" />
+                            <span><i aria-hidden="true"></i><b class="private-toggle-public">Público</b><b class="private-toggle-private">Privado</b></span>
+                          </label>
+                        )}
                         <button type="submit" aria-label={t.home.send} title={t.home.send}>
                           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-5.5 16-3.1-6.4L4 12Zm7.4 1.6L20 4" /></svg>
                         </button>
@@ -413,6 +424,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         event.preventDefault();
         const field = form.elements.namedItem('message') as HTMLInputElement;
         const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        const privateField = form.elements.namedItem('private') as HTMLInputElement | null;
         const panel = form.closest<HTMLElement>('[data-comments-panel]');
         const list = panel?.querySelector<HTMLElement>('[data-comment-list]');
         const empty = panel?.querySelector<HTMLElement>('[data-comment-empty]');
@@ -429,7 +441,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           const response = await fetch('/api/comments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ postId: Number(form.dataset.postId), message }),
+            body: JSON.stringify({ postId: Number(form.dataset.postId), message, private: Boolean(privateField?.checked) }),
           });
           const data = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(String(data.error || 'Não foi possível enviar a mensagem.'));
@@ -440,15 +452,16 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             const strong = document.createElement('strong');
             const text = document.createElement('p');
             const time = document.createElement('time');
+            const content = document.createElement('div');
+            const deleteArea = document.createElement('div');
+            const deleteButton = document.createElement('button');
+            const isPrivate = Boolean(privateField?.checked);
             userLink.className = 'comment-user';
             userLink.href = `/perfil/${encodeURIComponent(String(data.comment.username))}`;
             strong.textContent = `@${data.comment.username}`;
             text.textContent = String(data.comment.message || message);
             time.textContent = formatCommentDate(String(data.comment.createdAt || new Date().toISOString()));
-            const content = document.createElement('div');
-            const deleteArea = document.createElement('div');
-            const deleteButton = document.createElement('button');
-            article.className = 'comment-item';
+            article.className = isPrivate ? 'comment-item comment-item-private' : 'comment-item';
             article.dataset.commentItem = '';
             article.dataset.commentId = String(data.comment.id || '');
             content.className = 'comment-content';
@@ -465,13 +478,22 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             userLink.append(strong);
             deleteArea.append(deleteButton);
             meta.append(deleteArea, time);
-            content.append(userLink, text, meta);
+            content.append(userLink);
+            if (isPrivate) {
+              const badge = document.createElement('div');
+              badge.className = 'private-comment-badge';
+              badge.innerHTML = '<span aria-hidden="true">🔒</span> Mensagem privada';
+              text.className = 'private-comment-message';
+              content.append(badge);
+            }
+            content.append(text, meta);
             article.append(content);
             list.append(article);
             list.hidden = false;
           }
           if (empty) empty.hidden = true;
           field.value = '';
+          if (privateField) privateField.checked = false;
           field.focus();
         } catch (error) {
           if (messageBox) {
@@ -491,6 +513,88 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
   .profile-photo-feed { display: grid; gap: 28px; }
   .profile-photo-post + .profile-photo-post { border-top: 1px solid #ddd; padding-top: 28px; }
   .profile-photo-post .comments-panel { margin-top: 18px; padding-top: 18px; }
+  .comment-form-unified { display: flex; gap: 10px; }
+  .comment-form-unified > input[name="message"] { flex: 1 1 auto; min-width: 0; }
+  .private-toggle { flex: 0 0 auto; cursor: pointer; user-select: none; }
+  .private-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+  .private-toggle span {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px 0 10px;
+    border: 1px solid #d8d8d2;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #f8f8f6 0%, #eeeeea 100%);
+    color: #666;
+    font-size: .76rem;
+    font-weight: 700;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .9), 0 1px 2px rgb(0 0 0 / .05);
+    transition: background .22s ease, color .22s ease, border-color .22s ease, box-shadow .22s ease, transform .15s ease;
+  }
+  .private-toggle span i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #9a9a94;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12), 0 0 0 3px rgb(120 120 114 / .08);
+    transition: background .22s ease, box-shadow .22s ease;
+  }
+  .private-toggle span b { font: inherit; }
+  .private-toggle-private { display: none; }
+  .private-toggle input:checked + span .private-toggle-public { display: none; }
+  .private-toggle input:checked + span .private-toggle-private { display: inline; }
+  .private-toggle:hover span { border-color: #c8c8c1; transform: translateY(-1px); }
+  .private-toggle input:checked + span {
+    border-color: rgb(42 209 179 / .7);
+    background: linear-gradient(135deg, rgb(7 27 35 / .98), rgb(8 47 51 / .96));
+    color: #effffc;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .08), 0 0 0 1px rgb(59 211 190 / .12), 0 0 16px rgb(40 180 255 / .18), 0 0 24px rgb(46 230 176 / .12);
+  }
+  .private-toggle input:checked + span i {
+    background: #54f6c5;
+    box-shadow: 0 0 5px #36e6c2, 0 0 11px rgb(52 216 255 / .9), 0 0 18px rgb(63 255 174 / .55);
+  }
+  .private-toggle input:focus-visible + span { outline: 2px solid #35d6c1; outline-offset: 2px; }
+
+  .comment-item-private {
+    border: 1px solid rgb(46 202 180 / .42);
+    background: linear-gradient(135deg, rgb(240 252 250 / .82), rgb(242 248 255 / .9));
+    box-shadow: 0 8px 24px rgb(35 142 168 / .07);
+  }
+  .private-comment-badge {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0 8px;
+    padding: 5px 9px;
+    border: 1px solid rgb(44 205 177 / .4);
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgb(8 47 51 / .96), rgb(14 73 79 / .94));
+    color: #eafffb;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+    box-shadow: 0 0 0 1px rgb(70 224 197 / .08), 0 0 14px rgb(40 180 255 / .13), 0 0 20px rgb(46 230 176 / .08);
+  }
+  .private-comment-badge span { filter: saturate(.75); }
+  .private-comment-message {
+    margin-top: 2px;
+  }
+  .private-comment-placeholder {
+    width: fit-content;
+    padding: 7px 11px;
+    border: 1px dashed #c9c9c2;
+    border-radius: 999px;
+    background: #f4f4f0;
+    color: #777;
+    font-size: .78rem;
+    font-style: italic;
+    letter-spacing: .01em;
+  }
+  .comment-form-message[data-type="success"] { color: #2f6b3a; }
   .profile-photo-post .comments-panel h2 { margin-bottom: 10px; }
   .profile-photo-post .comment-empty { padding: 6px 2px 2px; }
   .profile-photo-post .comment-form { align-items: center; margin-top: 10px; }

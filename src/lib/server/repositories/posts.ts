@@ -7,6 +7,7 @@ export async function listPosts(currentUserId: number | null): Promise<unknown[]
             `SELECT p.id,
                     p.user_id,
                     p.parent_post_id,
+                    p.post_type,
                     p.contents,
                     p.positive_count,
                     p.negative_count,
@@ -24,12 +25,17 @@ export async function listPosts(currentUserId: number | null): Promise<unknown[]
                ON v.post_id = p.id
               AND v.user_id = :current_user_id
              WHERE p.status = 'published'
+               AND (
+                    NVL(p.visibility_code, 'public') = 'public'
+                    OR p.user_id = :current_user_id
+                    OR p.recipient_user_id = :current_user_id
+               )
              ORDER BY p.created_at DESC`,
             { current_user_id: currentUserId },
         );
 
         const rows = result.rows || [];
-        const roots = rows.filter(row => row.PARENT_POST_ID == null);
+        const roots = rows.filter(row => row.PARENT_POST_ID == null || String(row.POST_TYPE) === 'comment');
         const repliesByParent = new Map<number, Record<string, unknown>[]>();
 
         rows.filter(row => row.PARENT_POST_ID != null).forEach(row => {

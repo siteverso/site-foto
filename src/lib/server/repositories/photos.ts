@@ -13,6 +13,8 @@ type OracleRow = Record<string, unknown> & {
     MESSAGE?: unknown;
     CREATED_AT?: unknown;
     TOTAL?: unknown;
+    IS_PRIVATE?: unknown;
+    CAN_READ?: unknown;
     IMAGE_BLOB?: unknown;
     IMAGE_MIME_TYPE?: unknown;
     BIO?: unknown;
@@ -33,6 +35,8 @@ export type PhotoComment = {
     username: string;
     message: string;
     createdAt: string;
+    isPrivate: boolean;
+    canRead: boolean;
 };
 
 export type PhotoCommentsPage = {
@@ -137,7 +141,7 @@ export async function getLatestPhotos(userId: number): Promise<PhotoCard[]> {
     });
 }
 
-export async function getComments(postId: number, limit = 10, offset = 0): Promise<PhotoCommentsPage> {
+export async function getComments(postId: number, viewerUserId: number, limit = 10, offset = 0): Promise<PhotoCommentsPage> {
     return withConnection(async connection => {
         const result = await connection.execute<OracleRow>(
             `SELECT id,
@@ -145,15 +149,31 @@ export async function getComments(postId: number, limit = 10, offset = 0): Promi
                     username,
                     message,
                     created_at,
+                    is_private,
+                    can_read,
                     total
              FROM (
                  SELECT c.id,
                         c.user_id,
                         u.username,
-                        c.contents AS message,
+                        CASE
+                            WHEN NVL(c.visibility_code, 'public') = 'public'
+                              OR c.user_id = :viewer_user_id
+                              OR c.recipient_user_id = :viewer_user_id
+                            THEN c.contents
+                            ELSE NULL
+                        END AS message,
                         TO_CHAR(c.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS created_at,
+                        CASE WHEN NVL(c.visibility_code, 'public') = 'private' THEN 1 ELSE 0 END AS is_private,
+                        CASE
+                            WHEN NVL(c.visibility_code, 'public') = 'public'
+                              OR c.user_id = :viewer_user_id
+                              OR c.recipient_user_id = :viewer_user_id
+                            THEN 1
+                            ELSE 0
+                        END AS can_read,
                         COUNT(*) OVER () AS total,
-                        ROW_NUMBER() OVER (ORDER BY c.created_at) AS row_number_value
+                        ROW_NUMBER() OVER (ORDER BY c.created_at DESC, c.id DESC) AS row_number_value
                  FROM murm_post c
                  JOIN murm_user u ON u.id = c.user_id
                  WHERE c.parent_post_id = :post_id
@@ -162,9 +182,10 @@ export async function getComments(postId: number, limit = 10, offset = 0): Promi
              )
              WHERE row_number_value > :comment_offset
                AND row_number_value <= :comment_offset + :comment_limit
-             ORDER BY row_number_value`,
+             ORDER BY created_at, id`,
             {
                 post_id: postId,
+                viewer_user_id: viewerUserId,
                 comment_offset: Math.max(0, offset),
                 comment_limit: Math.max(1, Math.min(limit, 50)),
             },
@@ -175,8 +196,10 @@ export async function getComments(postId: number, limit = 10, offset = 0): Promi
                 id: Number(row.ID),
                 userId: Number(row.USER_ID),
                 username: String(row.USERNAME),
-                message: String(row.MESSAGE),
+                message: String(row.MESSAGE || ''),
                 createdAt: String(row.CREATED_AT),
+                isPrivate: Number(row.IS_PRIVATE || 0) === 1,
+                canRead: Number(row.CAN_READ || 0) === 1,
             })),
             total: Number(rows[0]?.TOTAL || 0),
         };
@@ -256,24 +279,48 @@ export async function saveTodayPhoto(input: {
     });
 }
 
-export async function addComment(postId: number, userId: number, message: string): Promise<number> {
+export async function addComment(
+    postId: number,
+    userId: number,
+    message: string,
+    isPrivate = false,
+): Promise<number> {
     return withConnection(async connection => {
-        const result = await connection.execute(
-            `INSERT INTO murm_post
-                (user_id, parent_post_id, contents, post_type)
-             VALUES
-                (:user_id, :post_id, :contents, 'comment')
-             RETURNING id INTO :comment_id`,
-            {
-                post_id: postId,
-                user_id: userId,
-                contents: message,
-                comment_id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
-            },
-            { autoCommit: true },
-        );
-        const outBinds = result.outBinds as { comment_id?: number[] } | undefined;
-        return Number(outBinds?.comment_id?.[0] || 0);
+        try {
+            const photoResult = await connection.execute<OracleRow>(
+                `SELECT user_id
+                   FROM murm_post
+                  WHERE id = :post_id
+                    AND post_type = 'photo'
+                    AND status = 'published'`,
+                { post_id: postId },
+            );
+            const ownerUserId = Number(photoResult.rows?.[0]?.USER_ID || 0);
+            if (!ownerUserId) throw new Error('FOTO_INVALIDA');
+            if (isPrivate && ownerUserId == userId) throw new Error('MENSAGEM_PRIVADA_INVALIDA');
+
+            const result = await connection.execute(
+                `INSERT INTO murm_post
+                    (user_id, parent_post_id, recipient_user_id, contents, post_type, visibility_code)
+                 VALUES
+                    (:user_id, :post_id, :recipient_user_id, :contents, 'comment', :visibility_code)
+                 RETURNING id INTO :comment_id`,
+                {
+                    post_id: postId,
+                    user_id: userId,
+                    recipient_user_id: isPrivate ? ownerUserId : null,
+                    contents: message,
+                    visibility_code: isPrivate ? 'private' : 'public',
+                    comment_id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
+                },
+            );
+            await connection.commit();
+            const outBinds = result.outBinds as { comment_id?: number[] } | undefined;
+            return Number(outBinds?.comment_id?.[0] || 0);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        }
     });
 }
 

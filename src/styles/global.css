@@ -1484,3 +1484,4 @@ body:has(.login-shell) {
 .observed-privacy-item input { width: 17px; height: 17px; margin: 0; }
 .observed-privacy-avatar { width: 30px; height: 30px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: var(--inverse); background: var(--strong); font-size: .72rem; font-weight: 800; }
 .observed-privacy-empty { margin: 0; color: var(--muted); }
+.direct-photo-reference { display: inline-block; margin-top: 8px; font-size: .78rem; text-decoration: underline; opacity: .8; }

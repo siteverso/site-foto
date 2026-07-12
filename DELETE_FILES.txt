@@ -1,0 +1,2 @@
+src/pages/api/photos/private-messages.ts
+src/lib/server/repositories/private-photo-messages.ts

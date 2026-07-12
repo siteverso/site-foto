@@ -787,6 +787,7 @@ function bindDirectsPage() {
     return `
       <article class="direct-note ${own ? 'sent' : 'received'} ${sexClass(senderSexCode)}" data-direct-message="${message.id}" data-direct-sender-id="${message.senderId}">
         <p>${escapeHtml(message.contents)}</p>
+        ${message.photoPostId ? `<a class="direct-photo-reference" href="/api/photos/${message.photoPostId}" target="_blank" rel="noopener">Ver foto relacionada</a>` : ''}
         <div class="direct-note-footer">
           <time>${new Date(message.createdAt).toLocaleString()}</time>
           ${own ? `<div class="direct-delete-zone">

@@ -26,6 +26,8 @@ export function errorResponse(error: unknown): Response {
         SENHAS_DIFERENTES: [400, 'SENHAS_DIFERENTES'],
         CONTA_EXISTENTE: [409, 'CONTA_EXISTENTE'],
         VISIBILIDADE_OBSERVADOS_INVALIDA: [400, 'VISIBILIDADE_OBSERVADOS_INVALIDA'],
+        FOTO_INVALIDA: [400, 'FOTO_INVALIDA'],
+        MENSAGEM_PRIVADA_INVALIDA: [400, 'MENSAGEM_PRIVADA_INVALIDA'],
     };
     const [status, message] = known[code] || [500, 'ERRO_INTERNO'];
     return json({ ok: false, error: message }, status);

@@ -1,37 +1,8 @@
-# FotoLife
+# site-foto
 
-Protótipo Astro com login Google, conta por usuário/e-mail e senha, perfil, definição posterior de senha para contas Google, recuperação local de senha, feed, votos, respostas, compartilhamento e idiomas português/inglês.
+Etapa atual: mensagens de foto unificadas em `murm_post`.
 
-## Desenvolvimento
-
-```bash
-npm install
-npm run dev
-```
-
-Acesse `http://localhost:4321`.
-
-## Google
-
-```env
-PUBLIC_GOOGLE_CLIENT_ID="SEU_CLIENT_ID.apps.googleusercontent.com"
-```
-
-## Idiomas
-
-Os textos ficam separados da estrutura em:
-
-```text
-src/i18n/pt-BR.ts
-src/i18n/en.ts
-```
-
-## Oracle
-
-Os scripts estão em `sind-oracle/database`. Execute:
-
-```sql
-@install-fotolife.sql
-```
-
-A autenticação desta versão ainda é local no navegador. Em produção, senha e token Google devem ser validados no backend e a sessão deve usar cookie HTTP-only.
+- comentário público: post `comment`, `visibility_code = public`;
+- mensagem reservada ao proprietário: post `comment`, `visibility_code = private` e `recipient_user_id`;
+- o Direct continua exclusivo para conversas privadas do chat;
+- o patch incremental migra mensagens de foto que tenham sido colocadas no Direct e remove essa ligação.
