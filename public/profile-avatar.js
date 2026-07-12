@@ -28,6 +28,33 @@ function closeCropper({ clearInput = false } = {}) {
   activeCropperCleanup = null;
 }
 
+function refreshVisibleAvatars(blob, serverAvatarUrl = '') {
+  const previewUrl = URL.createObjectURL(blob);
+  const cacheBustedServerUrl = serverAvatarUrl
+    ? `${serverAvatarUrl}${serverAvatarUrl.includes('?') ? '&' : '?'}v=${Date.now()}`
+    : '';
+
+  document.querySelectorAll('[data-avatar-image], [data-site-user-avatar-image]').forEach(element => {
+    if (!(element instanceof HTMLImageElement)) return;
+    element.hidden = false;
+    element.src = previewUrl;
+
+    if (element.matches('[data-site-user-avatar-image]')) {
+      element.dataset.avatarSources = JSON.stringify(
+        cacheBustedServerUrl ? [cacheBustedServerUrl] : [previewUrl],
+      );
+      const placeholder = element.parentElement?.querySelector('[data-site-user-avatar-placeholder]');
+      if (placeholder instanceof HTMLElement) placeholder.hidden = true;
+    }
+  });
+
+  document.querySelectorAll('[data-avatar-fallback], [data-profile-avatar-fallback]').forEach(element => {
+    if (element instanceof HTMLElement) element.hidden = true;
+  });
+
+  window.addEventListener('pagehide', () => URL.revokeObjectURL(previewUrl), { once: true });
+}
+
 async function uploadAvatar(blob, message) {
   const formData = new FormData();
   formData.append('avatar', blob, 'avatar.jpg');
@@ -38,8 +65,9 @@ async function uploadAvatar(blob, message) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || 'Não foi possível atualizar a foto.');
+
+  refreshVisibleAvatars(blob, data.user?.avatarUrl || '');
   setMessage(message, 'Foto atualizada.', 'success');
-  window.setTimeout(() => location.reload(), 250);
 }
 
 function openCropper(file, message, input) {
