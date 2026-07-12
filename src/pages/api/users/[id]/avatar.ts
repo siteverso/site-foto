@@ -24,7 +24,9 @@ export const GET: APIRoute = async ({ params }) => {
     return new Response(image.AVATAR_IMAGE as Buffer, {
         headers: {
             'Content-Type': String(image.AVATAR_MIME_TYPE || 'application/octet-stream'),
-            'Cache-Control': 'public, max-age=31536000, immutable',
+            'Cache-Control': 'private, no-store, max-age=0, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
             'X-Content-Type-Options': 'nosniff',
         },
     });

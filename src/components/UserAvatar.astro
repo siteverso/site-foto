@@ -1,0 +1,50 @@
+---
+import { getAvatarSources } from '../lib/avatar';
+
+interface Props {
+  userId?: number | string | null;
+  avatarUrl?: string | null;
+  username?: string;
+  alt?: string;
+  class?: string;
+  imageClass?: string;
+  loading?: 'eager' | 'lazy';
+  decorative?: boolean;
+}
+
+const {
+  userId,
+  avatarUrl = '',
+  username = '',
+  alt = username ? `@${username}` : '',
+  class: wrapperClass = '',
+  imageClass = '',
+  loading = 'lazy',
+  decorative = false,
+} = Astro.props;
+
+const sources = getAvatarSources(userId, avatarUrl);
+const resolvedSource = sources[0] || '';
+const initials = username.slice(0, 2).toUpperCase() || 'FL';
+const normalizedUserId = Number(userId);
+const userIdValue = Number.isSafeInteger(normalizedUserId) && normalizedUserId > 0 ? String(normalizedUserId) : undefined;
+---
+<span class={wrapperClass} data-user-avatar data-avatar-user-id={userIdValue}>
+  {resolvedSource ? (
+    <>
+      <img
+        class={imageClass}
+        src={resolvedSource}
+        alt={decorative ? '' : alt}
+        aria-hidden={decorative ? 'true' : undefined}
+        loading={loading}
+        data-avatar-image
+        data-avatar-user-id={userIdValue}
+        data-avatar-sources={JSON.stringify(sources)}
+      />
+      <span data-avatar-fallback hidden>{initials}</span>
+    </>
+  ) : (
+    <span data-avatar-fallback>{initials}</span>
+  )}
+</span>

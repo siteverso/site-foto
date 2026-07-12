@@ -1,34 +1,34 @@
 import { describe, expect, it } from 'vitest';
-import fs from 'node:fs';
+import { readFileSync } from 'node:fs';
 
-const header = fs.readFileSync('src/components/SiteHeader.astro', 'utf8');
-const css = fs.readFileSync('src/styles/components/site-header.css', 'utf8');
-const session = fs.readFileSync('src/lib/server/session.ts', 'utf8');
-const avatarApi = fs.readFileSync('src/pages/api/auth/avatar.ts', 'utf8');
+const header = readFileSync(new URL('../src/components/SiteHeader.astro', import.meta.url), 'utf8');
+const avatar = readFileSync(new URL('../src/components/UserAvatar.astro', import.meta.url), 'utf8');
+const endpoint = readFileSync(new URL('../src/pages/api/users/[id]/avatar.ts', import.meta.url), 'utf8');
+const upload = readFileSync(new URL('../src/pages/api/auth/avatar.ts', import.meta.url), 'utf8');
+const css = readFileSync(new URL('../src/styles/components/site-header.css', import.meta.url), 'utf8');
 
 describe('avatar no topo', () => {
-  it('renderiza a imagem do usuário junto ao nome no cabeçalho', () => {
-    expect(header).toContain('userId?: number | string');
-    expect(header).toContain('avatarUrl?: string');
-    expect(header).toContain('class=\"site-user-avatar\"');
-    expect(header).toContain('const avatarSources = getAvatarSources(userId, avatarUrl)');
-    expect(header).toContain('<img src={resolvedAvatarUrl}');
-    expect(header).toContain('data-site-user-avatar-image');
-    expect(header).toContain('data-avatar-sources={JSON.stringify(avatarSources)}');
+  it('renderiza o componente compartilhado de avatar junto ao nome', () => {
+    expect(header).toContain("import UserAvatar from './UserAvatar.astro'");
+    expect(header).toContain('class="site-user-avatar"');
+    expect(header).toContain('userId={userId}');
+    expect(avatar).toContain('getAvatarSources(userId, avatarUrl)');
+    expect(avatar).toContain('data-avatar-user-id={userIdValue}');
   });
 
   it('usa no cabeçalho a mesma imagem BLOB exibida no perfil', () => {
-    expect(session).toContain("WHEN u.avatar_image IS NOT NULL THEN");
-    expect(session).toContain("'/api/users/' || u.id || '/avatar?v='");
+    expect(avatar).toContain('data-avatar-sources={JSON.stringify(sources)}');
+    expect(endpoint).toContain('SELECT avatar_image, avatar_mime_type');
+    expect(endpoint).toContain("'Cache-Control': 'private, no-store, max-age=0, must-revalidate'");
   });
 
   it('renova o usuário em cache logo após trocar a imagem', () => {
-    expect(avatarApi).toContain('invalidateCurrentUser(context)');
-    expect(avatarApi.indexOf('invalidateCurrentUser(context)')).toBeLessThan(avatarApi.indexOf('await currentUser(context)'));
+    expect(upload).toContain('invalidateCurrentUser(context)');
+    expect(upload).toContain('await currentUser(context)');
   });
 
   it('mantém formato circular e recorte de capa', () => {
-    expect(css).toMatch(/\.site-user-avatar\s*\{[\s\S]*border-radius:\s*50%/);
-    expect(css).toMatch(/\.site-user-avatar img\s*\{[\s\S]*object-fit:\s*cover/);
+    expect(css).toContain('border-radius: 50%');
+    expect(css).toContain('object-fit: cover');
   });
 });

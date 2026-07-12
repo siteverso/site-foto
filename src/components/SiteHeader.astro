@@ -2,7 +2,7 @@
 import LanguageSwitch from './LanguageSwitch.astro';
 import '../styles/components/site-header.css';
 import { getMessages, normalizeLocale } from '../i18n';
-import { getAvatarSources } from '../lib/avatar';
+import UserAvatar from './UserAvatar.astro';
 
 interface Props {
   username?: string;
@@ -11,8 +11,6 @@ interface Props {
 }
 
 const { username, userId, avatarUrl = '' } = Astro.props;
-const avatarSources = getAvatarSources(userId, avatarUrl);
-const resolvedAvatarUrl = avatarSources[0] || '';
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
 ---
@@ -24,14 +22,15 @@ const t = getMessages(locale);
       {username ? (
         <>
           <a class="site-user-link" href={`/perfil/${username}`} data-user-profile-link>
-            <span class="site-user-avatar" aria-hidden="true">
-              {resolvedAvatarUrl ? (
-                <>
-                  <img src={resolvedAvatarUrl} alt="" width="40" height="40" data-site-user-avatar-image data-avatar-sources={JSON.stringify(avatarSources)} />
-                  <span class="site-user-avatar-placeholder" data-site-user-avatar-placeholder hidden></span>
-                </>
-              ) : <span class="site-user-avatar-placeholder"></span>}
-            </span>
+            <UserAvatar
+              class="site-user-avatar"
+              imageClass="site-user-avatar-image"
+              userId={userId}
+              avatarUrl={avatarUrl}
+              username={username}
+              loading="eager"
+              decorative
+            />
             <strong data-user-name>@{username}</strong>
           </a>
           <LanguageSwitch locale={locale} />
@@ -50,7 +49,7 @@ const t = getMessages(locale);
 </header>
 
 <script>
-  document.querySelectorAll('[data-site-user-avatar-image]').forEach(image => {
+  document.querySelectorAll('.site-user-avatar [data-avatar-image]').forEach(image => {
     if (!(image instanceof HTMLImageElement)) return;
 
     let sources = [];
@@ -64,7 +63,7 @@ const t = getMessages(locale);
     let sourceIndex = Math.max(0, sources.findIndex(source => image.getAttribute('src') === source));
     image.addEventListener('load', () => {
       image.hidden = false;
-      const placeholder = image.parentElement?.querySelector('[data-site-user-avatar-placeholder]');
+      const placeholder = image.parentElement?.querySelector('[data-avatar-fallback]');
       if (placeholder instanceof HTMLElement) placeholder.hidden = true;
     });
     image.addEventListener('error', () => {
@@ -76,7 +75,7 @@ const t = getMessages(locale);
       }
 
       image.hidden = true;
-      const placeholder = image.parentElement?.querySelector('[data-site-user-avatar-placeholder]');
+      const placeholder = image.parentElement?.querySelector('[data-avatar-fallback]');
       if (placeholder instanceof HTMLElement) placeholder.hidden = false;
     });
   });

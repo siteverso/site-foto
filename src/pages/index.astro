@@ -1,6 +1,7 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
 import SiteHeader from '../components/SiteHeader.astro';
+import UserAvatar from '../components/UserAvatar.astro';
 import { requireUser } from '../lib/server/session';
 import { getFeedPhotos } from '../lib/server/repositories/photos';
 import { getMessages, normalizeLocale } from '../i18n';
@@ -31,7 +32,13 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
         <div class="site-updates-list" data-live-section="home-updates" data-live-list>
           {updates.map(photo => (
             <a href={`#foto-${photo.id}`} data-live-key={`update-${photo.id}`}>
-              <img src={`/api/photos/${photo.id}`} alt="" loading="lazy" />
+              <UserAvatar
+                class="site-update-avatar"
+                userId={photo.userId}
+                avatarUrl={photo.avatarUrl}
+                username={photo.username}
+                decorative
+              />
               <span>
                 <strong>@{photo.username}</strong>
                 <small>{formatDate(photo.publishedAt)}</small>

@@ -23,7 +23,7 @@ const avatarUrl = profile?.avatarUrl || '';
     <div class="user-profile-intro user-profile-intro-sidebar">
       {editableAvatar ? (
         <button class="profile-avatar-button profile-avatar-edit-button" type="button" data-profile-avatar data-avatar-trigger aria-label={t.profile.changePhoto} title={t.profile.changePhoto}>
-          {avatarUrl ? <img src={avatarUrl} alt={`@${username}`} data-avatar-image /> : <span data-profile-avatar-fallback data-avatar-fallback>{initials}</span>}
+          {avatarUrl ? <img src={avatarUrl} alt={`@${username}`} data-avatar-image data-avatar-user-id={profile?.id} /> : <span data-profile-avatar-fallback data-avatar-fallback>{initials}</span>}
         </button>
       ) : (
         <button class="profile-avatar-button" type="button" data-open-avatar-dialog aria-label={`${t.profile.enlargePhoto} @${username}`}>

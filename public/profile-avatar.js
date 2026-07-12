@@ -28,28 +28,35 @@ function closeCropper({ clearInput = false } = {}) {
   activeCropperCleanup = null;
 }
 
-function refreshVisibleAvatars(blob, serverAvatarUrl = '') {
+function refreshVisibleAvatars(blob, serverAvatarUrl = '', userId = '') {
   const previewUrl = URL.createObjectURL(blob);
   const cacheBustedServerUrl = serverAvatarUrl
     ? `${serverAvatarUrl}${serverAvatarUrl.includes('?') ? '&' : '?'}v=${Date.now()}`
     : '';
 
-  document.querySelectorAll('[data-avatar-image], [data-site-user-avatar-image]').forEach(element => {
+  const normalizedUserId = String(userId || '');
+  document.querySelectorAll('[data-avatar-image]').forEach(element => {
+    if (normalizedUserId && element.getAttribute('data-avatar-user-id') !== normalizedUserId) return;
     if (!(element instanceof HTMLImageElement)) return;
     element.hidden = false;
     element.src = previewUrl;
 
-    if (element.matches('[data-site-user-avatar-image]')) {
+    if (element.closest('.site-user-avatar')) {
       element.dataset.avatarSources = JSON.stringify(
         cacheBustedServerUrl ? [cacheBustedServerUrl] : [previewUrl],
       );
-      const placeholder = element.parentElement?.querySelector('[data-site-user-avatar-placeholder]');
+      const placeholder = element.parentElement?.querySelector('[data-avatar-fallback]');
       if (placeholder instanceof HTMLElement) placeholder.hidden = true;
     }
   });
 
   document.querySelectorAll('[data-avatar-fallback], [data-profile-avatar-fallback]').forEach(element => {
-    if (element instanceof HTMLElement) element.hidden = true;
+    if (!(element instanceof HTMLElement)) return;
+    if (normalizedUserId) {
+      const owner = element.closest('[data-avatar-user-id]');
+      if (owner?.getAttribute('data-avatar-user-id') !== normalizedUserId) return;
+    }
+    element.hidden = true;
   });
 
   window.addEventListener('pagehide', () => URL.revokeObjectURL(previewUrl), { once: true });
@@ -66,7 +73,8 @@ async function uploadAvatar(blob, message) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || 'Não foi possível atualizar a foto.');
 
-  refreshVisibleAvatars(blob, data.user?.avatarUrl || '');
+  refreshVisibleAvatars(blob, data.user?.avatarUrl || '', data.user?.id || '');
+  window.dispatchEvent(new CustomEvent('fotolife:avatar-updated', { detail: { userId: data.user?.id, avatarUrl: data.user?.avatarUrl || '' } }));
   setMessage(message, 'Foto atualizada.', 'success');
 }
 
