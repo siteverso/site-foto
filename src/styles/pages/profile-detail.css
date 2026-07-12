@@ -391,8 +391,8 @@
 .profile-photo-published-at {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 7px;
+  justify-content: space-between;
+  gap: 14px;
   min-height: 30px;
   margin: 0 2px;
   padding-top: 9px;
@@ -403,7 +403,28 @@
   line-height: 1.2;
 }
 
-.profile-photo-published-at span {
+.profile-photo-published-user {
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-photo-published-user:hover {
+  color: color-mix(in srgb, currentColor 82%, white 18%);
+}
+
+.profile-photo-published-time {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+
+.profile-photo-published-time span {
   width: 5px;
   height: 5px;
   flex: 0 0 5px;
@@ -413,7 +434,7 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 8%, transparent);
 }
 
-.profile-photo-published-at time {
+.profile-photo-published-time time {
   white-space: nowrap;
 }
 

@@ -7,6 +7,8 @@ const profileCss = readFileSync('src/styles/pages/profile-detail.css', 'utf8');
 describe('profile photo date and time', () => {
   it('renders the publication timestamp for every photo in the profile feed', () => {
     expect(profilePage).toContain('class="profile-photo-published-at"');
+    expect(profilePage).toContain('class="profile-photo-published-user"');
+    expect(profilePage).toContain('@{profile.username}');
     expect(profilePage).toContain('<time datetime={photo.publishedAt}>{formatPhotoDateTime(photo.publishedAt)}</time>');
     expect(profilePage).toContain("hour: '2-digit'");
     expect(profilePage).toContain("minute: '2-digit'");
@@ -14,7 +16,9 @@ describe('profile photo date and time', () => {
 
   it('keeps the timestamp subtle and contained in the photo card', () => {
     expect(profileCss).toContain('.profile-photo-published-at {');
-    expect(profileCss).toContain('justify-content: flex-end;');
+    expect(profileCss).toContain('justify-content: space-between;');
+    expect(profileCss).toContain('.profile-photo-published-user {');
+    expect(profileCss).toContain('.profile-photo-published-time {');
     expect(profileCss).toContain('white-space: nowrap;');
   });
 });

@@ -118,8 +118,11 @@ const formatPhotoDateTime = (value: string) => new Intl.DateTimeFormat(locale, {
                                                             )}
                                                             <a class="profile-photo-detail-link" href={`/foto/${photo.id}`} aria-label={`${t.home.comments}: @${profile.username}`}><img src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} loading="lazy"/></a>
                                                             <div class="profile-photo-published-at">
-                                                                <span aria-hidden="true"></span>
-                                                                <time datetime={photo.publishedAt}>{formatPhotoDateTime(photo.publishedAt)}</time>
+                                                                <a class="profile-photo-published-user" href={`/perfil/${profile.username}`}>@{profile.username}</a>
+                                                                <div class="profile-photo-published-time">
+                                                                    <span aria-hidden="true"></span>
+                                                                    <time datetime={photo.publishedAt}>{formatPhotoDateTime(photo.publishedAt)}</time>
+                                                                </div>
                                                             </div>
                                                             <p data-photo-caption data-editable-caption={isOwner ? "true" : undefined} title={isOwner ? t.home.doubleClickCaption : undefined} hidden={!photo.caption}>{photo.caption}</p>
                                                             {isOwner && (
