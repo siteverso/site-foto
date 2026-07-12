@@ -3,6 +3,7 @@ import { currentUser } from '../../../lib/server/session';
 import { PhotoLimitError, saveTodayPhoto } from '../../../lib/server/repositories/photos';
 import { readStagedPhoto, removeStagedPhoto } from '../../../lib/server/photo-upload';
 import { validateMessageLength } from '../../../lib/message-limit';
+import { formatPhotoPostRetry, getPhotoPostIntervalLabel } from '../../../lib/photo-post-limit';
 
 export const POST: APIRoute = async (context: APIContext) => {
     const user = await currentUser(context);
@@ -35,21 +36,15 @@ export const POST: APIRoute = async (context: APIContext) => {
         await removeStagedPhoto(uploadToken);
     } catch (error) {
         if (error instanceof PhotoLimitError) {
-            const periodName = error.periodType === 'DAY'
-                ? (error.periodAmount === 1 ? 'dia' : 'dias')
-                : (error.periodAmount === 1 ? 'minuto' : 'minutos');
-            const retryMinutes = Math.max(1, Math.ceil(error.retryAfterSeconds / 60));
-            const retryText = retryMinutes >= 1440
-                ? `${Math.ceil(retryMinutes / 1440)} dia(s)`
-                : `${retryMinutes} minuto(s)`;
+            const intervalLabel = getPhotoPostIntervalLabel(error.intervalType);
+            const retryText = formatPhotoPostRetry(error.retryAfterSeconds);
 
             return Response.json(
                 {
                     ok: false,
-                    error: `Você atingiu o limite de ${error.limit} foto(s) por ${error.periodAmount} ${periodName}. Tente novamente em aproximadamente ${retryText}.`,
+                    error: `Você atingiu o limite de ${error.limit} foto(s) por ${intervalLabel}. Tente novamente em aproximadamente ${retryText}.`,
                     limit: error.limit,
-                    periodAmount: error.periodAmount,
-                    periodType: error.periodType,
+                    intervalType: error.intervalType,
                     retryAfterSeconds: error.retryAfterSeconds,
                 },
                 {
@@ -58,6 +53,7 @@ export const POST: APIRoute = async (context: APIContext) => {
                 },
             );
         }
+
         throw error;
     }
 

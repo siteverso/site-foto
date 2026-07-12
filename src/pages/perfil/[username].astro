@@ -383,9 +383,12 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     let activeUpload: XMLHttpRequest | null = null;
     let previewReady = false;
     let isPublishing = false;
+    let retryBlockedUntil = 0;
+    let retryTimer = 0;
 
     const updatePublishAvailability = () => {
-      if (publishButton) publishButton.disabled = !(uploadToken && previewReady);
+      const retryBlocked = retryBlockedUntil > Date.now();
+      if (publishButton) publishButton.disabled = isPublishing || retryBlocked || !(uploadToken && previewReady);
     };
 
     const showPostMessage = (message = '', type = 'error') => {
@@ -402,6 +405,41 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         return String(data.error || 'Não foi possível concluir a operação.');
       }
       return (await response.text()) || 'Não foi possível concluir a operação.';
+    };
+
+    const formatRetrySeconds = (seconds: number) => {
+      const value = Math.max(1, Math.ceil(seconds));
+      if (value < 60) return `${value} segundo${value === 1 ? '' : 's'}`;
+      const minutes = Math.ceil(value / 60);
+      return `${minutes} minuto${minutes === 1 ? '' : 's'}`;
+    };
+
+    const startRetryCountdown = (seconds: number, baseMessage: string) => {
+      window.clearInterval(retryTimer);
+      retryBlockedUntil = Date.now() + Math.max(1, Math.ceil(seconds)) * 1000;
+
+      const refresh = () => {
+        const remaining = Math.max(0, Math.ceil((retryBlockedUntil - Date.now()) / 1000));
+        if (remaining <= 0) {
+          window.clearInterval(retryTimer);
+          retryTimer = 0;
+          retryBlockedUntil = 0;
+          showPostMessage();
+          if (status) status.textContent = 'Tentando publicar…';
+          updatePublishAvailability();
+          window.setTimeout(() => {
+            if (!isPublishing && uploadToken && previewReady && postForm?.isConnected) {
+              postForm.requestSubmit();
+            }
+          }, 150);
+          return;
+        }
+        showPostMessage(remaining === 1 ? `${baseMessage} Liberando…` : `${baseMessage} Aguarde ${formatRetrySeconds(remaining)}.`);
+        updatePublishAvailability();
+      };
+
+      refresh();
+      retryTimer = window.setInterval(refresh, 250);
     };
 
     const setPostDialogOpen = (open: boolean) => {
@@ -532,7 +570,17 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uploadToken: token, caption }),
         });
-        if (!response.ok) throw new Error(await responseError(response));
+        if (!response.ok) {
+          if (response.status === 429) {
+            const data = await response.json().catch(() => ({})) as { error?: string; retryAfterSeconds?: number };
+            const retryAfterSeconds = Math.max(1, Number(data.retryAfterSeconds || response.headers.get('Retry-After') || 1));
+            const error = new Error(String(data.error || 'Limite temporário de publicação atingido.')) as Error & { retryAfterSeconds?: number; limitMessage?: string };
+            error.retryAfterSeconds = retryAfterSeconds;
+            error.limitMessage = 'Limite temporário de publicação atingido.';
+            throw error;
+          }
+          throw new Error(await responseError(response));
+        }
         const result = await response.json() as { photoId?: number };
 
         if (status) status.textContent = 'Carregando no perfil…';
@@ -549,8 +597,14 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         isPublishing = false;
         postDialog?.classList.remove('is-finalizing', 'is-loading-published-photo', 'is-published', 'is-closing');
         postDialog?.removeAttribute('aria-busy');
-        updatePublishAvailability();
-        showPostMessage(error instanceof Error ? error.message : 'Não foi possível publicar.');
+        const retryError = error as Error & { retryAfterSeconds?: number; limitMessage?: string };
+        if (retryError?.retryAfterSeconds) {
+          if (status) status.textContent = 'Aguardando liberação…';
+          startRetryCountdown(retryError.retryAfterSeconds, retryError.limitMessage || 'Limite temporário de publicação atingido.');
+        } else {
+          showPostMessage(error instanceof Error ? error.message : 'Não foi possível publicar.');
+          updatePublishAvailability();
+        }
       }
     });
     const formatCommentDate = (value: string) => new Intl.DateTimeFormat(document.documentElement.lang || 'pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));

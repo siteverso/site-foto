@@ -3,6 +3,7 @@ import { Buffer } from 'node:buffer';
 import oracledb from 'oracledb';
 import { withConnection } from '../oracle';
 import { normalizeSexCode } from '../../account-profile';
+import { getPhotoPostCutoffSql, getPhotoPostRetrySql, normalizePhotoPostIntervalType, normalizePhotoPostLimit, type PhotoPostIntervalType } from '../../photo-post-limit';
 
 type OracleRow = Record<string, unknown> & {
     ID?: unknown;
@@ -242,16 +243,12 @@ export async function getComments(postId: number, viewerUserId: number, limit = 
 export class PhotoLimitError extends Error {
     constructor(
         public readonly limit: number,
-        public readonly periodMinutes: number,
+        public readonly intervalType: PhotoPostIntervalType,
+        public readonly retryAfterSeconds: number,
     ) {
-        super(`Limite de ${limit} foto(s) a cada ${periodMinutes} minuto(s) atingido.`);
+        super(`Limite de ${limit} foto(s) por ${intervalType} atingido.`);
         this.name = 'PhotoLimitError';
     }
-}
-
-function positiveInteger(value: string | undefined, fallback: number): number {
-    const parsed = Number.parseInt(String(value || ''), 10);
-    return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 export async function saveTodayPhoto(input: {
@@ -261,8 +258,10 @@ export async function saveTodayPhoto(input: {
     mimeType: string;
     image: Buffer;
 }): Promise<number> {
-    const limit = positiveInteger(import.meta.env.PHOTO_POST_LIMIT, 1);
-    const periodMinutes = positiveInteger(import.meta.env.PHOTO_POST_PERIOD_MINUTES, 1);
+    const limit = normalizePhotoPostLimit(import.meta.env.PHOTO_POST_LIMIT, 1);
+    const intervalType = normalizePhotoPostIntervalType(import.meta.env.PHOTO_POST_INTERVAL_TYPE);
+    const cutoffSql = getPhotoPostCutoffSql(intervalType);
+    const retrySql = getPhotoPostRetrySql(intervalType);
 
     return withConnection(async connection => {
         try {
@@ -274,21 +273,44 @@ export async function saveTodayPhoto(input: {
                 { user_id: input.userId },
             );
 
-            const result = await connection.execute<OracleRow>(
+            const countResult = await connection.execute<OracleRow>(
                 `SELECT COUNT(*) AS total
                  FROM murm_post
                  WHERE user_id = :user_id
                    AND post_type = 'photo'
                    AND status = 'published'
-                   AND created_at >= SYSTIMESTAMP - NUMTODSINTERVAL(:period_minutes, 'MINUTE')`,
-                {
-                    user_id: input.userId,
-                    period_minutes: periodMinutes,
-                },
+                   AND created_at >= ${cutoffSql}`,
+                { user_id: input.userId },
             );
 
-            const total = Number(result.rows?.[0]?.TOTAL || 0);
-            if (total >= limit) throw new PhotoLimitError(limit, periodMinutes);
+            const total = Number(countResult.rows?.[0]?.TOTAL || 0);
+            if (total >= limit) {
+                const retryResult = await connection.execute<OracleRow>(
+                    `SELECT ${retrySql} AS retry_after_seconds
+                     FROM murm_post
+                     WHERE user_id = :user_id
+                       AND post_type = 'photo'
+                       AND status = 'published'
+                       AND created_at >= ${cutoffSql}`,
+                    { user_id: input.userId },
+                );
+                const rawRetryAfterSeconds = Number(retryResult.rows?.[0]?.RETRY_AFTER_SECONDS);
+                const retryAfterSeconds = Number.isFinite(rawRetryAfterSeconds)
+                    ? Math.max(0, Math.ceil(rawRetryAfterSeconds))
+                    : 0;
+
+                console.info('[photo-limit]', {
+                    userId: input.userId,
+                    total,
+                    limit,
+                    intervalType,
+                    retryAfterSeconds,
+                });
+
+                if (retryAfterSeconds > 0) {
+                    throw new PhotoLimitError(limit, intervalType, retryAfterSeconds);
+                }
+            }
 
             const insertResult = await connection.execute(
                 `INSERT INTO murm_post
