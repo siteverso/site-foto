@@ -6,6 +6,7 @@ import { requireUser } from '../lib/server/session';
 import { getMessages, normalizeLocale } from '../i18n';
 import { MESSAGE_MAX_LENGTH } from '../lib/message-limit';
 import { getAccountProfile } from '../lib/server/repositories/account-profile';
+import '../styles/pages/account.css';
 import '../styles/themes/theme-overrides.css';
 const user = await requireUser(Astro);
 const account = await getAccountProfile(user.id);
@@ -81,7 +82,7 @@ const t = getMessages(locale);
 
 
 <script define:vars={{ clientMessages: {
-    accountExists: t.errors.accountExists, invalidUsername: t.signup.invalidUsername, invalidEmail: t.signup.invalidEmail, invalidSex: t.errors.invalidSex, invalidPassword: t.signup.invalidPassword, passwordMismatch: t.signup.passwordMismatch, sessionExpired: t.errors.sessionExpired, generic: t.errors.generic, noBio: t.common.noBio, emptyObserved: t.profile.hiddenObservedEmpty, password: t.common.password, google: "Google", none: t.common.none, changePassword: t.common.newPassword, definePassword: t.profile.definePassword, saving: t.common.loading
+    accountExists: t.errors.accountExists, invalidUsername: t.signup.invalidUsername, invalidEmail: t.signup.invalidEmail, invalidSex: t.errors.invalidSex, invalidPassword: t.signup.invalidPassword, passwordMismatch: t.signup.passwordMismatch, sessionExpired: t.errors.sessionExpired, generic: t.errors.generic, noBio: t.common.noBio, emptyObserved: t.profile.hiddenObservedEmpty, password: t.common.password, google: "Google", none: t.common.none, changePassword: t.common.changePassword, definePassword: t.common.definePassword, saving: t.common.saving, googleAccess: t.profile.googleAccess, passwordAccess: t.profile.passwordAccess, accountUpdated: t.profile.accountUpdated, passwordUpdated: t.profile.passwordUpdated
   } }}>
   const profileForm = document.querySelector('[data-profile-form]');
   const passwordForm = document.querySelector('[data-password-form]');
@@ -197,10 +198,10 @@ const t = getMessages(locale);
     if (account.hasGoogle) methods.push(clientMessages.google);
     document.querySelector('[data-auth-methods]').textContent = methods.join(' + ') || clientMessages.none;
     document.querySelector('[data-auth-explanation]').textContent = account.hasGoogle
-      ? 'Sua conta pode ser acessada pelo Google. Você também pode definir ou trocar uma senha abaixo.'
-      : 'Sua conta usa acesso por usuário/e-mail e senha.';
+      ? clientMessages.googleAccess
+      : clientMessages.passwordAccess;
 
-    const passwordLabel = account.hasPassword ? 'Trocar senha' : 'Definir senha';
+    const passwordLabel = account.hasPassword ? clientMessages.changePassword : clientMessages.definePassword;
     document.querySelector('[data-password-title]').textContent = passwordLabel;
     passwordForm.querySelector('button[type="submit"]').textContent = passwordLabel;
   }
@@ -234,7 +235,7 @@ const t = getMessages(locale);
       });
       renderAccount(data.account);
       showMessage(profileForm, 'Dados da conta salvos com sucesso.', 'success');
-      toast('Conta atualizada.');
+      toast(clientMessages.accountUpdated);
     } catch (error) {
       showMessage(profileForm, messages[error.message] || messages.ERRO_INTERNO, 'error');
     } finally {
@@ -258,7 +259,7 @@ const t = getMessages(locale);
       passwordForm.reset();
       await loadAccount();
       showMessage(passwordForm, 'Senha atualizada com sucesso.', 'success');
-      toast('Senha atualizada.');
+      toast(clientMessages.passwordUpdated);
     } catch (error) {
       showMessage(passwordForm, messages[error.message] || messages.ERRO_INTERNO, 'error');
     } finally {

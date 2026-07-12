@@ -51,7 +51,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             labels={{ addFriend: t.publicProfile.addFriend, alreadyFriend: t.publicProfile.alreadyFriend }}
           />
 
-          <section class="profile-side-section" data-profile-observed data-empty-message={`@${profile.username} ainda não observa nenhum perfil.`}>
+          <section class="profile-side-section" data-profile-observed data-empty-message={`@${profile.username} ${t.publicProfile.noObserved}`}>
             <h2>{observedSectionTitle}</h2>
             {showObservedList ? (
               observedPhotos.length ? (
@@ -63,16 +63,16 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                         type="button"
                         data-remove-friend
                         data-user-id={item.userId}
-                        aria-label={`Deixar de observar @${item.username}`}
-                        title={`Deixar de observar @${item.username}`}
+                        aria-label={`${t.profile.stopObserving} @${item.username}`}
+                        title={`${t.profile.stopObserving} @${item.username}`}
                       >×</button>
                     )}
                     <a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a>
                     <div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div>
                   </article>
                 ))}</div>
-              ) : <p class="empty-state">@{profile.username} ainda não observa nenhum perfil.</p>
-            ) : <p class="empty-state">Esta lista é privada.</p>}
+              ) : <p class="empty-state">@{profile.username} {t.publicProfile.noObserved}</p>
+            ) : <p class="empty-state">{t.publicProfile.privateList}</p>}
           </section>
         </aside>
 
@@ -80,7 +80,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           {isOwner && (
             <button class="profile-new-post-button" type="button" data-open-post-dialog>
               <span aria-hidden="true">＋</span>
-              <strong>Nova postagem</strong>
+              <strong>{t.home.newPost}</strong>
             </button>
           )}
 
@@ -93,20 +93,20 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                     <div class="daily-photo" data-daily-photo>
                       {isOwner && (
                         <div class="daily-photo-actions">
-                          <button class="daily-photo-edit" type="button" data-edit-caption aria-label="Editar legenda" title="Editar legenda">
+                          <button class="daily-photo-edit" type="button" data-edit-caption aria-label={t.home.editCaption} title={t.home.editCaption}>
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V20h3.5L18 9.5 14.5 6 4 16.5Zm16.7-9.8a1 1 0 0 0 0-1.4l-2-2a1 1 0 0 0-1.4 0l-1.6 1.6 3.5 3.5 1.5-1.7Z" /></svg>
                           </button>
                           <button class="daily-photo-delete" type="button" data-delete-photo data-photo-id={photo.id} aria-label={t.home.deletePhoto} title={t.home.deletePhoto}>×</button>
                         </div>
                       )}
                       <img src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} loading="lazy" />
-                      <p data-photo-caption data-editable-caption={isOwner ? "true" : undefined} title={isOwner ? "Duplo clique para editar a legenda" : undefined} hidden={!photo.caption}>{photo.caption}</p>
+                      <p data-photo-caption data-editable-caption={isOwner ? "true" : undefined} title={isOwner ? t.home.doubleClickCaption : undefined} hidden={!photo.caption}>{photo.caption}</p>
                       {isOwner && (
                         <form class="photo-caption-form" data-caption-form data-photo-id={photo.id} hidden>
-                          <textarea name="caption" maxlength={MESSAGE_MAX_LENGTH} aria-label="Legenda da foto">{photo.caption}</textarea>
+                          <textarea name="caption" maxlength={MESSAGE_MAX_LENGTH} aria-label={t.home.photoCaption}>{photo.caption}</textarea>
                           <div>
-                            <button type="button" data-cancel-caption>Cancelar</button>
-                            <button type="submit">Salvar</button>
+                            <button type="button" data-cancel-caption>{t.common.cancel}</button>
+                            <button type="submit">{t.common.save}</button>
                           </div>
                           <p data-caption-message hidden></p>
                         </form>
@@ -126,15 +126,15 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                           <div class="comment-content">
                             <a class="comment-user" href={`/perfil/${comment.username}`}><strong>@{comment.username}</strong></a>
                             {comment.isPrivate && !comment.canRead
-                              ? <p class="private-comment-placeholder private-comment-placeholder-hidden"><span aria-hidden="true">🔒</span> Mensagem privada</p>
+                              ? <p class="private-comment-placeholder private-comment-placeholder-hidden"><span aria-hidden="true">🔒</span> {t.home.privateMessage}</p>
                               : <>
-                                  {comment.isPrivate && <div class="private-comment-badge private-comment-badge-visible"><span aria-hidden="true">🔒</span> Mensagem privada</div>}
+                                  {comment.isPrivate && <div class="private-comment-badge private-comment-badge-visible"><span aria-hidden="true">🔒</span> {t.home.privateMessage}</div>}
                                   <p class:list={[{ "private-comment-message": comment.isPrivate }]}>{comment.message}</p>
                                 </>}
                             <div class="comment-meta">
                               {(comment.userId === user.id || isOwner) && (
                                 <div class="comment-delete-area" data-comment-delete-area>
-                                  <button class="comment-delete-trigger" type="button" data-comment-delete-trigger aria-label="Excluir mensagem" title="Excluir mensagem">
+                                  <button class="comment-delete-trigger" type="button" data-comment-delete-trigger aria-label={t.home.deleteMessage} title={t.home.deleteMessage}>
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" /></svg>
                                   </button>
                                 </div>
@@ -148,9 +148,9 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                       <form class="comment-form comment-form-unified" data-comment-form data-post-id={photo.id}>
                         <input name="message" maxlength={MESSAGE_MAX_LENGTH} placeholder={t.home.commentPlaceholder} autocomplete="off" required />
                         {!isOwner && (
-                          <label class="private-toggle" title={`Somente @${profile.username} poderá ler`}>
+                          <label class="private-toggle" title={`${t.home.onlyUserCanRead}: @${profile.username}`}>
                             <input type="checkbox" name="private" />
-                            <span><i aria-hidden="true"></i><b class="private-toggle-public">Público</b><b class="private-toggle-private">Privado</b></span>
+                            <span><i aria-hidden="true"></i><b class="private-toggle-public">{t.common.public}</b><b class="private-toggle-private">{t.common.private}</b></span>
                           </label>
                         )}
                         <button type="submit" aria-label={t.home.send} title={t.home.send}>
@@ -176,7 +176,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                   <div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div>
                 </article>
               ))}</div>
-            ) : <p class="empty-state">Ainda não há observadores.</p>}
+            ) : <p class="empty-state">{t.publicProfile.noObservers}</p>}
           </section>
 
           <section class="profile-side-section profile-updates-section">
@@ -192,9 +192,9 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
 
   {profile && (
     <div class="profile-avatar-dialog" data-avatar-dialog hidden>
-      <button class="profile-avatar-dialog-backdrop" type="button" data-close-avatar-dialog aria-label="Fechar foto de perfil"></button>
-      <section class="profile-avatar-dialog-card" role="dialog" aria-modal="true" aria-label={`Foto de perfil de @${profile.username}`}>
-        <button class="profile-avatar-dialog-close" type="button" data-close-avatar-dialog aria-label="Fechar">×</button>
+      <button class="profile-avatar-dialog-backdrop" type="button" data-close-avatar-dialog aria-label={t.profile.closePhoto}></button>
+      <section class="profile-avatar-dialog-card" role="dialog" aria-modal="true" aria-label={`${t.profile.profilePhotoOf} @${profile.username}`}>
+        <button class="profile-avatar-dialog-close" type="button" data-close-avatar-dialog aria-label={t.common.close}>×</button>
         <div class="profile-avatar-dialog-image">
           {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`@${profile.username}`} /> : <span>{profile.username.slice(0,2).toUpperCase()}</span>}
         </div>
@@ -205,10 +205,10 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
   {isOwner && (
     <div class="post-dialog" data-post-dialog hidden>
       <div class="post-dialog-backdrop" data-close-post-dialog></div>
-      <section class="post-dialog-card" role="dialog" aria-modal="true" aria-label="Nova postagem">
+      <section class="post-dialog-card" role="dialog" aria-modal="true" aria-label={t.home.newPost}>
         <header>
-          <h2>Nova postagem</h2>
-          <button type="button" aria-label="Fechar" data-close-post-dialog>×</button>
+          <h2>{t.home.newPost}</h2>
+          <button type="button" aria-label={t.common.close} data-close-post-dialog>×</button>
         </header>
         <form class="daily-upload post-dialog-form" data-photo-form data-processing-text={t.home.processing}>
           <label class="upload-drop" data-upload-drop>
@@ -231,7 +231,20 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     </div>
   )}
 
-  <script>
+  <script define:vars={{ clientMessages: {
+    noObserved: t.publicProfile.noObservedFull, captionSaveError: t.home.captionSaveError,
+    operationError: t.home.operationError, loadConfirmationError: t.home.loadConfirmationError,
+    imageStillLoading: t.home.imageStillLoading, uploading: t.home.uploading,
+    processing: t.home.processing, imageReady: t.home.imageReady, uploadError: t.home.uploadError,
+    uploadReplaced: t.home.uploadReplaced, uploadFailed: t.home.uploadFailed,
+    waitImage: t.home.waitImage, publishing: t.home.publishing, publishingPhoto: t.home.publishingPhoto,
+    temporaryLimit: t.home.temporaryLimit, loadingProfile: t.home.loadingProfile,
+    photoPublished: t.home.photoPublished, deleteMessage: t.home.deleteMessage,
+    deleteQuestion: t.home.deleteQuestion, confirmDeletion: t.home.confirmDeletion,
+    cancelDeletion: t.home.cancelDeletion, messageDeleted: t.home.messageDeleted,
+    undo: t.common.undo, privateMessage: t.home.privateMessage,
+    messageSendError: t.home.messageSendError
+  } }}>
     const avatarDialog = document.querySelector<HTMLElement>('[data-avatar-dialog]');
     const setAvatarDialogOpen = (open: boolean) => {
       if (!avatarDialog) return;
@@ -281,7 +294,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           grid.remove();
           const empty = document.createElement('p');
           empty.className = 'empty-state';
-          empty.textContent = section.dataset.emptyMessage || 'Este usuário ainda não observa nenhum perfil.';
+          empty.textContent = section.dataset.emptyMessage || clientMessages.noObserved;
           section.append(empty);
         }
         return;
@@ -348,7 +361,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           form.hidden = true;
         } catch (error) {
           if (message) {
-            message.textContent = error instanceof Error ? error.message : 'Não foi possível salvar a legenda.';
+            message.textContent = error instanceof Error ? error.message : clientMessages.captionSaveError;
             message.hidden = false;
           }
         } finally {
@@ -389,9 +402,9 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       const contentType = response.headers.get('content-type') || '';
       if (contentType.includes('application/json')) {
         const data = await response.json().catch(() => ({}));
-        return String(data.error || 'Não foi possível concluir a operação.');
+        return String(data.error || clientMessages.operationError);
       }
-      return (await response.text()) || 'Não foi possível concluir a operação.';
+      return (await response.text()) || clientMessages.operationError;
     };
 
     const setPostDialogOpen = (open: boolean) => {
@@ -402,13 +415,13 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     };
 
     const preloadPublishedPhoto = async (photoId: number) => {
-      if (!Number.isInteger(photoId) || photoId <= 0) throw new Error('A foto foi publicada, mas não foi possível confirmar seu carregamento.');
+      if (!Number.isInteger(photoId) || photoId <= 0) throw new Error(clientMessages.loadConfirmationError);
       const image = new Image();
       image.decoding = 'async';
       image.src = `/api/photos/${photoId}?published=${Date.now()}`;
       await new Promise<void>((resolve, reject) => {
         image.onload = () => resolve();
-        image.onerror = () => reject(new Error('A foto foi publicada, mas ainda não carregou. Tente novamente em instantes.'));
+        image.onerror = () => reject(new Error(clientMessages.imageStillLoading));
       });
       if (typeof image.decode === 'function') await image.decode().catch(() => undefined);
     };
@@ -428,7 +441,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       showPostMessage();
       updatePublishAvailability();
       progress?.removeAttribute('hidden');
-      if (status) status.textContent = 'Enviando foto…';
+      if (status) status.textContent = clientMessages.uploading;
       if (percent) percent.textContent = '0%';
       if (fill) fill.style.width = '0%';
 
@@ -444,31 +457,31 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           if (percent) percent.textContent = `${value}%`;
           if (fill) fill.style.width = `${value}%`;
         };
-        xhr.upload.onload = () => { if (status) status.textContent = postForm?.dataset.processingText || 'Processando imagem…'; };
+        xhr.upload.onload = () => { if (status) status.textContent = postForm?.dataset.processingText || clientMessages.processing; };
         xhr.onload = () => {
           activeUpload = null;
           if (xhr.status < 200 || xhr.status >= 300) {
-            reject(new Error(xhr.responseText || 'Não foi possível enviar a imagem.'));
+            reject(new Error(xhr.responseText || clientMessages.uploadError));
             return;
           }
           const data = JSON.parse(xhr.responseText);
           uploadToken = String(data.uploadToken || '');
-          if (status) status.textContent = 'Imagem pronta';
+          if (status) status.textContent = clientMessages.imageReady;
           if (percent) percent.textContent = '100%';
           if (fill) fill.style.width = '100%';
           updatePublishAvailability();
           resolve(uploadToken);
         };
-        xhr.onerror = () => { activeUpload = null; reject(new Error('Não foi possível enviar a imagem.')); };
-        xhr.onabort = () => reject(new Error('Envio substituído.'));
+        xhr.onerror = () => { activeUpload = null; reject(new Error(clientMessages.uploadError)); };
+        xhr.onabort = () => reject(new Error(clientMessages.uploadReplaced));
         xhr.send(data);
       });
 
       uploadPromise.catch(error => {
         if (activeUpload) return;
-        if (status) status.textContent = 'Falha no envio';
+        if (status) status.textContent = clientMessages.uploadFailed;
         updatePublishAvailability();
-        if (error.message !== 'Envio substituído.') showPostMessage(error.message);
+        if (error.message !== clientMessages.uploadReplaced) showPostMessage(error.message);
       });
       return uploadPromise;
     }
@@ -505,15 +518,15 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
       event.preventDefault();
       if (publishButton) publishButton.disabled = true;
       try {
-        if (!previewReady) throw new Error('Aguarde a imagem terminar de carregar.');
+        if (!previewReady) throw new Error(clientMessages.waitImage);
         const token = uploadToken || await uploadPromise;
-        if (!token || !previewReady) throw new Error('Aguarde a imagem terminar de carregar.');
-        if (status) status.textContent = 'Publicando…';
+        if (!token || !previewReady) throw new Error(clientMessages.waitImage);
+        if (status) status.textContent = clientMessages.publishing;
         const caption = String(new FormData(postForm).get('caption') || '');
         isPublishing = true;
         postDialog?.classList.add('is-finalizing');
         postDialog?.setAttribute('aria-busy', 'true');
-        if (status) status.textContent = 'Publicando sua foto…';
+        if (status) status.textContent = clientMessages.publishingPhoto;
         if (percent) percent.textContent = '100%';
         if (fill) fill.style.width = '100%';
 
@@ -525,17 +538,17 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         if (!response.ok) {
           if (response.status === 429) {
             const data = await response.json().catch(() => ({})) as { error?: string };
-            throw new Error(String(data.error || 'Limite temporário de publicação atingido.'));
+            throw new Error(String(data.error || clientMessages.temporaryLimit));
           }
           throw new Error(await responseError(response));
         }
         const result = await response.json() as { photoId?: number };
 
-        if (status) status.textContent = 'Carregando no perfil…';
+        if (status) status.textContent = clientMessages.loadingProfile;
         postDialog?.classList.add('is-loading-published-photo');
         await preloadPublishedPhoto(Number(result.photoId || 0));
 
-        if (status) status.textContent = 'Foto publicada';
+        if (status) status.textContent = clientMessages.photoPublished;
         postDialog?.classList.remove('is-loading-published-photo');
         postDialog?.classList.add('is-published');
         await new Promise(resolve => window.setTimeout(resolve, 260));
@@ -545,14 +558,14 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         isPublishing = false;
         postDialog?.classList.remove('is-finalizing', 'is-loading-published-photo', 'is-published', 'is-closing');
         postDialog?.removeAttribute('aria-busy');
-        if (status) status.textContent = 'Imagem pronta';
+        if (status) status.textContent = clientMessages.imageReady;
         showPostMessage(error instanceof Error ? error.message : 'Não foi possível publicar.');
         updatePublishAvailability();
       }
     });
     const formatCommentDate = (value: string) => new Intl.DateTimeFormat(document.documentElement.lang || 'pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
     const iconAttrs = `width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"`;
-    const deleteButtonHtml = `<button class="comment-delete-trigger" type="button" data-comment-delete-trigger aria-label="Excluir mensagem" title="Excluir mensagem"><svg ${iconAttrs}><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" /></svg></button>`;
+    const deleteButtonHtml = `<button class="comment-delete-trigger" type="button" data-comment-delete-trigger aria-label={t.home.deleteMessage} title={t.home.deleteMessage}><svg ${iconAttrs}><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" /></svg></button>`;
     const cancelIcon = `<svg ${iconAttrs}><path d="m7 7 10 10M17 7 7 17" /></svg>`;
     const confirmIcon = `<svg ${iconAttrs}><path d="m5 12 4 4L19 6" /></svg>`;
     const undoIcon = `<svg ${iconAttrs}><path d="M9 7 4 12l5 5M5 12h8a6 6 0 1 1 0 12" /></svg>`;
@@ -581,9 +594,9 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
 
       if (target.closest('[data-comment-delete-trigger]')) {
         area.innerHTML = `
-          <span class="comment-delete-confirm">Excluir?</span>
-          <button class="comment-action-button is-confirm" type="button" data-comment-delete-confirm aria-label="Confirmar exclusão" title="Confirmar">${confirmIcon}</button>
-          <button class="comment-action-button" type="button" data-comment-delete-cancel aria-label="Cancelar exclusão" title="Cancelar">${cancelIcon}</button>
+          <span class="comment-delete-confirm">${clientMessages.deleteQuestion}</span>
+          <button class="comment-action-button is-confirm" type="button" data-comment-delete-confirm aria-label="${clientMessages.confirmDeletion}" title="${clientMessages.confirmDeletion}">${confirmIcon}</button>
+          <button class="comment-action-button" type="button" data-comment-delete-cancel aria-label="${clientMessages.cancelDeletion}" title="${clientMessages.cancelDeletion}">${cancelIcon}</button>
         `;
         return;
       }
@@ -603,8 +616,8 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
 
         item.classList.add('is-comment-deleted');
         area.innerHTML = `
-          <span class="comment-deleted-label">Mensagem excluída</span>
-          <button class="comment-undo-button" type="button" data-comment-undo>${undoIcon}<span>Desfazer</span></button>
+          <span class="comment-deleted-label">${clientMessages.messageDeleted}</span>
+          <button class="comment-undo-button" type="button" data-comment-undo>${undoIcon}<span>${clientMessages.undo}</span></button>
         `;
 
         const commentList = item.closest<HTMLElement>('[data-comment-list]');
@@ -662,7 +675,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             body: JSON.stringify({ postId: Number(form.dataset.postId), message, private: isPrivate }),
           });
           const data = await response.json().catch(() => ({}));
-          if (!response.ok) throw new Error(String(data.error || 'Não foi possível enviar a mensagem.'));
+          if (!response.ok) throw new Error(String(data.error || clientMessages.messageSendError));
 
           if (list && data.comment) {
             const article = document.createElement('article');
@@ -699,7 +712,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
             if (isPrivate) {
               const badge = document.createElement('div');
               badge.className = 'private-comment-badge private-comment-badge-visible';
-              badge.innerHTML = '<span aria-hidden="true">🔒</span> Mensagem privada';
+              badge.innerHTML = ;
               text.className = 'private-comment-message';
               content.append(badge);
             }
@@ -714,7 +727,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           field.focus();
         } catch (error) {
           if (messageBox) {
-            messageBox.textContent = error instanceof Error ? error.message : 'Não foi possível enviar a mensagem.';
+            messageBox.textContent = error instanceof Error ? error.message : clientMessages.messageSendError;
             messageBox.hidden = false;
           }
         } finally {

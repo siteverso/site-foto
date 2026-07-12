@@ -1,10 +1,11 @@
 export default {
   site: { title: 'FotoLife', description: 'Um flog simples: uma foto por dia e conversas embaixo dela.' },
   common: {
-    save: 'Salvar', cancel: 'Cancelar', delete: 'Excluir', confirm: 'Confirmar', undo: 'Desfazer', loading: 'Carregando…', retry: 'Tentar novamente',
-    email: 'E-mail', username: 'Usuário', password: 'Senha', newPassword: 'Nova senha', confirmPassword: 'Confirmar senha',
+    save: 'Salvar', saving: 'Salvando…', cancel: 'Cancelar', delete: 'Excluir', confirm: 'Confirmar', undo: 'Desfazer', loading: 'Carregando…', retry: 'Tentar novamente',
+    email: 'E-mail', username: 'Usuário', password: 'Senha', newPassword: 'Nova senha', changePassword: 'Trocar senha', definePassword: 'Definir senha', confirmPassword: 'Confirmar senha',
     home: 'Início', profile: 'Perfil', logout: 'Sair', signIn: 'Entrar', navigation: 'Navegação principal', changeTheme: 'Alternar tema',
-    close: 'Fechar', public: 'Público', private: 'Privado', none: 'Nenhum', noBio: 'Sem bio ainda.',
+    close: 'Fechar', public: 'Público', private: 'Privado', none: 'Nenhum', noBio: 'Sem bio ainda.', google: 'Google',
+    characterLimit: '{percent}% do limite de {limit} caracteres',
   },
   signup: {
     title: 'Criar conta', headline: 'Sua foto. Sua história.', intro: 'Para começar, precisamos apenas de um usuário, um e-mail e uma senha.',
@@ -18,11 +19,13 @@ export default {
     title: 'Conta', editTitle: 'Editar dados da conta', bio: 'Bio pública', murmurs: 'fotos', positives: 'mensagens', shares: 'observadores',
     photos: 'Fotos', messages: 'Mensagens', observed: 'Observando', observers: 'Observadores', accountTitle: 'Acesso à conta', definePassword: 'Definir uma senha',
     passwordHelp: 'Ao definir uma senha, você poderá entrar sem o Google usando seu usuário ou e-mail.', accessMethods: 'Métodos de acesso',
+    googleAccess: 'Sua conta pode ser acessada pelo Google. Você também pode definir ou trocar uma senha abaixo.', passwordAccess: 'Sua conta usa acesso por usuário/e-mail e senha.',
     observerVisibility: 'Quem pode ver sua lista', observerVisibilityPublic: 'Pública — todos podem ver', observerVisibilityPrivate: 'Privada — ninguém pode ver',
     observerVisibilityHelp: 'Você sempre poderá ver sua própria lista no perfil.', hiddenObservedTitle: 'Ocultar pessoas da lista pública',
     hiddenObservedHelp: 'Marque quem não deve aparecer para outras pessoas. Você continuará vendo todos no seu próprio perfil.', hiddenObservedEmpty: 'Você ainda não observa ninguém.',
     sex: 'Sexo', sexUnknown: 'Não informado', sexMale: 'Masculino', sexFemale: 'Feminino', changePhoto: 'Alterar foto', enlargePhoto: 'Ampliar foto de perfil',
-    photoHelp: 'JPG, PNG ou WebP, até 3 MB.', editAccount: 'Editar conta', viewMyProfile: 'Ver meu perfil', stopObserving: 'Deixar de observar', observe: 'Observar', observedLabel: 'Observado',
+    closePhoto: 'Fechar foto de perfil', profilePhotoOf: 'Foto de perfil de', photoHelp: 'JPG, PNG ou WebP, até 3 MB.', editAccount: 'Editar conta', viewMyProfile: 'Ver meu perfil',
+    stopObserving: 'Deixar de observar', observe: 'Observar', observedLabel: 'Observado', accountUpdated: 'Conta atualizada.', passwordUpdated: 'Senha atualizada.',
   },
   login: {
     title: 'Entrar', headline: 'Uma foto por dia.', intro: 'Guarde um instante diário e compartilhe a história por trás da imagem.', description: 'Entre com sua conta compartilhada.',
@@ -33,15 +36,18 @@ export default {
   home: {
     friends: 'Observando', today: 'Foto do dia', updates: 'Últimas atualizações', comments: 'Mensagens', noPhoto: 'Você ainda não publicou a foto de hoje.',
     noFriends: 'As fotos de quem você observa aparecerão aqui.', noUpdates: 'Ainda não há atualizações.', noComments: 'Seja o primeiro a comentar.',
-    choosePhoto: 'Escolher foto', caption: 'Conte a história dessa foto', publish: 'Publicar foto do dia', uploading: 'Enviando foto…', processing: 'Processando imagem…', completed: 'Concluído',
+    choosePhoto: 'Escolher foto', caption: 'Conte a história dessa foto', publish: 'Publicar foto do dia', uploading: 'Enviando foto…', processing: 'Processando imagem…', completed: 'Concluído', imageReady: 'Imagem pronta', uploadFailed: 'Falha no envio', publishing: 'Publicando…', publishingPhoto: 'Publicando sua foto…', loadingProfile: 'Carregando no perfil…', photoPublished: 'Foto publicada',
+    waitImage: 'Aguarde a imagem terminar de carregar.', uploadReplaced: 'Envio substituído.', uploadError: 'Não foi possível enviar a imagem.', loadConfirmationError: 'A foto foi publicada, mas não foi possível confirmar seu carregamento.', imageStillLoading: 'A foto foi publicada, mas ainda não carregou. Tente novamente em instantes.', temporaryLimit: 'Limite temporário de publicação atingido.',
     commentPlaceholder: 'Escreva uma mensagem', send: 'Enviar', sending: 'Enviando…', signedAs: 'Conectado como', logout: 'Sair', myAccount: 'Minha conta', myProfile: 'Perfil do usuário',
     openMyProfile: 'Abrir meu perfil', feedEyebrow: 'Agora no FotoLife', feedTitle: 'Últimas atualizações', ownPage: 'Sua página pública', userPage: 'Página do usuário',
-    deletePhoto: 'Apagar esta foto?', loadMore: 'Carregar mais', loadingMore: 'Carregando…', viewProfile: 'Ver perfil de', newPost: 'Nova postagem', editCaption: 'Editar legenda',
+    deletePhoto: 'Apagar esta foto?', loadMore: 'Carregar mais', loadingMore: 'Carregando…', viewProfile: 'Ver perfil de', post: 'Postar', newPost: 'Publicar imagem', editCaption: 'Editar legenda',
     doubleClickCaption: 'Duplo clique para editar a legenda', photoCaption: 'Legenda da foto', privateMessage: 'Mensagem privada', deleteMessage: 'Excluir mensagem', onlyUserCanRead: 'Somente este usuário poderá ler',
+    captionSaveError: 'Não foi possível salvar a legenda.', messageSendError: 'Não foi possível enviar a mensagem.', operationError: 'Não foi possível concluir a operação.',
+    deleteQuestion: 'Excluir?', confirmDeletion: 'Confirmar exclusão', cancelDeletion: 'Cancelar exclusão', messageDeleted: 'Mensagem excluída',
   },
   publicProfile: {
     title: 'Perfil do usuário', photos: 'Fotos publicadas', latestPosts: 'Últimas postagens', noPhotos: 'Este usuário ainda não publicou fotos.', notFound: 'Perfil não encontrado',
-    back: 'Voltar ao FotoLife', friends: 'Observadores', addFriend: 'Observar', alreadyFriend: 'Observando', noObserved: 'ainda não observa nenhum perfil.', privateList: 'Esta lista é privada.', noObservers: 'Ainda não há observadores.',
+    back: 'Voltar ao FotoLife', friends: 'Observadores', addFriend: 'Observar', alreadyFriend: 'Observando', noObserved: 'ainda não observa nenhum perfil.', noObservedFull: 'Este usuário ainda não observa nenhum perfil.', privateList: 'Esta lista é privada.', noObservers: 'Ainda não há observadores.',
   },
   directs: {
     title: 'Bilhetes', subtitle: 'Directs', choose: 'Escolha um bilhete', intro: 'As conversas chegam como correspondência, sem cara de chat.', replyPlaceholder: 'Responder com outro bilhete…',
@@ -52,6 +58,6 @@ export default {
   language: { label: 'Idioma' },
   errors: {
     generic: 'Não foi possível concluir. Tente novamente.', invalidLogin: 'E-mail, usuário ou senha inválidos.', googleInvalid: 'Não foi possível entrar com o Google.',
-    accountExists: 'Este usuário já está em uso.', invalidSex: 'Selecione uma opção de sexo válida.', sessionExpired: 'Sua sessão expirou. Entre novamente.',
+    accountExists: 'Este usuário já está em uso.', invalidSex: 'Selecione uma opção de sexo válida.', sessionExpired: 'Sua sessão expirou. Entre novamente.', feedLoad: 'Falha ao carregar o feed.',
   },
 };

@@ -1,0 +1,217 @@
+/* Página de conta: formulário, privacidade e composição responsiva. */
+.account-page .profile-grid {
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.account-page aside,
+.account-page .profile-sections,
+.account-page .profile-edit,
+.account-page form {
+  min-width: 0;
+}
+
+.account-page .profile-sections {
+  display: grid;
+  gap: 24px;
+}
+
+.account-page .profile-edit {
+  padding: clamp(22px, 2.4vw, 34px);
+}
+
+.account-page .profile-edit h2 {
+  margin: 0 0 24px;
+  font-size: clamp(1.25rem, 1.8vw, 1.55rem);
+  letter-spacing: -.025em;
+}
+
+.account-page .profile-edit h3 {
+  margin: 0 0 8px;
+}
+
+.account-page .field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.account-page .field > label,
+.account-page .field > legend {
+  color: var(--text);
+  font-size: .88rem;
+  font-weight: 800;
+}
+
+.account-page .field input:not([type="checkbox"]):not([type="radio"]),
+.account-page .field textarea,
+.account-page .field select {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 82%, var(--surface-2));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 35%, transparent);
+  font: inherit;
+  outline: none;
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.account-page .field textarea {
+  min-height: 132px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.account-page .field select {
+  appearance: auto;
+  cursor: pointer;
+}
+
+.account-page .field input:focus,
+.account-page .field textarea:focus,
+.account-page .field select:focus {
+  border-color: color-mix(in srgb, var(--strong) 48%, var(--line));
+  background: var(--surface);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--strong) 10%, transparent);
+}
+
+.account-page .field-help {
+  display: block;
+  margin-top: -1px;
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.account-page .observed-privacy {
+  margin: 22px 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-2) 52%, var(--surface));
+}
+
+.account-page .observed-privacy legend {
+  padding: 0 7px;
+}
+
+.account-page .observed-privacy-list {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.account-page .observed-privacy-item {
+  min-height: 52px;
+  padding: 9px 11px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.account-page .observed-privacy-item:hover {
+  border-color: color-mix(in srgb, var(--strong) 30%, var(--line));
+  background: color-mix(in srgb, var(--surface) 82%, var(--surface-2));
+  transform: translateY(-1px);
+}
+
+.account-page .observed-privacy-item input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--strong);
+}
+
+.account-page .observed-privacy-avatar {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--inverse);
+  background: var(--strong);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.account-page .observed-privacy-item span:not(.observed-privacy-avatar) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 750;
+}
+
+.account-page .observed-privacy-empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.account-page .auth-methods {
+  margin: 18px 0 24px;
+  padding: 15px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.account-page .auth-methods span,
+.account-page .account-access > p,
+.account-page .account-access form > p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.account-page .button.primary {
+  min-width: 112px;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--strong) 12%, transparent);
+}
+
+@media (max-width: 900px) {
+  .account-page .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-page aside {
+    max-width: 560px;
+  }
+}
+
+@media (max-width: 560px) {
+  .account-page .profile-edit {
+    padding: 20px 16px;
+    border-radius: 18px;
+  }
+
+  .account-page .observed-privacy {
+    padding: 14px;
+  }
+
+  .account-page .observed-privacy-list {
+    grid-template-columns: 1fr;
+  }
+
+  .account-page .auth-methods {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .account-page .button.primary {
+    width: 100%;
+  }
+}

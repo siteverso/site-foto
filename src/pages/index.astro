@@ -64,7 +64,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
     </section>
   </main>
 
-  <script define:vars={{ locale, feedLabels: { loading: t.home.loadingMore, retry: t.common.retry, loadMore: t.home.loadMore, viewProfile: t.home.viewProfile } }}>
+  <script define:vars={{ locale, feedLabels: { loading: t.home.loadingMore, retry: t.common.retry, loadMore: t.home.loadMore, viewProfile: t.home.viewProfile, feedLoad: t.errors.feedLoad } }}>
     const feed = document.querySelector('[data-photo-feed]');
     const loadMoreButton = document.querySelector('[data-load-more]');
     let feedOffset = document.querySelectorAll('.photo-post').length;
@@ -109,7 +109,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
           headers: { Accept: 'application/json' },
           credentials: 'same-origin',
         });
-        if (!response.ok) throw new Error(`Falha ao carregar o feed: ${response.status}`);
+        if (!response.ok) throw new Error(`${feedLabels.feedLoad}: ${response.status}`);
         const data = await response.json();
         feed.querySelector('[data-feed-skeletons]')?.remove();
         feed.insertAdjacentHTML('beforeend', data.items.map(postHtml).join(''));

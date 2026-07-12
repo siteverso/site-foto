@@ -71,3 +71,98 @@
 }
 
 
+
+/* Estrutura visual pertence ao componente e deve acompanhá-lo em qualquer página. */
+.profile-summary-card {
+  width: 100%;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.profile-summary-card .user-profile-intro {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  padding: 0 0 18px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.profile-summary-card .user-profile-intro > div {
+  min-width: 0;
+}
+
+.profile-summary-card .user-profile-intro h1 {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.35rem;
+  letter-spacing: -.025em;
+}
+
+.profile-summary-card .profile-account-link,
+.profile-sidebar-external-action {
+  min-height: 44px;
+  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--strong) 5%, transparent);
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease;
+}
+
+.profile-summary-card .profile-account-link:hover,
+.profile-sidebar-external-action:hover {
+  border-color: color-mix(in srgb, var(--strong) 28%, var(--line));
+  background: var(--surface-2);
+  transform: translateY(-1px);
+}
+
+.profile-summary-card .profile-account-link:focus-visible,
+.profile-sidebar-external-action:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
+.profile-sidebar-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.profile-sidebar-stats div {
+  min-width: 0;
+  padding: 12px 8px;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.profile-sidebar-stats strong,
+.profile-sidebar-stats span {
+  display: block;
+}
+
+.profile-sidebar-stats strong {
+  font-size: 1rem;
+}
+
+.profile-sidebar-stats span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: .72rem;
+}
