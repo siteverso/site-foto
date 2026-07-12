@@ -20,11 +20,13 @@ const t = getMessages(locale);
           <a class="site-user-link" href={`/perfil/${username}`} data-user-profile-link><strong data-user-name>@{username}</strong></a>
           <a class="site-account-link" href="/conta">{locale === 'pt-BR' ? 'Conta' : 'Account'}</a>
           <LanguageSwitch locale={locale} />
+          <button class="site-theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema" title="Alternar tema"><span aria-hidden="true">☀</span></button>
           <button class="flog-logout" type="button" data-logout>{t.home.logout}</button>
         </>
       ) : (
         <>
           <LanguageSwitch locale={locale} />
+          <button class="site-theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema" title="Alternar tema"><span aria-hidden="true">☀</span></button>
           <a class="site-account-link" href="/login">{locale === 'pt-BR' ? 'Entrar' : 'Sign in'}</a>
         </>
       )}
@@ -33,7 +35,42 @@ const t = getMessages(locale);
 </header>
 
 <script>
-  // noinspection TypeScriptValidateTypes
+  const FOTO_THEMES = [
+    { code: 'light', name: 'Claro', icon: '☀', scheme: 'light' },
+    { code: 'light-warm', name: 'Claro quente', icon: '◒', scheme: 'light' },
+    { code: 'dark', name: 'Escuro', icon: '☾', scheme: 'dark' },
+    { code: 'dark-blue', name: 'Escuro azulado', icon: '◐', scheme: 'dark' },
+  ];
+
+  const themeButton = document.querySelector('[data-theme-toggle]');
+
+  function currentThemeIndex() {
+    const current = document.documentElement.dataset.theme || 'light';
+    const index = FOTO_THEMES.findIndex(theme => theme.code === current);
+    return index >= 0 ? index : 0;
+  }
+
+  function refreshThemeButton() {
+    if (!(themeButton instanceof HTMLButtonElement)) return;
+    const currentIndex = currentThemeIndex();
+    const current = FOTO_THEMES[currentIndex];
+    const next = FOTO_THEMES[(currentIndex + 1) % FOTO_THEMES.length];
+    const icon = themeButton.querySelector('span');
+    if (icon) icon.textContent = current.icon;
+    themeButton.dataset.currentTheme = current.code;
+    themeButton.setAttribute('aria-label', `Tema ${current.name}. Ativar ${next.name}`);
+    themeButton.title = `${current.name} · próximo: ${next.name}`;
+  }
+
+  refreshThemeButton();
+  themeButton?.addEventListener('click', () => {
+    const next = FOTO_THEMES[(currentThemeIndex() + 1) % FOTO_THEMES.length];
+    document.documentElement.dataset.theme = next.code;
+    document.cookie = `fotolife-theme=${next.code}; path=/; max-age=31536000; SameSite=Lax`;
+    document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', next.scheme);
+    refreshThemeButton();
+  });
+
   document.querySelector('[data-logout]')?.addEventListener('click', async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     location.href = '/login';

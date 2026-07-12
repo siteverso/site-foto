@@ -8,15 +8,6 @@ Realize testes unitarios para garantir funcionamento
 
 TODO, um de cada vez (verifique se ja existe o recurso e se precisa ser alterado melhorado ou corrigido e avise explique antes de gerar o zip):
 
-- [x] deve ter remover observado do perfil proprio
-- [x] na esquerda sao os observadores (quem observa o perfil), na direita sao os observados (quem o perfil observa) e na esquerda embaixo entao as ultimas atualizacoes ![img_6.png](img_6.png)
-- [x] deve ter opcao na conta se quer tornar lista de observados publica ou privada (nenhum)
-- [x] deve ter opcao na conta se quer tornar lista de observados publica e bloquear alguns para nao aparecer
-- [x] deve preencher os dados da conta e permitir alterar
-- [x] deve ter opcao de mandar msg privada na foto só que ve é o dono do perfil
-- [x] deve ter modo dark
-- deve ter clica na foto e ver em tela cheia com botoes de proxima e anterior usando pre carga com assincrono
-- deve ser possivel enviar foto pelo perfil onde escolhe a foto, assincrona, permite marcar o circulo do local da foto e atualiza no banco coluna blob
 - deve permitir ao proprietario editar o caption da imagem enviada
 - deve ter um x nos observados para remover o observado da grade de observados direto e tambem dentro do perfil do amigo um x no botao amigo para remover ele
 - deve ter um clique no popup da imagem do perfil para ver imagem circular da pessoa
