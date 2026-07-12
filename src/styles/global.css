@@ -2206,7 +2206,7 @@ img.media-loading {
 .profile-sidebar-card .user-profile-intro-sidebar { margin-bottom: 0; }
 .profile-sidebar-card .handle { display: block; margin-top: 4px; color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; }
 .profile-sidebar-card .user-profile-intro p { margin: 7px 0 0; color: var(--muted); line-height: 1.45; }
-.profile-sidebar-stats { margin: 18px 0 0; }
+.profile-sidebar-stats { margin: 18px 0 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .profile-avatar-edit-button { cursor: pointer; }
 .account-avatar-form { display: grid; gap: 8px; margin-top: 18px; }
 .account-avatar-form .profile-account-link { margin-top: 0; cursor: pointer; }
@@ -2248,3 +2248,61 @@ img.media-loading {
 .avatar-crop-zoom { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 14px; color: var(--muted); font-size: .86rem; font-weight: 800; }
 .avatar-crop-zoom input { width: 100%; accent-color: var(--strong); }
 .avatar-crop-actions { justify-content: flex-end; }
+
+/* Ajuste fino da coluna de perfil/conta */
+.profile-sidebar-stack {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+.profile-sidebar-card .user-profile-intro-sidebar {
+  align-items: flex-start;
+}
+.profile-sidebar-card .profile-avatar-button {
+  margin-top: 0;
+}
+.profile-sidebar-card .account-avatar-form {
+  margin-top: 18px;
+  margin-bottom: 0;
+}
+.profile-sidebar-card .profile-sidebar-stats {
+  margin-top: 18px;
+}
+.profile-sidebar-external-action {
+  width: 100%;
+  margin-top: 0;
+}
+
+
+/* FotoLife: foto da Home como acesso ao perfil e legenda com respiro */
+.photo-post-image-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.photo-post-image-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -4px;
+}
+
+.photo-post-caption {
+  margin: 18px;
+  padding: 15px 17px;
+  border: 1px solid var(--line, #deded9);
+  border-radius: 14px;
+  color: var(--text, #111);
+  background: var(--surface-2, #f7f7f4);
+  font-size: 0.94rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .photo-post-caption {
+    margin: 14px;
+    padding: 13px 14px;
+    border-radius: 12px;
+  }
+}

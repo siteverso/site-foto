@@ -8,8 +8,6 @@ Realize testes unitarios para garantir funcionamento
 
 TODO, um de cada vez (verifique se ja existe o recurso e se precisa ser alterado melhorado ou corrigido e avise explique antes de gerar o zip):
 
-- passar edicao da conta pra dentro do perfil ali na esquerda, qd for o proprietario claro ![img.png](img.png)
-- quando o perfil for meu o termo é Observando e nao observadores ![img_2.png](img_2.png)
 - so deve aparecer a ultima atualizacao da pessoa ![img_1.png](img_1.png) para ter apenas uma entrada no grid
 - pertmir que /@nomeusuario acesso o perfil do usuario 
 - centralize ![img_8.png](img_8.png)

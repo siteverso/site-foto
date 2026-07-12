@@ -22,14 +22,14 @@ const t = getMessages(locale);
         editableAvatar
         isOwner
         showStats
-        labels={{ photos: 'Fotos', messages: 'Mensagens', observers: 'Observadores' }}
+        labels={{ photos: 'Fotos', messages: 'Mensagens', observed: 'Observando', observers: 'Observadores' }}
       />
     </aside>
 
     <div class="profile-sections">
       <section class="panel profile-edit">
         <h2>{t.profile.editTitle}</h2>
-        <form data-profile-form>
+        <form data-profile-form data-page-managed>
           <div class="field"><label for="username">{t.common.username}</label><input id="username" name="username" maxlength="30" value={account.username} autocomplete="username" required /></div>
           <div class="field"><label for="email">{t.common.email}</label><input id="email" name="email" type="email" value={account.email} autocomplete="email" required /></div>
           <div class="field"><label for="bio">{t.profile.bio}</label><textarea id="bio" name="bio" maxlength={MESSAGE_MAX_LENGTH} rows="5">{account.bio}</textarea></div>
@@ -63,7 +63,7 @@ const t = getMessages(locale);
         <h2>{t.profile.accountTitle}</h2>
         <p data-auth-explanation></p>
         <div class="auth-methods"><strong>{t.profile.accessMethods}</strong><span data-auth-methods></span></div>
-        <form data-password-form>
+        <form data-password-form data-page-managed>
           <h3 data-password-title>{t.profile.definePassword}</h3>
           <p>{t.profile.passwordHelp}</p>
           <div class="field"><label for="newPassword">{t.common.newPassword}</label><input id="newPassword" name="password" type="password" minlength="6" autocomplete="new-password" required /></div>
@@ -148,13 +148,22 @@ const t = getMessages(locale);
     document.querySelectorAll('[data-user-profile-link]').forEach(element => {
       element.href = `/perfil/${encodeURIComponent(account.username)}`;
     });
-    document.querySelector('[data-profile-avatar]').textContent = initials(account.username);
-    document.querySelector('[data-profile-username]').textContent = `@${account.username}`;
-    document.querySelector('[data-profile-email]').textContent = account.email;
-    document.querySelector('[data-profile-bio]').textContent = account.bio || 'Sem bio ainda.';
-    document.querySelector('[data-profile-posts]').textContent = account.photoCount;
-    document.querySelector('[data-profile-positive]').textContent = account.messageCount;
-    document.querySelector('[data-profile-shares]').textContent = account.observerCount;
+    const avatarFallback = document.querySelector('[data-profile-avatar-fallback]');
+    if (avatarFallback) avatarFallback.textContent = initials(account.username);
+    const profileUsername = document.querySelector('[data-profile-username]');
+    if (profileUsername) profileUsername.textContent = `@${account.username}`;
+    const profileEmail = document.querySelector('[data-profile-email]');
+    if (profileEmail) profileEmail.textContent = account.email;
+    const profileBio = document.querySelector('[data-profile-bio]');
+    if (profileBio) profileBio.textContent = account.bio || 'Sem bio ainda.';
+    const profilePosts = document.querySelector('[data-profile-posts]');
+    if (profilePosts) profilePosts.textContent = account.photoCount;
+    const profileMessages = document.querySelector('[data-profile-positive]');
+    if (profileMessages) profileMessages.textContent = account.messageCount;
+    const profileObserved = document.querySelector('[data-profile-observed]');
+    if (profileObserved) profileObserved.textContent = account.observedCount;
+    const profileObservers = document.querySelector('[data-profile-shares]');
+    if (profileObservers) profileObservers.textContent = account.observerCount;
 
     profileForm.username.value = account.username;
     profileForm.email.value = account.email;

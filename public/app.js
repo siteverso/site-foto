@@ -742,7 +742,7 @@ function bindProfile() {
     openAvatarCropper(file, message, avatarInput);
   });
   const profileForm = $('[data-profile-form]');
-  profileForm?.addEventListener('submit', async event => {
+  if (profileForm && !profileForm.hasAttribute('data-page-managed')) profileForm.addEventListener('submit', async event => {
     event.preventDefault();
     const message = $('[data-form-message]', profileForm);
     setFormMessage(message);
@@ -770,7 +770,7 @@ function bindProfile() {
   });
 
   const passwordForm = $('[data-password-form]');
-  passwordForm?.addEventListener('submit', async event => {
+  if (passwordForm && !passwordForm.hasAttribute('data-page-managed')) passwordForm.addEventListener('submit', async event => {
     event.preventDefault();
     const message = $('[data-form-message]', passwordForm);
     setFormMessage(message);
