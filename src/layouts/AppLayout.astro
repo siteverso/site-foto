@@ -251,6 +251,7 @@ if (auth && !await currentUser(Astro)) {
           }
         }
 
+        window.addEventListener('fotolife:refresh-live-sections', refreshLiveSections);
         window.setInterval(refreshLiveSections, LIVE_REFRESH_MS);
       </script>
     )}

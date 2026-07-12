@@ -54,8 +54,8 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
           <section class="profile-side-section" data-profile-observed data-empty-message={`@${profile.username} ${t.publicProfile.noObserved}`}>
             <h2>{observedSectionTitle}</h2>
             {showObservedList ? (
-              observedPhotos.length ? (
-                <div class="photo-mini-grid" data-live-section="profile-observed" data-live-list>{observedPhotos.map(item => (
+              <div class="photo-mini-grid" data-live-section="profile-observed" data-live-list>
+                {observedPhotos.length ? observedPhotos.map(item => (
                   <article class="photo-mini-card" data-live-key={`observed-${item.userId}`} data-observed-user-id={item.userId}>
                     {isOwner && (
                       <button
@@ -70,8 +70,8 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
                     <a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a>
                     <div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div>
                   </article>
-                ))}</div>
-              ) : <p class="empty-state">@{profile.username} {t.publicProfile.noObserved}</p>
+                )) : <p class="empty-state" data-live-key="empty">@{profile.username} {t.publicProfile.noObserved}</p>}
+              </div>
             ) : <p class="empty-state">{t.publicProfile.privateList}</p>}
           </section>
         </aside>
@@ -169,21 +169,23 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         <aside class="flog-panel">
           <section class="profile-side-section">
             <h2>{observerSectionTitle}</h2>
-            {observerPhotos.length ? (
-              <div class="photo-mini-grid" data-live-section="profile-observers" data-live-list>{observerPhotos.map(item => (
+            <div class="photo-mini-grid" data-live-section="profile-observers" data-live-list>
+              {observerPhotos.length ? observerPhotos.map(item => (
                 <article class="photo-mini-card" data-live-key={`observer-${item.userId}`}>
                   <a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a>
                   <div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div>
                 </article>
-              ))}</div>
-            ) : <p class="empty-state">{t.publicProfile.noObservers}</p>}
+              )) : <p class="empty-state" data-live-key="empty">{t.publicProfile.noObservers}</p>}
+            </div>
           </section>
 
           <section class="profile-side-section profile-updates-section">
             <h2>{t.home.updates}</h2>
-            {latestPhotos.length ? <div class="photo-mini-grid" data-live-section="profile-updates" data-live-list>{latestPhotos.map(item => (
-              <article class="photo-mini-card" data-live-key={`update-${item.id}`}><a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a><div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div></article>
-            ))}</div> : <p class="empty-state">{t.home.noUpdates}</p>}
+            <div class="photo-mini-grid" data-live-section="profile-updates" data-live-list>
+              {latestPhotos.length ? latestPhotos.map(item => (
+                <article class="photo-mini-card" data-live-key={`update-${item.id}`}><a class="photo-mini-image" href={`/perfil/${item.username}`}><img src={`/api/photos/${item.id}`} alt={item.caption || item.username} loading="lazy" /></a><div><a href={`/perfil/${item.username}`}><strong>@{item.username}</strong></a><time>{formatDate(item.publishedAt)}</time></div></article>
+              )) : <p class="empty-state" data-live-key="empty">{t.home.noUpdates}</p>}
+            </div>
           </section>
         </aside>
       </section>

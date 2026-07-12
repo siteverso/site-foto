@@ -71,7 +71,13 @@ document.addEventListener("click", async (event) => {
   if (!current) return;
   if (!confirm(current.title)) return;
   const response = await fetch(`/api/photos/${current.dataset.photoId}`, { method: "DELETE" });
-  if (!response.ok) alert(await response.text());
+  if (!response.ok) {
+    alert(await response.text());
+    return;
+  }
+
+  current.closest("[data-live-key]")?.remove();
+  window.dispatchEvent(new CustomEvent("fotolife:refresh-live-sections"));
 });
 const openCaptionEditor = (photo) => {
   const form = photo?.querySelector("[data-caption-form]");
