@@ -44,6 +44,7 @@ export type AccountProfile = {
     photoCount: number;
     messageCount: number;
     observerCount: number;
+    observedCount: number;
     observerVisibility: 'public' | 'private';
     observedUsers: Array<{ id: number; username: string; avatarUrl: string; hidden: boolean }>;
 };
@@ -105,6 +106,7 @@ export async function getAccountProfile(userId: number): Promise<AccountProfile>
             photoCount: Number(row.PHOTO_COUNT || 0),
             messageCount: Number(row.MESSAGE_COUNT || 0),
             observerCount: Number(row.OBSERVER_COUNT || 0),
+            observedCount: (observedResult.rows || []).length,
             observerVisibility: normalizeObserverVisibility(row.OBSERVER_VISIBILITY_CODE || 'public'),
             observedUsers: (observedResult.rows || []).map(item => ({
                 id: Number(item.ID),

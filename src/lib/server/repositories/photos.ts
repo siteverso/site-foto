@@ -153,22 +153,42 @@ export async function getObserverPhotos(userId: number): Promise<PhotoCard[]> {
 export async function getLatestPhotos(userId: number): Promise<PhotoCard[]> {
     return withConnection(async connection => {
         const result = await connection.execute<OracleRow>(
-            `SELECT *
+            `SELECT id,
+                    user_id,
+                    username,
+                    avatar_url,
+                    caption,
+                    published_at
              FROM (
-                 SELECT p.id,
-                        p.user_id,
-                        u.username,
-                        NVL(u.avatar_url, '') AS avatar_url,
-                        NVL(p.contents, '') AS caption,
-                        TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at
-                 FROM murm_post p
-                 JOIN murm_user u ON u.id = p.user_id
-                 WHERE p.user_id <> :user_id
-                   AND p.post_type = 'photo'
-                   AND p.status = 'published'
-                 ORDER BY p.created_at DESC
+                 SELECT id,
+                        user_id,
+                        username,
+                        avatar_url,
+                        caption,
+                        published_at,
+                        ROW_NUMBER() OVER (ORDER BY created_at DESC, id DESC) AS update_order
+                 FROM (
+                     SELECT p.id,
+                            p.user_id,
+                            u.username,
+                            NVL(u.avatar_url, '') AS avatar_url,
+                            NVL(p.contents, '') AS caption,
+                            p.created_at,
+                            TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY p.user_id
+                                ORDER BY p.created_at DESC, p.id DESC
+                            ) AS user_photo_order
+                     FROM murm_post p
+                     JOIN murm_user u ON u.id = p.user_id
+                     WHERE p.user_id <> :user_id
+                       AND p.post_type = 'photo'
+                       AND p.status = 'published'
+                 )
+                 WHERE user_photo_order = 1
              )
-             WHERE ROWNUM <= 8`,
+             WHERE update_order <= 8
+             ORDER BY update_order`,
             { user_id: userId },
         );
         return (result.rows || []).map(card);
@@ -572,17 +592,31 @@ export async function getFeedPhotos(limit = 20, offset = 0): Promise<PhotoCard[]
                     caption,
                     published_at
              FROM (
-                 SELECT p.id,
-                        p.user_id,
-                        u.username,
-                        NVL(u.avatar_url, '') AS avatar_url,
-                        NVL(p.contents, '') AS caption,
-                        TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at,
-                        ROW_NUMBER() OVER (ORDER BY p.created_at DESC) AS row_number_value
-                 FROM murm_post p
-                 JOIN murm_user u ON u.id = p.user_id
-                 WHERE p.post_type = 'photo'
-                   AND p.status = 'published'
+                 SELECT id,
+                        user_id,
+                        username,
+                        avatar_url,
+                        caption,
+                        published_at,
+                        ROW_NUMBER() OVER (ORDER BY created_at DESC, id DESC) AS row_number_value
+                 FROM (
+                     SELECT p.id,
+                            p.user_id,
+                            u.username,
+                            NVL(u.avatar_url, '') AS avatar_url,
+                            NVL(p.contents, '') AS caption,
+                            p.created_at,
+                            TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS published_at,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY p.user_id
+                                ORDER BY p.created_at DESC, p.id DESC
+                            ) AS user_photo_order
+                     FROM murm_post p
+                     JOIN murm_user u ON u.id = p.user_id
+                     WHERE p.post_type = 'photo'
+                       AND p.status = 'published'
+                 )
+                 WHERE user_photo_order = 1
              )
              WHERE row_number_value > :photo_offset
                AND row_number_value <= :photo_offset + :photo_limit
