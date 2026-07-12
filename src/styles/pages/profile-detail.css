@@ -385,7 +385,36 @@
 }
 
 .profile-photo-post .daily-photo > p {
-  margin: 14px 2px 0;
+  margin: 12px 2px 0;
+}
+
+.profile-photo-published-at {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  min-height: 30px;
+  margin: 0 2px;
+  padding-top: 9px;
+  color: color-mix(in srgb, currentColor 54%, transparent);
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .015em;
+  line-height: 1.2;
+}
+
+.profile-photo-published-at span {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .58;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.profile-photo-published-at time {
+  white-space: nowrap;
 }
 
 @media (max-width: 1180px) {

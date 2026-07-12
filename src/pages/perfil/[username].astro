@@ -37,6 +37,13 @@ const commentsMap = new Map(commentsByPhoto.map(item => [item.photoId, item.comm
 const observedSectionTitle = profile ? getObservedSectionTitle(isOwner, profile.sexCode) : 'Observando';
 const observerSectionTitle = profile ? getObserverSectionTitle(isOwner, profile.sexCode) : 'Observadores';
 const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {day: '2-digit', month: 'short', year: 'numeric'}).format(new Date(value));
+const formatPhotoDateTime = (value: string) => new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+}).format(new Date(value));
 ---
 <AppLayout title={profile ? `@${profile.username} — ${t.site.title}` : t.publicProfile.notFound}>
     <main class="flog-page">
@@ -110,6 +117,10 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {day: '2-d
                                                                     </div>
                                                             )}
                                                             <a class="profile-photo-detail-link" href={`/foto/${photo.id}`} aria-label={`${t.home.comments}: @${profile.username}`}><img src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} loading="lazy"/></a>
+                                                            <div class="profile-photo-published-at">
+                                                                <span aria-hidden="true"></span>
+                                                                <time datetime={photo.publishedAt}>{formatPhotoDateTime(photo.publishedAt)}</time>
+                                                            </div>
                                                             <p data-photo-caption data-editable-caption={isOwner ? "true" : undefined} title={isOwner ? t.home.doubleClickCaption : undefined} hidden={!photo.caption}>{photo.caption}</p>
                                                             {isOwner && (
                                                                     <form class="photo-caption-form" data-caption-form data-photo-id={photo.id} hidden>
