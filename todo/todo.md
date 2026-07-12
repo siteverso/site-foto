@@ -6,11 +6,11 @@ Mas Faca cada coisa de uma vez com cuidado e teste e nao duplique codigo
 Vamos fazer uma alteracao por vez e eu vou confirmar uma por uma apois vc mandar o zip
 Realize testes unitarios para garantir funcionamento
 
-TODO, um de cada vez:
+TODO, um de cada vez (verifique se ja existe o recurso e se precisa ser alterado melhorado ou corrigido e avise explique antes de gerar o zip):
 
 - [x] deve ter remover observado do perfil proprio
 - [x] na esquerda sao os observadores (quem observa o perfil), na direita sao os observados (quem o perfil observa) e na esquerda embaixo entao as ultimas atualizacoes ![img_6.png](img_6.png)
-- deve ter opcao na conta se quer tornar lista de observados publica ou privada (nenhum)
+- [x] deve ter opcao na conta se quer tornar lista de observados publica ou privada (nenhum)
 - deve ter opcao na conta se quer tornar lista de observados publica e bloquear alguns para nao aparecer
 - deve preencher os dados da conta e permitir alterar
 - deve ter opcao de mandar msg privada na foto só que ve é o dono do perfil
