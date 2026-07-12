@@ -58,7 +58,7 @@ const t = getMessages(locale);
             </select>
             <small class="field-help">{t.profile.observerVisibilityHelp}</small>
           </div>
-          <fieldset class="field observed-privacy" data-observed-privacy data-empty-text={t.profile.hiddenObservedEmpty}>
+          <fieldset class="field observed-privacy" data-observed-privacy data-empty-text={t.profile.hiddenObservedEmpty} hidden={account.observerVisibility === 'private'}>
             <legend>{t.profile.hiddenObservedTitle}</legend>
             <small class="field-help">{t.profile.hiddenObservedHelp}</small>
             <button class="observed-lov-trigger" type="button" data-observed-lov-open aria-haspopup="dialog">
@@ -249,9 +249,11 @@ const t = getMessages(locale);
 
   function syncObservedPrivacyState() {
     const isPublic = profileForm?.observerVisibility?.value === 'public';
+    if (!observedPrivacy || !observedLovOpen) return;
+    observedPrivacy.hidden = !isPublic;
     observedPrivacy.disabled = !isPublic;
-    observedPrivacy.classList.toggle('is-disabled', !isPublic);
     observedLovOpen.disabled = !isPublic || observedUsers.length === 0;
+    if (!isPublic && observedLov && !observedLov.hidden) closeObservedLov();
   }
 
   function openObservedLov() {
