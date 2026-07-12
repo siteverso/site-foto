@@ -35,7 +35,9 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
         <aside class="flog-panel">
           <section class="profile-summary-card">
             <div class="user-profile-intro user-profile-intro-sidebar">
-              {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`@${profile.username}`} /> : <span>{profile.username.slice(0,2).toUpperCase()}</span>}
+              <button class="profile-avatar-button" type="button" data-open-avatar-dialog aria-label={`Ampliar foto de perfil de @${profile.username}`}>
+                {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`@${profile.username}`} /> : <span>{profile.username.slice(0,2).toUpperCase()}</span>}
+              </button>
               <div><h1>@{profile.username}</h1>{profile.bio && <p>{profile.bio}</p>}</div>
             </div>
 
@@ -194,6 +196,18 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     ) : <section class="public-profile-not-found"><h1>{t.publicProfile.notFound}</h1><a href="/">{t.publicProfile.back}</a></section>}
   </main>
 
+  {profile && (
+    <div class="profile-avatar-dialog" data-avatar-dialog hidden>
+      <button class="profile-avatar-dialog-backdrop" type="button" data-close-avatar-dialog aria-label="Fechar foto de perfil"></button>
+      <section class="profile-avatar-dialog-card" role="dialog" aria-modal="true" aria-label={`Foto de perfil de @${profile.username}`}>
+        <button class="profile-avatar-dialog-close" type="button" data-close-avatar-dialog aria-label="Fechar">×</button>
+        <div class="profile-avatar-dialog-image">
+          {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`@${profile.username}`} /> : <span>{profile.username.slice(0,2).toUpperCase()}</span>}
+        </div>
+      </section>
+    </div>
+  )}
+
   {isOwner && (
     <div class="post-dialog" data-post-dialog hidden>
       <div class="post-dialog-backdrop" data-close-post-dialog></div>
@@ -224,6 +238,22 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
   )}
 
   <script>
+    const avatarDialog = document.querySelector<HTMLElement>('[data-avatar-dialog]');
+    const setAvatarDialogOpen = (open: boolean) => {
+      if (!avatarDialog) return;
+      avatarDialog.hidden = !open;
+      document.documentElement.classList.toggle('has-open-dialog', open);
+      if (open) avatarDialog.querySelector<HTMLButtonElement>('[data-close-avatar-dialog]')?.focus();
+    };
+
+    document.querySelector<HTMLButtonElement>('[data-open-avatar-dialog]')?.addEventListener('click', () => setAvatarDialogOpen(true));
+    document.querySelectorAll<HTMLButtonElement>('[data-close-avatar-dialog]').forEach(button => {
+      button.addEventListener('click', () => setAvatarDialogOpen(false));
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && avatarDialog && !avatarDialog.hidden) setAvatarDialogOpen(false);
+    });
+
     document.querySelector<HTMLButtonElement>('[data-friend-toggle]')?.addEventListener('click', async event => {
       const button = event.currentTarget;
       const userId = button.dataset.userId;
