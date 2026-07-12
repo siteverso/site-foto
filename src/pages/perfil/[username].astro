@@ -1,6 +1,7 @@
 ---
 import AppLayout from '../../layouts/AppLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
+import ProfileSidebar from '../../components/ProfileSidebar.astro';
 import { requireUser } from '../../lib/server/session';
 import { getComments, getLatestPhotos, getObservedPhotos, getObserverPhotos, getPublicProfile, getUserPhotos, isFriend } from '../../lib/server/repositories/photos';
 import { getMessages, normalizeLocale } from '../../i18n';
@@ -36,33 +37,12 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, { day: '2-
     {profile ? (
       <section class="flog-grid">
         <aside class="flog-panel">
-          <section class="profile-summary-card">
-            <div class="user-profile-intro user-profile-intro-sidebar">
-              <button class="profile-avatar-button" type="button" data-open-avatar-dialog aria-label={`Ampliar foto de perfil de @${profile.username}`}>
-                {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`@${profile.username}`} /> : <span>{profile.username.slice(0,2).toUpperCase()}</span>}
-              </button>
-              <div><h1>@{profile.username}</h1>{profile.bio && <p>{profile.bio}</p>}</div>
-            </div>
-
-            {isOwner && (
-              <a class="profile-account-link" href="/conta">Editar conta</a>
-            )}
-
-            {!isOwner && (
-              <button
-                class:list={["friend-button", { "friend-button-remove": alreadyFriend }]}
-                type="button"
-                data-friend-toggle
-                data-user-id={profile.id}
-                data-observing={alreadyFriend ? "true" : "false"}
-                aria-label={alreadyFriend ? `Deixar de observar @${profile.username}` : `Observar @${profile.username}`}
-                title={alreadyFriend ? `Deixar de observar @${profile.username}` : `Observar @${profile.username}`}
-              >
-                {alreadyFriend && <span aria-hidden="true">×</span>}
-                {alreadyFriend ? t.publicProfile.alreadyFriend : t.publicProfile.addFriend}
-              </button>
-            )}
-          </section>
+          <ProfileSidebar
+            profile={profile}
+            isOwner={isOwner}
+            alreadyFriend={alreadyFriend}
+            labels={{ addFriend: t.publicProfile.addFriend, alreadyFriend: t.publicProfile.alreadyFriend }}
+          />
 
           <section class="profile-side-section" data-profile-observed data-empty-message={`@${profile.username} ainda não observa nenhum perfil.`}>
             <h2>{observedSectionTitle}</h2>

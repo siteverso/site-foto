@@ -1,6 +1,7 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
 import SiteHeader from '../components/SiteHeader.astro';
+import ProfileSidebar from '../components/ProfileSidebar.astro';
 import { requireUser } from '../lib/server/session';
 import { getMessages, normalizeLocale } from '../i18n';
 import { MESSAGE_MAX_LENGTH } from '../lib/message-limit';
@@ -15,16 +16,14 @@ const t = getMessages(locale);
   <main class="site-container site-section account-page">
     <header class="account-heading"><h1>Conta</h1></header>
     <div class="profile-grid">
-    <aside class="panel profile-card">
-      <div class="avatar" data-profile-avatar>{account.avatarUrl ? <img src={account.avatarUrl} alt="" /> : account.username.slice(0, 2).toUpperCase()}</div>
-      <h1 data-profile-username>@{account.username}</h1>
-      <span class="handle" data-profile-email>{account.email}</span>
-      <p class="bio" data-profile-bio>{account.bio || 'Sem bio ainda.'}</p>
-      <div class="profile-stats">
-        <div><strong data-profile-posts>{account.photoCount}</strong><span>{t.profile.murmurs}</span></div>
-        <div><strong data-profile-positive>{account.messageCount}</strong><span>{t.profile.positives}</span></div>
-        <div><strong data-profile-shares>{account.observerCount}</strong><span>{t.profile.shares}</span></div>
-      </div>
+    <aside>
+      <ProfileSidebar
+        profile={account}
+        editableAvatar
+        isOwner
+        showStats
+        labels={{ photos: 'Fotos', messages: 'Mensagens', observers: 'Observadores' }}
+      />
     </aside>
 
     <div class="profile-sections">

@@ -57,7 +57,7 @@ export async function getAccountProfile(userId: number): Promise<AccountProfile>
                         u.email,
                         NVL(u.bio, '') AS bio,
                         NVL(u.sex_code, '') AS sex_code,
-                        NVL(u.avatar_url, '') AS avatar_url,
+                        CASE WHEN u.avatar_image IS NOT NULL THEN '/api/users/' || u.id || '/avatar?v=' || TO_CHAR(u.avatar_updated_at, 'YYYYMMDDHH24MISSFF3') ELSE NVL(u.avatar_url, '') END AS avatar_url,
                         NVL(u.observer_visibility_code, 'public') AS observer_visibility_code,
                         NVL2(u.password_hash, 1, 0) AS has_password,
                         NVL2(u.google_sub, 1, 0) AS has_google,

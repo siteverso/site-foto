@@ -519,7 +519,7 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
             `SELECT id,
                     username,
                     NVL(bio, '') AS bio,
-                    NVL(avatar_url, '') AS avatar_url,
+                    CASE WHEN avatar_image IS NOT NULL THEN '/api/users/' || id || '/avatar?v=' || TO_CHAR(avatar_updated_at, 'YYYYMMDDHH24MISSFF3') ELSE NVL(avatar_url, '') END AS avatar_url,
                     NVL(sex_code, '') AS sex_code,
                     NVL(observer_visibility_code, 'public') AS observer_visibility_code
              FROM murm_user

@@ -1,0 +1,67 @@
+---
+const {
+  profile,
+  editableAvatar = false,
+  isOwner = false,
+  alreadyFriend = false,
+  labels = {},
+  showStats = false,
+} = Astro.props;
+
+const username = profile?.username || 'usuario';
+const initials = username.slice(0, 2).toUpperCase() || 'FL';
+const avatarUrl = profile?.avatarUrl || '';
+---
+<section class="profile-summary-card profile-sidebar-card">
+  <div class="user-profile-intro user-profile-intro-sidebar">
+    {editableAvatar ? (
+      <button class="profile-avatar-button profile-avatar-edit-button" type="button" data-avatar-trigger aria-label="Alterar foto de perfil" title="Alterar foto de perfil">
+        {avatarUrl ? <img src={avatarUrl} alt={`@${username}`} data-avatar-image /> : <span data-avatar-fallback>{initials}</span>}
+      </button>
+    ) : (
+      <button class="profile-avatar-button" type="button" data-open-avatar-dialog aria-label={`Ampliar foto de perfil de @${username}`}>
+        {avatarUrl ? <img src={avatarUrl} alt={`@${username}`} /> : <span>{initials}</span>}
+      </button>
+    )}
+    <div>
+      <h1>@{username}</h1>
+      {profile?.email && <span class="handle">{profile.email}</span>}
+      {profile?.bio && <p>{profile.bio}</p>}
+    </div>
+  </div>
+
+  {showStats && (
+    <div class="profile-stats profile-sidebar-stats">
+      <div><strong>{profile?.photoCount || 0}</strong><span>{labels.photos || 'Fotos'}</span></div>
+      <div><strong>{profile?.messageCount || 0}</strong><span>{labels.messages || 'Mensagens'}</span></div>
+      <div><strong>{profile?.observerCount || 0}</strong><span>{labels.observers || 'Observadores'}</span></div>
+    </div>
+  )}
+
+  {editableAvatar && (
+    <form class="account-avatar-form" data-avatar-form>
+      <label class="profile-account-link" for="profileAvatar">Alterar foto</label>
+      <input id="profileAvatar" name="avatar" type="file" accept="image/jpeg,image/png,image/webp" hidden data-avatar-input />
+      <small>JPG, PNG ou WebP, até 3 MB.</small>
+      <p class="form-message" data-form-message hidden></p>
+    </form>
+  )}
+
+  {isOwner && !editableAvatar && <a class="profile-account-link" href="/conta">Editar conta</a>}
+  {editableAvatar && <a class="profile-account-link" href="/perfil">Ver meu perfil</a>}
+
+  {!isOwner && !editableAvatar && (
+    <button
+      class:list={["friend-button", { "friend-button-remove": alreadyFriend }]}
+      type="button"
+      data-friend-toggle
+      data-user-id={profile?.id}
+      data-observing={alreadyFriend ? "true" : "false"}
+      aria-label={alreadyFriend ? `Deixar de observar @${username}` : `Observar @${username}`}
+      title={alreadyFriend ? `Deixar de observar @${username}` : `Observar @${username}`}
+    >
+      {alreadyFriend && <span aria-hidden="true">×</span>}
+      {alreadyFriend ? (labels.alreadyFriend || 'Observado') : (labels.addFriend || 'Observar')}
+    </button>
+  )}
+</section>
