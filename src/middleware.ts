@@ -12,6 +12,7 @@ const PUBLIC_API_PREFIXES = [
     '/api/auth/google',
     '/api/auth/signup',
     '/api/auth/reset-password',
+    '/api/users/',
 ];
 
 const PUBLIC_ASSET_PREFIXES = [

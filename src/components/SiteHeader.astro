@@ -2,15 +2,17 @@
 import LanguageSwitch from './LanguageSwitch.astro';
 import '../styles/components/site-header.css';
 import { getMessages, normalizeLocale } from '../i18n';
+import { getAvatarSources } from '../lib/avatar';
 
 interface Props {
   username?: string;
-  userId?: number;
+  userId?: number | string;
   avatarUrl?: string;
 }
 
 const { username, userId, avatarUrl = '' } = Astro.props;
-const resolvedAvatarUrl = avatarUrl || (Number.isSafeInteger(userId) && Number(userId) > 0 ? `/api/users/${userId}/avatar` : '');
+const avatarSources = getAvatarSources(userId, avatarUrl);
+const resolvedAvatarUrl = avatarSources[0] || '';
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
 ---
@@ -25,7 +27,7 @@ const t = getMessages(locale);
             <span class="site-user-avatar" aria-hidden="true">
               {resolvedAvatarUrl ? (
                 <>
-                  <img src={resolvedAvatarUrl} alt="" width="40" height="40" data-site-user-avatar-image />
+                  <img src={resolvedAvatarUrl} alt="" width="40" height="40" data-site-user-avatar-image data-avatar-sources={JSON.stringify(avatarSources)} />
                   <span class="site-user-avatar-placeholder" data-site-user-avatar-placeholder hidden></span>
                 </>
               ) : <span class="site-user-avatar-placeholder"></span>}
@@ -50,11 +52,33 @@ const t = getMessages(locale);
 <script>
   document.querySelectorAll('[data-site-user-avatar-image]').forEach(image => {
     if (!(image instanceof HTMLImageElement)) return;
+
+    let sources = [];
+    try {
+      const parsed = JSON.parse(image.dataset.avatarSources || '[]');
+      if (Array.isArray(parsed)) sources = parsed.filter(source => typeof source === 'string' && source.trim());
+    } catch {
+      sources = image.currentSrc || image.src ? [image.currentSrc || image.src] : [];
+    }
+
+    let sourceIndex = Math.max(0, sources.findIndex(source => image.getAttribute('src') === source));
+    image.addEventListener('load', () => {
+      image.hidden = false;
+      const placeholder = image.parentElement?.querySelector('[data-site-user-avatar-placeholder]');
+      if (placeholder instanceof HTMLElement) placeholder.hidden = true;
+    });
     image.addEventListener('error', () => {
+      sourceIndex += 1;
+      const nextSource = sources[sourceIndex];
+      if (nextSource) {
+        image.src = nextSource;
+        return;
+      }
+
       image.hidden = true;
       const placeholder = image.parentElement?.querySelector('[data-site-user-avatar-placeholder]');
       if (placeholder instanceof HTMLElement) placeholder.hidden = false;
-    }, { once: true });
+    });
   });
 
   const themeLabels = JSON.parse(document.documentElement.dataset.themeLabels || '{}');

@@ -8,12 +8,13 @@ const avatarApi = fs.readFileSync('src/pages/api/auth/avatar.ts', 'utf8');
 
 describe('avatar no topo', () => {
   it('renderiza a imagem do usuário junto ao nome no cabeçalho', () => {
-    expect(header).toContain('userId?: number');
+    expect(header).toContain('userId?: number | string');
     expect(header).toContain('avatarUrl?: string');
     expect(header).toContain('class=\"site-user-avatar\"');
-    expect(header).toContain('const resolvedAvatarUrl = avatarUrl ||');
+    expect(header).toContain('const avatarSources = getAvatarSources(userId, avatarUrl)');
     expect(header).toContain('<img src={resolvedAvatarUrl}');
     expect(header).toContain('data-site-user-avatar-image');
+    expect(header).toContain('data-avatar-sources={JSON.stringify(avatarSources)}');
   });
 
   it('usa no cabeçalho a mesma imagem BLOB exibida no perfil', () => {
