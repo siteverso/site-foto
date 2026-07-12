@@ -6,10 +6,17 @@ import { requireUser } from '../lib/server/session';
 import { getMessages, normalizeLocale } from '../i18n';
 import { MESSAGE_MAX_LENGTH } from '../lib/message-limit';
 import { getAccountProfile } from '../lib/server/repositories/account-profile';
+import { getPublicProfile } from '../lib/server/repositories/photos';
 import '../styles/pages/account.css';
 import '../styles/themes/theme-overrides.css';
 const user = await requireUser(Astro);
 const account = await getAccountProfile(user.id);
+// A lateral da conta usa a mesma origem de avatar já validada pela página pública do perfil.
+const publicProfile = await getPublicProfile(account.username);
+const accountSidebar = {
+  ...account,
+  avatarUrl: publicProfile?.avatarUrl || account.avatarUrl,
+};
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
 ---
@@ -20,7 +27,7 @@ const t = getMessages(locale);
     <div class="profile-grid">
     <aside>
       <ProfileSidebar
-        profile={account}
+        profile={accountSidebar}
         editableAvatar
         isOwner
         showStats
