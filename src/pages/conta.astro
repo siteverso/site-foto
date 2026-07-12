@@ -61,7 +61,13 @@ const t = getMessages(locale);
           <fieldset class="field observed-privacy" data-observed-privacy data-empty-text={t.profile.hiddenObservedEmpty}>
             <legend>{t.profile.hiddenObservedTitle}</legend>
             <small class="field-help">{t.profile.hiddenObservedHelp}</small>
-            <div class="observed-privacy-list" data-observed-privacy-list></div>
+            <button class="observed-lov-trigger" type="button" data-observed-lov-open aria-haspopup="dialog">
+              <span class="observed-lov-trigger-icon" aria-hidden="true">⌕</span>
+              <span data-observed-lov-summary>{t.profile.hiddenObservedSearch}</span>
+              <span class="observed-lov-trigger-count" data-observed-lov-count>0</span>
+            </button>
+            <div class="observed-lov-selection" data-observed-lov-selection></div>
+            <div data-observed-hidden-inputs></div>
           </fieldset>
           <button class="button primary" type="submit">{t.common.save}</button>
           <p class="form-message" data-form-message hidden></p>
@@ -84,18 +90,48 @@ const t = getMessages(locale);
     </div>
     </div>
   </main>
+  <div class="observed-lov-backdrop" data-observed-lov hidden>
+    <section class="observed-lov-dialog" role="dialog" aria-modal="true" aria-labelledby="observed-lov-title">
+      <header class="observed-lov-header">
+        <div>
+          <h2 id="observed-lov-title">{t.profile.hiddenObservedDialogTitle}</h2>
+          <p>{t.profile.hiddenObservedDialogHelp}</p>
+        </div>
+        <button class="observed-lov-close" type="button" data-observed-lov-close aria-label={t.common.close}>×</button>
+      </header>
+      <label class="observed-lov-search">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" data-observed-lov-search placeholder={t.profile.hiddenObservedSearch} autocomplete="off" />
+      </label>
+      <div class="observed-lov-results" data-observed-lov-results></div>
+      <footer class="observed-lov-actions">
+        <button class="button" type="button" data-observed-lov-cancel>{t.common.cancel}</button>
+        <button class="button primary" type="button" data-observed-lov-apply>{t.common.apply}</button>
+      </footer>
+    </section>
+  </div>
   <div class="toast" data-toast></div>
 </AppLayout>
 
 
 <script define:vars={{ clientMessages: {
-    accountExists: t.errors.accountExists, invalidUsername: t.signup.invalidUsername, invalidEmail: t.signup.invalidEmail, invalidSex: t.errors.invalidSex, invalidPassword: t.signup.invalidPassword, passwordMismatch: t.signup.passwordMismatch, sessionExpired: t.errors.sessionExpired, generic: t.errors.generic, noBio: t.common.noBio, emptyObserved: t.profile.hiddenObservedEmpty, password: t.common.password, google: "Google", none: t.common.none, changePassword: t.common.changePassword, definePassword: t.common.definePassword, saving: t.common.saving, googleAccess: t.profile.googleAccess, passwordAccess: t.profile.passwordAccess, accountUpdated: t.profile.accountUpdated, passwordUpdated: t.profile.passwordUpdated
+    accountExists: t.errors.accountExists, invalidUsername: t.signup.invalidUsername, invalidEmail: t.signup.invalidEmail, invalidSex: t.errors.invalidSex, invalidPassword: t.signup.invalidPassword, passwordMismatch: t.signup.passwordMismatch, sessionExpired: t.errors.sessionExpired, generic: t.errors.generic, noBio: t.common.noBio, emptyObserved: t.profile.hiddenObservedEmpty, password: t.common.password, google: "Google", none: t.common.none, changePassword: t.common.changePassword, definePassword: t.common.definePassword, saving: t.common.saving, googleAccess: t.profile.googleAccess, passwordAccess: t.profile.passwordAccess, accountUpdated: t.profile.accountUpdated, passwordUpdated: t.profile.passwordUpdated, searchObserved: t.profile.hiddenObservedSearch, noObservedResults: t.profile.hiddenObservedNoResults
   } }}>
   const profileForm = document.querySelector('[data-profile-form]');
   const passwordForm = document.querySelector('[data-password-form]');
   const toastElement = document.querySelector('[data-toast]');
   const observedPrivacy = document.querySelector('[data-observed-privacy]');
-  const observedPrivacyList = document.querySelector('[data-observed-privacy-list]');
+  const observedLov = document.querySelector('[data-observed-lov]');
+  const observedLovOpen = document.querySelector('[data-observed-lov-open]');
+  const observedLovSearch = document.querySelector('[data-observed-lov-search]');
+  const observedLovResults = document.querySelector('[data-observed-lov-results]');
+  const observedLovSelection = document.querySelector('[data-observed-lov-selection]');
+  const observedLovSummary = document.querySelector('[data-observed-lov-summary]');
+  const observedLovCount = document.querySelector('[data-observed-lov-count]');
+  const observedHiddenInputs = document.querySelector('[data-observed-hidden-inputs]');
+  let observedUsers = [];
+  let selectedObservedIds = new Set();
+  let draftObservedIds = new Set();
 
   const api = async (url, options = {}) => {
     const response = await fetch(url, {
@@ -143,6 +179,98 @@ const t = getMessages(locale);
     return String(username).trim().slice(0, 2).toUpperCase() || 'FL';
   }
 
+  function normalizedSearch(value = '') {
+    return String(value).trim().toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function renderObservedSelection() {
+    if (!observedLovSelection || !observedHiddenInputs) return;
+    observedLovSelection.replaceChildren();
+    observedHiddenInputs.replaceChildren();
+    const selected = observedUsers.filter(item => selectedObservedIds.has(Number(item.id)));
+    selected.forEach(item => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'observed-lov-chip';
+      chip.textContent = `@${item.username} ×`;
+      chip.addEventListener('click', () => {
+        selectedObservedIds.delete(Number(item.id));
+        renderObservedSelection();
+      });
+      observedLovSelection.append(chip);
+
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'hiddenObservedUserIds';
+      input.value = String(item.id);
+      observedHiddenInputs.append(input);
+    });
+    const count = selected.length;
+    observedLovCount.textContent = String(count);
+    observedLovSummary.textContent = count ? `${count} pessoa${count === 1 ? '' : 's'} oculta${count === 1 ? '' : 's'}` : clientMessages.searchObserved;
+  }
+
+  function renderObservedResults() {
+    if (!observedLovResults) return;
+    const query = normalizedSearch(observedLovSearch?.value);
+    const filtered = observedUsers.filter(item => normalizedSearch(`${item.displayName || ''} ${item.username || ''}`).includes(query));
+    observedLovResults.replaceChildren();
+    if (filtered.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'observed-privacy-empty';
+      empty.textContent = observedUsers.length ? clientMessages.noObservedResults : clientMessages.emptyObserved;
+      observedLovResults.append(empty);
+      return;
+    }
+    filtered.forEach(item => {
+      const label = document.createElement('label');
+      label.className = 'observed-lov-result';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = draftObservedIds.has(Number(item.id));
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) draftObservedIds.add(Number(item.id));
+        else draftObservedIds.delete(Number(item.id));
+      });
+      const avatar = document.createElement('span');
+      avatar.className = 'observed-privacy-avatar';
+      avatar.textContent = initials(item.username);
+      const identity = document.createElement('span');
+      identity.className = 'observed-lov-identity';
+      const name = document.createElement('strong');
+      name.textContent = item.displayName || `@${item.username}`;
+      const username = document.createElement('small');
+      username.textContent = `@${item.username}`;
+      identity.append(name, username);
+      label.append(checkbox, avatar, identity);
+      observedLovResults.append(label);
+    });
+  }
+
+  function syncObservedPrivacyState() {
+    const isPublic = profileForm?.observerVisibility?.value === 'public';
+    observedPrivacy.disabled = !isPublic;
+    observedPrivacy.classList.toggle('is-disabled', !isPublic);
+    observedLovOpen.disabled = !isPublic || observedUsers.length === 0;
+  }
+
+  function openObservedLov() {
+    if (!observedLov || observedLovOpen.disabled) return;
+    draftObservedIds = new Set(selectedObservedIds);
+    observedLovSearch.value = '';
+    renderObservedResults();
+    observedLov.hidden = false;
+    document.body.classList.add('modal-open');
+    requestAnimationFrame(() => observedLovSearch.focus());
+  }
+
+  function closeObservedLov() {
+    if (!observedLov) return;
+    observedLov.hidden = true;
+    document.body.classList.remove('modal-open');
+    observedLovOpen?.focus();
+  }
+
   function renderAccount(account) {
     document.querySelectorAll('[data-user-name]').forEach(element => {
       element.textContent = `@${account.username}`;
@@ -172,33 +300,10 @@ const t = getMessages(locale);
     profileForm.bio.value = account.bio || '';
     profileForm.sexCode.value = account.sexCode || '';
     profileForm.observerVisibility.value = account.observerVisibility || 'public';
-    if (observedPrivacyList) {
-      observedPrivacyList.replaceChildren();
-      const observedUsers = Array.isArray(account.observedUsers) ? account.observedUsers : [];
-      if (observedUsers.length === 0) {
-        const empty = document.createElement('p');
-        empty.className = 'observed-privacy-empty';
-        empty.textContent = observedPrivacy?.dataset.emptyText || clientMessages.emptyObserved;
-        observedPrivacyList.append(empty);
-      } else {
-        observedUsers.forEach(item => {
-          const label = document.createElement('label');
-          label.className = 'observed-privacy-item';
-          const checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.name = 'hiddenObservedUserIds';
-          checkbox.value = String(item.id);
-          checkbox.checked = Boolean(item.hidden);
-          const avatar = document.createElement('span');
-          avatar.className = 'observed-privacy-avatar';
-          avatar.textContent = initials(item.username);
-          const username = document.createElement('strong');
-          username.textContent = `@${item.username}`;
-          label.append(checkbox, avatar, username);
-          observedPrivacyList.append(label);
-        });
-      }
-    }
+    observedUsers = Array.isArray(account.observedUsers) ? account.observedUsers : [];
+    selectedObservedIds = new Set(observedUsers.filter(item => item.hidden).map(item => Number(item.id)));
+    renderObservedSelection();
+    syncObservedPrivacyState();
 
     const methods = [];
     if (account.hasPassword) methods.push(clientMessages.password);
@@ -223,6 +328,23 @@ const t = getMessages(locale);
     }
   }
 
+  profileForm?.observerVisibility?.addEventListener('change', syncObservedPrivacyState);
+  observedLovOpen?.addEventListener('click', openObservedLov);
+  observedLovSearch?.addEventListener('input', renderObservedResults);
+  document.querySelector('[data-observed-lov-close]')?.addEventListener('click', closeObservedLov);
+  document.querySelector('[data-observed-lov-cancel]')?.addEventListener('click', closeObservedLov);
+  document.querySelector('[data-observed-lov-apply]')?.addEventListener('click', () => {
+    selectedObservedIds = new Set(draftObservedIds);
+    renderObservedSelection();
+    closeObservedLov();
+  });
+  observedLov?.addEventListener('click', event => {
+    if (event.target === observedLov) closeObservedLov();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && observedLov && !observedLov.hidden) closeObservedLov();
+  });
+
   profileForm?.addEventListener('submit', async event => {
     event.preventDefault();
     const button = profileForm.querySelector('button[type="submit"]');
@@ -237,7 +359,7 @@ const t = getMessages(locale);
           bio: profileForm.bio.value,
           sexCode: profileForm.sexCode.value,
           observerVisibility: profileForm.observerVisibility.value,
-          hiddenObservedUserIds: [...profileForm.querySelectorAll('input[name="hiddenObservedUserIds"]:checked')].map(input => Number(input.value)),
+          hiddenObservedUserIds: [...selectedObservedIds],
         }),
       });
       renderAccount(data.account);

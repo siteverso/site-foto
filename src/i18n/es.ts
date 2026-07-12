@@ -1,7 +1,7 @@
 export default {
   site: { title: 'FotoLife', description: 'Un fotolog simple: una foto al día y conversaciones debajo.' },
   common: {
-    save: 'Guardar', saving: 'Guardando…', cancel: 'Cancelar', delete: 'Eliminar', confirm: 'Confirmar', undo: 'Deshacer', loading: 'Cargando…', retry: 'Intentar de nuevo',
+    save: 'Guardar', saving: 'Guardando…', cancel: 'Cancelar', apply: 'Aplicar', delete: 'Eliminar', confirm: 'Confirmar', undo: 'Deshacer', loading: 'Cargando…', retry: 'Intentar de nuevo',
     email: 'Correo electrónico', username: 'Usuario', password: 'Contraseña', newPassword: 'Nueva contraseña', changePassword: 'Cambiar contraseña', definePassword: 'Definir contraseña', confirmPassword: 'Confirmar contraseña',
     home: 'Inicio', profile: 'Perfil', logout: 'Salir', signIn: 'Iniciar sesión', navigation: 'Navegación principal', changeTheme: 'Cambiar tema',
     close: 'Cerrar', public: 'Público', private: 'Privado', none: 'Ninguno', noBio: 'Aún no hay biografía.', google: 'Google',
@@ -22,7 +22,7 @@ export default {
     googleAccess: 'Puedes acceder a tu cuenta con Google. También puedes definir o cambiar una contraseña abajo.', passwordAccess: 'Tu cuenta usa acceso por usuario/correo y contraseña.',
     observerVisibility: 'Quién puede ver tu lista', observerVisibilityPublic: 'Pública — todos pueden verla', observerVisibilityPrivate: 'Privada — nadie puede verla',
     observerVisibilityHelp: 'Siempre podrás ver tu propia lista en el perfil.', hiddenObservedTitle: 'Ocultar personas de la lista pública',
-    hiddenObservedHelp: 'Marca quién no debe aparecer para otras personas. Seguirás viendo a todos en tu perfil.', hiddenObservedEmpty: 'Aún no sigues a nadie.',
+    hiddenObservedHelp: 'Elige, entre las personas que sigues, quién no debe aparecer para otros. Solo se aplica cuando tu lista es pública.', hiddenObservedEmpty: 'Aún no sigues a nadie.', hiddenObservedSearch: 'Buscar por nombre o @usuario', hiddenObservedDialogTitle: 'Ocultar personas que sigues', hiddenObservedDialogHelp: 'Busca y selecciona quién no debe aparecer en tu lista pública.', hiddenObservedNoResults: 'No se encontraron personas.',
     sex: 'Sexo', sexUnknown: 'No especificado', sexMale: 'Masculino', sexFemale: 'Femenino', changePhoto: 'Cambiar foto', enlargePhoto: 'Ampliar foto de perfil',
     closePhoto: 'Cerrar foto de perfil', profilePhotoOf: 'Foto de perfil de', ownerPhotoHint: 'Para cambiar tu imagen de perfil, haz clic aquí.', photoHelp: 'JPG, PNG o WebP, hasta 3 MB.', editAccount: 'Editar cuenta', viewMyProfile: 'Ver mi perfil',
     sentMessages: 'Mensajes enviados',

@@ -1,7 +1,7 @@
 export default {
   site: { title: 'FotoLife', description: 'A simple photolog: one photo a day and conversations below it.' },
   common: {
-    save: 'Save', saving: 'Saving…', cancel: 'Cancel', delete: 'Delete', confirm: 'Confirm', undo: 'Undo', loading: 'Loading…', retry: 'Try again',
+    save: 'Save', saving: 'Saving…', cancel: 'Cancel', apply: 'Apply', delete: 'Delete', confirm: 'Confirm', undo: 'Undo', loading: 'Loading…', retry: 'Try again',
     email: 'Email', username: 'Username', password: 'Password', newPassword: 'New password', changePassword: 'Change password', definePassword: 'Set password', confirmPassword: 'Confirm password',
     home: 'Home', profile: 'Profile', logout: 'Sign out', signIn: 'Sign in', navigation: 'Main navigation', changeTheme: 'Change theme',
     close: 'Close', public: 'Public', private: 'Private', none: 'None', noBio: 'No bio yet.', google: 'Google',
@@ -22,7 +22,7 @@ export default {
     googleAccess: 'Your account can be accessed with Google. You can also set or change a password below.', passwordAccess: 'Your account uses username/email and password access.',
     observerVisibility: 'Who can see your list', observerVisibilityPublic: 'Public — everyone can see it', observerVisibilityPrivate: 'Private — no one can see it',
     observerVisibilityHelp: 'You can always see your own list on your profile.', hiddenObservedTitle: 'Hide people from the public list',
-    hiddenObservedHelp: 'Select who should not appear to other people. You will still see everyone on your own profile.', hiddenObservedEmpty: 'You are not following anyone yet.',
+    hiddenObservedHelp: 'Choose, among the people you follow, who should not appear to others. This only applies while your list is public.', hiddenObservedEmpty: 'You are not following anyone yet.', hiddenObservedSearch: 'Search by name or @username', hiddenObservedDialogTitle: 'Hide people you follow', hiddenObservedDialogHelp: 'Search and select who should not appear in your public list.', hiddenObservedNoResults: 'No people found.',
     sex: 'Sex', sexUnknown: 'Not specified', sexMale: 'Male', sexFemale: 'Female', changePhoto: 'Change photo', enlargePhoto: 'Enlarge profile photo',
     closePhoto: 'Close profile photo', profilePhotoOf: 'Profile photo of', ownerPhotoHint: 'To change your profile image, click here.', photoHelp: 'JPG, PNG, or WebP, up to 3 MB.', editAccount: 'Edit account', viewMyProfile: 'View my profile',
     sentMessages: 'Sent messages',
