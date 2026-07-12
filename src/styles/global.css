@@ -2006,3 +2006,75 @@ html.has-open-dialog { overflow: hidden; }
   .post-dialog-card { transition-duration: .01ms; }
   .post-dialog.is-loading-published-photo .photo-upload-progress-track span { animation: none; width: 100% !important; }
 }
+
+
+/* Lazy media + skeleton loading ------------------------------------------------ */
+@keyframes fotolife-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.media-loading,
+.skeleton-media,
+.skeleton-line,
+.skeleton-copy span {
+  background-color: color-mix(in srgb, var(--surface, #fff) 78%, var(--muted, #777) 22%);
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, #fff 48%, transparent) 42%,
+    transparent 64%
+  );
+  background-size: 220% 100%;
+  animation: fotolife-shimmer 1.25s linear infinite;
+}
+
+img.media-loading {
+  color: transparent;
+  border-color: transparent;
+}
+
+.feed-skeletons {
+  display: grid;
+  gap: 24px;
+}
+
+.photo-post-skeleton {
+  pointer-events: none;
+}
+
+.skeleton-line-user {
+  width: min(170px, 42%);
+  height: 14px;
+  margin: 18px;
+  border-radius: 999px;
+}
+
+.skeleton-media {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+}
+
+.skeleton-copy {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.skeleton-copy span {
+  display: block;
+  height: 11px;
+  border-radius: 999px;
+}
+
+.skeleton-copy span:nth-child(2) { width: 88%; }
+.skeleton-copy span:nth-child(3) { width: 62%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .media-loading,
+  .skeleton-media,
+  .skeleton-line,
+  .skeleton-copy span {
+    animation: none;
+  }
+}

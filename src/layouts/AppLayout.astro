@@ -26,6 +26,32 @@ if (auth && !await currentUser(Astro)) {
   <body>
     <slot />
 
+    <script>
+      const prepareLazyImage = image => {
+        if (!(image instanceof HTMLImageElement) || image.dataset.lazyPrepared === 'true') return;
+        image.dataset.lazyPrepared = 'true';
+        image.classList.add('media-loading');
+
+        const finish = () => image.classList.remove('media-loading');
+        if (image.complete) finish();
+        else {
+          image.addEventListener('load', finish, { once: true });
+          image.addEventListener('error', finish, { once: true });
+        }
+      };
+
+      document.querySelectorAll('img[loading="lazy"]').forEach(prepareLazyImage);
+      new MutationObserver(records => {
+        for (const record of records) {
+          for (const node of record.addedNodes) {
+            if (!(node instanceof Element)) continue;
+            if (node.matches('img[loading="lazy"]')) prepareLazyImage(node);
+            node.querySelectorAll?.('img[loading="lazy"]').forEach(prepareLazyImage);
+          }
+        }
+      }).observe(document.body, { childList: true, subtree: true });
+    </script>
+
     {auth && (
       <script>
         const LIVE_REFRESH_MS = 5000;
