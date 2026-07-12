@@ -20,8 +20,9 @@ describe('publicação de imagem no perfil', () => {
     expect(header).not.toContain('#postar');
   });
 
-  it('traduz Publicar imagem nos três idiomas', () => {
-    expect(pt).toContain("newPost: 'Publicar imagem'");
+  it('mantém os rótulos de publicação nos três idiomas', () => {
+    expect(pt).toContain("newPost: 'Publicar'");
+    expect(pt).toContain("publish: 'Enviar publicação'");
     expect(en).toContain("newPost: 'Publish image'");
     expect(es).toContain("newPost: 'Publicar imagen'");
   });
