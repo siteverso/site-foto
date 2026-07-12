@@ -1,0 +1,58 @@
+---
+type Props = {
+  photoId: number;
+  alt: string;
+  previousId: number | null;
+  nextId: number | null;
+  closeLabel: string;
+  fullscreenLabel: string;
+  previousLabel: string;
+  nextLabel: string;
+};
+
+const {
+  photoId,
+  alt,
+  previousId,
+  nextId,
+  closeLabel,
+  fullscreenLabel,
+  previousLabel,
+  nextLabel,
+} = Astro.props;
+---
+
+<dialog class="photo-lightbox" data-photo-lightbox aria-label={alt}>
+  <div class="photo-lightbox-shell" data-photo-lightbox-shell>
+    <img class="photo-lightbox-image" src={`/api/photos/${photoId}`} alt={alt} />
+
+    <div class="photo-lightbox-toolbar">
+      <button type="button" class="photo-lightbox-button" data-photo-fullscreen aria-label={fullscreenLabel} title={fullscreenLabel}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
+      </button>
+      <button type="button" class="photo-lightbox-button" data-photo-lightbox-close aria-label={closeLabel} title={closeLabel}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+
+    {previousId ? (
+      <a class="photo-lightbox-nav photo-lightbox-nav--previous" href={`/foto/${previousId}?viewer=1`} aria-label={previousLabel} title={previousLabel} data-photo-previous>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </a>
+    ) : (
+      <button class="photo-lightbox-nav photo-lightbox-nav--previous" type="button" aria-label={previousLabel} disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+    )}
+
+    {nextId ? (
+      <a class="photo-lightbox-nav photo-lightbox-nav--next" href={`/foto/${nextId}?viewer=1`} aria-label={nextLabel} title={nextLabel} data-photo-next>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+    ) : (
+      <button class="photo-lightbox-nav photo-lightbox-nav--next" type="button" aria-label={nextLabel} disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    )}
+  </div>
+</dialog>

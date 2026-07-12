@@ -80,6 +80,41 @@ export async function getPhotoById(photoId: number): Promise<PhotoCard | null> {
     });
 }
 
+
+export type AdjacentPhotoIds = {
+    previousId: number | null;
+    nextId: number | null;
+};
+
+export async function getAdjacentPhotoIds(photoId: number): Promise<AdjacentPhotoIds> {
+    if (!Number.isInteger(photoId) || photoId <= 0) {
+        return { previousId: null, nextId: null };
+    }
+
+    return withConnection(async connection => {
+        const result = await connection.execute<OracleRow>(
+            `SELECT previous_id, next_id
+               FROM (
+                   SELECT p.id,
+                          LAG(p.id) OVER (ORDER BY p.created_at, p.id) AS previous_id,
+                          LEAD(p.id) OVER (ORDER BY p.created_at, p.id) AS next_id
+                     FROM murm_post p
+                     JOIN murm_user u ON u.id = p.user_id
+                    WHERE p.post_type = 'photo'
+                      AND p.status = 'published'
+                      AND u.active = 1
+               )
+              WHERE id = :photo_id`,
+            { photo_id: photoId },
+        );
+        const row = result.rows?.[0];
+        return {
+            previousId: row?.PREVIOUS_ID == null ? null : Number(row.PREVIOUS_ID),
+            nextId: row?.NEXT_ID == null ? null : Number(row.NEXT_ID),
+        };
+    });
+}
+
 export async function getTodayPhoto(userId: number): Promise<PhotoCard | null> {
     return withConnection(async connection => {
         const result = await connection.execute<OracleRow>(

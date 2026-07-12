@@ -2,8 +2,9 @@
 import AppLayout from '../../layouts/AppLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import PhotoMessageComposer from '../../components/PhotoMessageComposer.astro';
+import PhotoLightbox from '../../components/PhotoLightbox.astro';
 import { requireUser } from '../../lib/server/session';
-import { getComments, getPhotoById } from '../../lib/server/repositories/photos';
+import { getAdjacentPhotoIds, getComments, getPhotoById } from '../../lib/server/repositories/photos';
 import { getMessages, normalizeLocale } from '../../i18n';
 import { MESSAGE_MAX_LENGTH } from '../../lib/message-limit';
 
@@ -23,6 +24,7 @@ const photoId = Number.parseInt(String(Astro.params.id || ''), 10);
 const photo = await getPhotoById(photoId);
 if (!photo) Astro.response.status = 404;
 const isOwner = Boolean(photo && photo.userId === user.id);
+const adjacentPhotos = photo ? await getAdjacentPhotoIds(photo.id) : { previousId: null, nextId: null };
 const comments = photo
   ? await getComments(photo.id, user.id, 50)
   : { items: [], total: 0 };
@@ -54,7 +56,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
                   </button>
                 </div>
               )}
-              <img class="photo-post-image" src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} />
+              <img class="photo-post-image photo-detail-viewer-trigger" src={`/api/photos/${photo.id}`} alt={photo.caption || t.home.today} role="button" tabindex="0" data-open-photo-lightbox />
               <p class="photo-post-caption" data-photo-caption data-editable-caption={isOwner ? 'true' : undefined} title={isOwner ? t.home.doubleClickCaption : undefined} hidden={!photo.caption}>{photo.caption}</p>
               {isOwner && (
                 <form class="photo-caption-form" data-caption-form data-photo-id={photo.id} hidden>
@@ -64,6 +66,17 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
                 </form>
               )}
             </div>
+
+            <PhotoLightbox
+              photoId={photo.id}
+              alt={photo.caption || t.home.today}
+              previousId={adjacentPhotos.previousId}
+              nextId={adjacentPhotos.nextId}
+              closeLabel={t.common.close}
+              fullscreenLabel={t.home.fullscreenPhoto}
+              previousLabel={t.home.previousPhoto}
+              nextLabel={t.home.nextPhoto}
+            />
 
             <section class="comments-panel photo-comments" data-comments-panel>
               <h2>{t.home.comments}</h2>
@@ -133,4 +146,5 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
     messageSendError: t.home.messageSendError
   })}></script>
   <script type="module" src="/js/pages/profile.js?v=20260712-2"></script>
+  <script type="module" src="/js/pages/photo-lightbox.js?v=20260712-1"></script>
 </AppLayout>
