@@ -1,3 +1,89 @@
+/* Publicação de fotos: botão e diálogo compartilhados pelo perfil. */
+.dialog-open { overflow: hidden; }
+
+.profile-new-post-button {
+  width: 100%;
+  min-height: 50px;
+  margin: 0 0 18px;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid color-mix(in srgb, var(--strong) 55%, var(--line));
+  border-radius: 14px;
+  color: var(--inverse);
+  background: var(--strong);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--strong) 14%, transparent);
+  font: inherit;
+  cursor: pointer;
+  transition: transform .16s ease, opacity .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+.profile-new-post-button span { font-size: 1.35rem; line-height: 1; }
+.profile-new-post-button strong { font-size: .88rem; }
+.profile-new-post-button:hover { transform: translateY(-1px); box-shadow: 0 12px 28px color-mix(in srgb, var(--strong) 18%, transparent); filter: brightness(1.02); }
+.profile-new-post-button:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+
+.post-dialog[hidden] { display: none; }
+.post-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+.post-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 55%);
+}
+.post-dialog-card {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 25%);
+}
+.post-dialog-card > header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.post-dialog-card h2 { margin: 0; font-size: 1rem; }
+.post-dialog-card header button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-2);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+.post-dialog-form {
+  margin: 0;
+  padding: 18px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.post-dialog-form [data-publish-button]:disabled { opacity: .5; cursor: default; }
+
+@media (max-width: 560px) {
+  .post-dialog { padding: 8px; }
+  .post-dialog-card { max-height: calc(100vh - 16px); border-radius: 15px; }
+  .post-dialog-form { padding: 12px; }
+}
+
 /* FotoLife: finalização inteligente da publicação no perfil */
 .post-dialog,
 .post-dialog-backdrop,
