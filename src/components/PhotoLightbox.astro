@@ -16,7 +16,6 @@ type Props = {
   slideshowLabel: string;
   pauseLabel: string;
   intervalLabel: string;
-  effectLabel: string;
   loopLabel: string;
 };
 
@@ -25,7 +24,7 @@ const {
   globalNavigation, profileNavigation,
   closeLabel, fullscreenLabel, previousLabel, nextLabel,
   profileModeLabel, globalModeLabel, slideshowLabel, pauseLabel,
-  intervalLabel, effectLabel, loopLabel,
+  intervalLabel, loopLabel,
 } = Astro.props;
 ---
 
@@ -83,12 +82,6 @@ const {
         <select data-slideshow-interval>
           <option value="2000">2s</option><option value="3000">3s</option>
           <option value="5000" selected>5s</option><option value="8000">8s</option><option value="10000">10s</option>
-        </select>
-      </label>
-      <label>{effectLabel}
-        <select data-slideshow-effect>
-          <option value="fade">Fade</option><option value="slide">Slide</option>
-          <option value="zoom">Zoom</option><option value="dissolve">Dissolve</option>
         </select>
       </label>
       <label class="photo-lightbox-checkbox">

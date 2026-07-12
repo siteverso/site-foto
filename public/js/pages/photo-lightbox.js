@@ -9,9 +9,10 @@ const slideshowButton = dialog?.querySelector("[data-slideshow-toggle]");
 const slideshowText = dialog?.querySelector("[data-slideshow-text]");
 const slideshowIcon = dialog?.querySelector("[data-slideshow-icon]");
 const intervalSelect = dialog?.querySelector("[data-slideshow-interval]");
-const effectSelect = dialog?.querySelector("[data-slideshow-effect]");
 const loopToggle = dialog?.querySelector("[data-slideshow-loop]");
 const image = dialog?.querySelector("[data-photo-lightbox-image]");
+const caption = dialog?.querySelector(".photo-lightbox-caption");
+const watermark = dialog?.querySelector(".photo-lightbox-watermark");
 
 const STORAGE_KEY = "fotolife-photo-viewer";
 let slideshowTimer = null;
@@ -44,7 +45,6 @@ function buildPhotoUrl(id) {
   const params = new URLSearchParams({ viewer: "1", nav: getMode() });
   if (slideshowRunning) params.set("slideshow", "1");
   if (isLoopEnabled()) params.set("loop", "1");
-  params.set("effect", effectSelect?.value || "fade");
   return `/foto/${id}?${params.toString()}`;
 }
 
@@ -74,49 +74,74 @@ function applyNavigationMode(mode) {
   setLinkState(nextLink, dialog.dataset[`${normalized}Next`] || "");
 }
 
-function applyEffect(effect) {
-  if (!(image instanceof HTMLElement)) return;
-  const effectClass = `effect-${effect}`;
-  image.classList.remove(
-    "effect-fade", "effect-slide", "effect-zoom", "effect-dissolve",
-    "effect-out-fade", "effect-out-slide-next", "effect-out-slide-previous",
-    "effect-out-zoom", "effect-out-dissolve"
-  );
-  // Reinicia a animação mesmo quando a imagem já veio do cache.
-  void image.offsetWidth;
-  image.classList.add(effectClass);
+function waitForImage(src) {
+  return new Promise((resolve, reject) => {
+    const loader = new Image();
+    loader.onload = () => resolve(src);
+    loader.onerror = reject;
+    loader.src = src;
+  });
 }
 
-function getEffectDuration(effect) {
-  if (effect === "dissolve") return 520;
-  if (effect === "zoom") return 440;
-  if (effect === "slide") return 400;
-  return 340;
+async function loadPhotoView(href) {
+  const response = await fetch(href, { headers: { "X-Photo-Lightbox": "1" } });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const html = await response.text();
+  const documentSnapshot = new DOMParser().parseFromString(html, "text/html");
+  const nextDialog = documentSnapshot.querySelector("[data-photo-lightbox]");
+  const nextImage = nextDialog?.querySelector("[data-photo-lightbox-image]");
+  if (!(nextDialog instanceof HTMLElement) || !(nextImage instanceof HTMLImageElement)) {
+    throw new Error("Invalid photo lightbox response");
+  }
+  await waitForImage(nextImage.src);
+  return { nextDialog, nextImage };
 }
 
-function navigateWithEffect(href, direction = "next") {
+function copyViewerState(nextDialog, nextImage) {
+  if (!(dialog instanceof HTMLElement) || !(image instanceof HTMLImageElement)) return;
+  [
+    "globalPrevious", "globalNext", "globalFirst", "globalLast",
+    "profilePrevious", "profileNext", "profileFirst", "profileLast"
+  ].forEach(key => { dialog.dataset[key] = nextDialog.dataset[key] || ""; });
+
+  image.src = nextImage.src;
+  image.alt = nextImage.alt;
+  dialog.setAttribute("aria-label", nextDialog.getAttribute("aria-label") || nextImage.alt);
+
+  const nextCaption = nextDialog.querySelector(".photo-lightbox-caption");
+  const nextWatermark = nextDialog.querySelector(".photo-lightbox-watermark");
+  if (caption && nextCaption) caption.innerHTML = nextCaption.innerHTML;
+  if (watermark && nextWatermark) watermark.textContent = nextWatermark.textContent;
+  applyNavigationMode(getMode());
+}
+
+async function navigatePhoto(href, { replaceHistory = false } = {}) {
   if (!href || navigationPending) return;
-  if (!(image instanceof HTMLElement)) {
-    window.location.href = href;
+  if (!(image instanceof HTMLImageElement)) {
+    window.location.assign(href);
     return;
   }
 
   navigationPending = true;
   if (slideshowTimer) window.clearTimeout(slideshowTimer);
   slideshowTimer = null;
+  shell?.classList.add("is-loading-photo");
 
-  const effect = effectSelect?.value || "fade";
-  image.classList.remove("effect-fade", "effect-slide", "effect-zoom", "effect-dissolve");
-  void image.offsetWidth;
+  try {
+    const { nextDialog, nextImage } = await loadPhotoView(href);
+    copyViewerState(nextDialog, nextImage);
 
-  const exitClass = effect === "slide"
-    ? `effect-out-slide-${direction === "previous" ? "previous" : "next"}`
-    : `effect-out-${effect}`;
-  image.classList.add(exitClass);
-
-  window.setTimeout(() => {
-    window.location.href = href;
-  }, getEffectDuration(effect));
+    const targetUrl = new URL(href, location.href);
+    if (replaceHistory) history.replaceState({ photoLightbox: true }, "", targetUrl);
+    else history.pushState({ photoLightbox: true }, "", targetUrl);
+  } catch {
+    window.location.assign(href);
+    return;
+  } finally {
+    navigationPending = false;
+    shell?.classList.remove("is-loading-photo");
+    if (slideshowRunning) scheduleNext();
+  }
 }
 
 function openLightbox() {
@@ -144,24 +169,21 @@ function getNextSlideshowHref() {
 }
 
 function scheduleNext() {
-  if (!slideshowRunning) {
-    stopSlideshow();
-    return;
-  }
+  if (!slideshowRunning || navigationPending) return;
   const nextHref = getNextSlideshowHref();
   if (!nextHref) {
     stopSlideshow();
     return;
   }
   const delay = Number(intervalSelect?.value || 5000);
-  slideshowTimer = window.setTimeout(() => { navigateWithEffect(nextHref, "next"); }, delay);
+  slideshowTimer = window.setTimeout(() => navigatePhoto(nextHref), delay);
 }
 
 function startSlideshow() {
   slideshowRunning = true;
   if (slideshowText) slideshowText.textContent = dialog?.dataset.pauseLabel || "Pause";
   if (slideshowIcon) slideshowIcon.textContent = "❚❚";
-  savePreferences({ interval: intervalSelect?.value, effect: effectSelect?.value, loop: isLoopEnabled() });
+  savePreferences({ interval: intervalSelect?.value, loop: isLoopEnabled() });
   applyNavigationMode(getMode());
   scheduleNext();
 }
@@ -196,14 +218,13 @@ previousLink?.addEventListener("click", event => {
   event.preventDefault();
   if (previousLink.getAttribute("aria-disabled") === "true") return;
   if (!slideshowRunning) stopSlideshow();
-  navigateWithEffect(previousLink.href, "previous");
+  void navigatePhoto(previousLink.href);
 });
-
 nextLink?.addEventListener("click", event => {
   event.preventDefault();
   if (nextLink.getAttribute("aria-disabled") === "true") return;
   if (!slideshowRunning) stopSlideshow();
-  navigateWithEffect(nextLink.href, "next");
+  void navigatePhoto(nextLink.href);
 });
 
 slideshowButton?.addEventListener("click", () => slideshowRunning ? stopSlideshow() : startSlideshow());
@@ -211,7 +232,6 @@ intervalSelect?.addEventListener("change", () => {
   savePreferences({ interval: intervalSelect.value });
   if (slideshowRunning) { if (slideshowTimer) clearTimeout(slideshowTimer); scheduleNext(); }
 });
-effectSelect?.addEventListener("change", () => { savePreferences({ effect: effectSelect.value }); applyEffect(effectSelect.value); });
 loopToggle?.addEventListener("change", () => {
   savePreferences({ loop: isLoopEnabled() });
   if (slideshowRunning) {
@@ -221,24 +241,23 @@ loopToggle?.addEventListener("change", () => {
 });
 
 document.addEventListener("keydown", event => {
-  if (!(dialog instanceof HTMLDialogElement) || !dialog.open) return;
+  if (!(dialog instanceof HTMLDialogElement) || !dialog.open || navigationPending) return;
   if (event.key === "Escape") closeLightbox();
   if (event.key === "ArrowLeft") previousLink?.click();
   if (event.key === "ArrowRight") nextLink?.click();
   if (event.key === " ") { event.preventDefault(); slideshowButton?.click(); }
 });
 
+window.addEventListener("popstate", () => {
+  if (!(dialog instanceof HTMLDialogElement) || !dialog.open) return;
+  void navigatePhoto(location.href, { replaceHistory: true });
+});
+
 const preferences = readPreferences();
 const urlParams = new URLSearchParams(location.search);
 if (intervalSelect && preferences.interval) intervalSelect.value = preferences.interval;
-if (effectSelect) effectSelect.value = urlParams.get("effect") || preferences.effect || "fade";
 if (loopToggle instanceof HTMLInputElement) {
   loopToggle.checked = urlParams.get("loop") === "1" || preferences.loop !== false;
-}
-if (image instanceof HTMLImageElement && !image.complete) {
-  image.addEventListener("load", () => applyEffect(effectSelect?.value || "fade"), { once: true });
-} else {
-  applyEffect(effectSelect?.value || "fade");
 }
 applyNavigationMode(urlParams.get("nav") || getMode());
 if (urlParams.get("viewer") === "1") openLightbox();

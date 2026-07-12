@@ -33,21 +33,24 @@ describe('visualizador avançado de foto', () => {
     expect(repository).toContain('LAST_VALUE(p.id)');
   });
 
-  it('inclui slideshow configurável, loop padrão, efeitos, caption e marca d’água', () => {
+  it('inclui slideshow configurável, loop padrão, caption e marca d’água sem efeitos', () => {
     expect(component).toContain('data-slideshow-toggle');
     expect(component).toContain('data-slideshow-interval');
-    expect(component).toContain('data-slideshow-effect');
+    expect(component).not.toContain('data-slideshow-effect');
     expect(component).toContain('data-slideshow-loop');
     expect(component).toContain('photo-lightbox-watermark');
     expect(component).toContain('@{username}');
     expect(script).toContain('fotolife-photo-viewer');
     expect(script).toContain('getNextSlideshowHref');
-    expect(script).toContain('navigateWithEffect');
-    expect(script).toContain('getEffectDuration');
+    expect(script).toContain('navigatePhoto');
+    expect(script).not.toContain('getEffectDuration');
+    expect(script).not.toContain('applyEffect');
     expect(script).toContain('isLoopEnabled');
-    expect(css).toContain('@keyframes photoFade');
-    expect(css).toContain('@keyframes photoFadeOut');
-    expect(css).toContain('@keyframes photoSlideOutNext');
+    expect(script).toContain('loadPhotoView');
+    expect(script).toContain('copyViewerState');
+    expect(script).toContain('history.pushState');
+    expect(script).not.toContain('window.location.href = href');
+    expect(css).not.toContain('.photo-lightbox-image.effect-');
     expect(css).toContain('height: 100dvh');
     expect(css).toContain('object-fit: contain');
   });
