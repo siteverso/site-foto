@@ -115,6 +115,10 @@
   line-height: 1.5;
 }
 
+.account-page .observed-privacy[hidden] {
+  display: none;
+}
+
 .account-page .observed-privacy {
   margin: 22px 0;
   padding: 18px;
