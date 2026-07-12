@@ -15,10 +15,17 @@ describe('navegação padronizada entre perfil e conta', () => {
 
   it('centraliza os dois atalhos no componente lateral reutilizável', () => {
     expect(sidebar).toContain('href="/conta"');
-    expect(sidebar).toContain('Editar conta');
+    expect(sidebar).toContain('t.profile.editAccount');
     expect(sidebar).toContain('href="/perfil"');
-    expect(sidebar).toContain('Ver meu perfil');
+    expect(sidebar).toContain('t.profile.viewMyProfile');
     expect(profile).toContain('<ProfileSidebar');
     expect(account).toContain('<ProfileSidebar');
   });
+  it('leva o proprietário sem foto para a conta ao clicar no avatar', () => {
+    expect(sidebar).toContain('!avatarUrl && isOwner');
+    expect(sidebar).toContain('class="profile-avatar-button"');
+    expect(sidebar).toContain('href="/conta"');
+    expect(sidebar).toContain('aria-label={t.profile.changePhoto}');
+  });
+
 });

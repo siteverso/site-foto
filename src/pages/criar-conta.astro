@@ -3,6 +3,7 @@ import AppLayout from '../layouts/AppLayout.astro';
 import LanguageSwitch from '../components/LanguageSwitch.astro';
 import { getMessages, normalizeLocale } from '../i18n';
 import { currentUser } from '../lib/server/session';
+import '../styles/pages/auth.css';
 if (await currentUser(Astro)) return Astro.redirect('/');
 
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);

@@ -10,6 +10,12 @@ import { MESSAGE_MAX_LENGTH } from '../../lib/message-limit';
 import { canViewObservedList } from '../../lib/observer-visibility';
 import { getObservedSectionTitle, getObserverSectionTitle } from '../../lib/profile-observer-copy';
 
+import '../../styles/components/photo-workspace.css';
+import '../../styles/components/photo-caption.css';
+import '../../styles/components/feed-actions.css';
+import '../../styles/processes/photo-publishing.css';
+import '../../styles/processes/lazy-media.css';
+import '../../styles/themes/theme-overrides.css';
 const user = await requireUser(Astro);
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);

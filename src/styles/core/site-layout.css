@@ -6,40 +6,7 @@
   }
 }
 
-/* FotoLife: estrutura única do topo e largura de todas as páginas */
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: #fff;
-}
-
-.site-header-inner {
-  min-height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.site-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.site-user-link,
-.site-account-link {
-  color: #111;
-  text-decoration: none;
-  font-size: .82rem;
-}
-
-.site-user-link:hover,
-.site-account-link:hover {
-  text-decoration: underline;
-}
-
+/* Estrutura compartilhada das páginas */
 .feed-page,
 .flog-page {
   min-height: 100vh;
@@ -62,8 +29,6 @@
 }
 
 /* remove qualquer linha/borda estrutural entre o topo e o conteúdo */
-.site-header,
-.site-header-inner,
 .feed-shell,
 .feed-grid {
   border: 0 !important;
@@ -84,20 +49,6 @@
   width: 100%;
   margin: 0;
   padding: 0;
-}
-
-@media (max-width: 760px) {
-  .site-header-inner {
-    min-height: 64px;
-  }
-
-  .site-header-actions {
-    gap: 8px;
-  }
-
-  .site-account-link {
-    display: none;
-  }
 }
 
 .user-profile-intro-sidebar {

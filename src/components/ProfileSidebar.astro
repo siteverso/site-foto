@@ -1,4 +1,9 @@
 ---
+import '../styles/components/profile-account-card.css';
+import '../styles/components/profile-avatar.css';
+import { getMessages, normalizeLocale } from '../i18n';
+const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
+const t = getMessages(locale);
 const {
   profile,
   editableAvatar = false,
@@ -16,11 +21,20 @@ const avatarUrl = profile?.avatarUrl || '';
   <section class="profile-summary-card profile-sidebar-card">
     <div class="user-profile-intro user-profile-intro-sidebar">
       {editableAvatar ? (
-        <button class="profile-avatar-button profile-avatar-edit-button" type="button" data-profile-avatar data-avatar-trigger aria-label="Alterar foto de perfil" title="Alterar foto de perfil">
+        <button class="profile-avatar-button profile-avatar-edit-button" type="button" data-profile-avatar data-avatar-trigger aria-label={t.profile.changePhoto} title={t.profile.changePhoto}>
           {avatarUrl ? <img src={avatarUrl} alt={`@${username}`} data-avatar-image /> : <span data-profile-avatar-fallback data-avatar-fallback>{initials}</span>}
         </button>
+      ) : !avatarUrl && isOwner ? (
+        <a
+          class="profile-avatar-button"
+          href="/conta"
+          aria-label={t.profile.changePhoto}
+          title={t.profile.changePhoto}
+        >
+          <span>{initials}</span>
+        </a>
       ) : (
-        <button class="profile-avatar-button" type="button" data-open-avatar-dialog aria-label={`Ampliar foto de perfil de @${username}`}>
+        <button class="profile-avatar-button" type="button" data-open-avatar-dialog aria-label={`${t.profile.enlargePhoto} @${username}`}>
           {avatarUrl ? <img src={avatarUrl} alt={`@${username}`} /> : <span>{initials}</span>}
         </button>
       )}
@@ -33,19 +47,19 @@ const avatarUrl = profile?.avatarUrl || '';
 
     {editableAvatar && (
       <form class="account-avatar-form" data-avatar-form>
-        <label class="profile-account-link" for="profileAvatar">Alterar foto</label>
+        <label class="profile-account-link" for="profileAvatar">{t.profile.changePhoto}</label>
         <input id="profileAvatar" name="avatar" type="file" accept="image/jpeg,image/png,image/webp" hidden data-avatar-input />
-        <small>JPG, PNG ou WebP, até 3 MB.</small>
+        <small>{t.profile.photoHelp}</small>
         <p class="form-message" data-form-message hidden></p>
       </form>
     )}
 
     {showStats && (
       <div class="profile-stats profile-sidebar-stats">
-        <div><strong data-profile-posts>{profile?.photoCount || 0}</strong><span>{labels.photos || 'Fotos'}</span></div>
-        <div><strong data-profile-positive>{profile?.messageCount || 0}</strong><span>{labels.messages || 'Mensagens'}</span></div>
-        <div><strong data-profile-observed>{profile?.observedCount || 0}</strong><span>{labels.observed || 'Observando'}</span></div>
-        <div><strong data-profile-shares>{profile?.observerCount || 0}</strong><span>{labels.observers || 'Observadores'}</span></div>
+        <div><strong data-profile-posts>{profile?.photoCount || 0}</strong><span>{labels.photos || t.profile.photos}</span></div>
+        <div><strong data-profile-positive>{profile?.messageCount || 0}</strong><span>{labels.messages || t.profile.messages}</span></div>
+        <div><strong data-profile-observed>{profile?.observedCount || 0}</strong><span>{labels.observed || t.profile.observed}</span></div>
+        <div><strong data-profile-shares>{profile?.observerCount || 0}</strong><span>{labels.observers || t.profile.observers}</span></div>
       </div>
     )}
 
@@ -56,17 +70,17 @@ const avatarUrl = profile?.avatarUrl || '';
         data-friend-toggle
         data-user-id={profile?.id}
         data-observing={alreadyFriend ? "true" : "false"}
-        aria-label={alreadyFriend ? `Deixar de observar @${username}` : `Observar @${username}`}
-        title={alreadyFriend ? `Deixar de observar @${username}` : `Observar @${username}`}
+        aria-label={alreadyFriend ? `${t.profile.stopObserving} @${username}` : `${t.profile.observe} @${username}`}
+        title={alreadyFriend ? `${t.profile.stopObserving} @${username}` : `${t.profile.observe} @${username}`}
       >
         {alreadyFriend && <span aria-hidden="true">×</span>}
-        {alreadyFriend ? (labels.alreadyFriend || 'Observado') : (labels.addFriend || 'Observar')}
+        {alreadyFriend ? (labels.alreadyFriend || t.profile.observedLabel) : (labels.addFriend || t.profile.observe)}
       </button>
     )}
   </section>
 
-  {isOwner && !editableAvatar && <a class="profile-account-link profile-sidebar-external-action" href="/conta">Editar conta</a>}
-  {editableAvatar && <a class="profile-account-link profile-sidebar-external-action" href="/perfil">Ver meu perfil</a>}
+  {isOwner && !editableAvatar && <a class="profile-account-link profile-sidebar-external-action" href="/conta">{t.profile.editAccount}</a>}
+  {editableAvatar && <a class="profile-account-link profile-sidebar-external-action" href="/perfil">{t.profile.viewMyProfile}</a>}
 </div>
 
 {editableAvatar && <script type="module" is:inline src="/profile-avatar.js?v=20260712-2"></script>}

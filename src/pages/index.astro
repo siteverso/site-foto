@@ -5,6 +5,11 @@ import { requireUser } from '../lib/server/session';
 import { getFeedPhotos } from '../lib/server/repositories/photos';
 import { getMessages, normalizeLocale } from '../i18n';
 
+import '../styles/pages/home-profile.css';
+import '../styles/pages/home-photo-card.css';
+import '../styles/components/feed-actions.css';
+import '../styles/processes/lazy-media.css';
+import '../styles/themes/theme-overrides.css';
 const user = await requireUser(Astro);
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
@@ -45,7 +50,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
                 <time>{formatDate(photo.publishedAt)}</time>
               </header>
 
-              <a class="photo-post-image-link" href={`/perfil/${photo.username}`} aria-label={`Ver perfil de @${photo.username}`}>
+              <a class="photo-post-image-link" href={`/perfil/${photo.username}`} aria-label={`${t.home.viewProfile} @${photo.username}`}>
                 <img class="photo-post-image" src={`/api/photos/${photo.id}`} alt={photo.caption || `@${photo.username}`} loading="lazy" />
               </a>
               {photo.caption && <p class="photo-post-caption">{photo.caption}</p>}
@@ -53,13 +58,13 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
           ))}
         </div>
 
-        {feedLimit === 20 && photos.length === 20 && <button class="feed-load-more" type="button" data-load-more>Carregar mais</button>}
+        {feedLimit === 20 && photos.length === 20 && <button class="feed-load-more" type="button" data-load-more>{t.home.loadMore}</button>}
         {!photos.length && <p class="empty-state feed-empty">{t.home.noUpdates}</p>}
       </section>
     </section>
   </main>
 
-  <script define:vars={{ locale }}>
+  <script define:vars={{ locale, feedLabels: { loading: t.home.loadingMore, retry: t.common.retry, loadMore: t.home.loadMore, viewProfile: t.home.viewProfile } }}>
     const feed = document.querySelector('[data-photo-feed]');
     const loadMoreButton = document.querySelector('[data-load-more]');
     let feedOffset = document.querySelectorAll('.photo-post').length;
@@ -75,7 +80,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
     function postHtml(photo) {
       return `<article class="photo-post" id="foto-${photo.id}" data-photo-id="${photo.id}" data-live-key="photo-${photo.id}">
         <header class="photo-post-header"><a href="/perfil/${encodeURIComponent(photo.username)}"><strong>@${escapeHtml(photo.username)}</strong></a><time>${formatDate(photo.publishedAt)}</time></header>
-        <a class="photo-post-image-link" href="/perfil/${encodeURIComponent(photo.username)}" aria-label="Ver perfil de @${escapeHtml(photo.username)}"><img class="photo-post-image" src="/api/photos/${photo.id}" alt="${escapeHtml(photo.caption || `@${photo.username}`)}" loading="lazy"></a>
+        <a class="photo-post-image-link" href="/perfil/${encodeURIComponent(photo.username)}" aria-label="${feedLabels.viewProfile} @${escapeHtml(photo.username)}"><img class="photo-post-image" src="/api/photos/${photo.id}" alt="${escapeHtml(photo.caption || `@${photo.username}`)}" loading="lazy"></a>
         ${photo.caption ? `<p class="photo-post-caption">${escapeHtml(photo.caption)}</p>` : ''}
       </article>`;
     }
@@ -96,7 +101,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
       if (!loadMoreButton || feedLoading || loadMoreButton.hidden) return;
       feedLoading = true;
       loadMoreButton.disabled = true;
-      loadMoreButton.textContent = 'Carregando…';
+      loadMoreButton.textContent = feedLabels.loading;
       feed.insertAdjacentHTML('beforeend', feedSkeletonHtml());
 
       try {
@@ -112,13 +117,13 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
         loadMoreButton.hidden = !data.hasMore;
       } catch (error) {
         feed.querySelector('[data-feed-skeletons]')?.remove();
-        loadMoreButton.textContent = 'Tentar novamente';
+        loadMoreButton.textContent = feedLabels.retry;
         console.error(error);
         return;
       } finally {
         feedLoading = false;
         loadMoreButton.disabled = false;
-        if (loadMoreButton.textContent !== 'Tentar novamente') loadMoreButton.textContent = 'Carregar mais';
+        if (loadMoreButton.textContent !== feedLabels.retry) loadMoreButton.textContent = feedLabels.loadMore;
       }
     }
 

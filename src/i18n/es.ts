@@ -1,0 +1,57 @@
+export default {
+  site: { title: 'FotoLife', description: 'Um flog simples: uma foto por dia e conversas embaixo dela.' },
+  common: {
+    save: 'Guardar', cancel: 'Cancelar', delete: 'Eliminar', confirm: 'Confirmar', undo: 'Deshacer', loading: 'Cargando…', retry: 'Intentar de nuevo',
+    email: 'Correo electrónico', username: 'Usuario', password: 'Contraseña', newPassword: 'Nueva contraseña', confirmPassword: 'Confirmar contraseña',
+    home: 'Inicio', profile: 'Perfil', logot: 'Salir', signIn: 'Iniciar sesión', navigation: 'Navegación principal', changeTheme: 'Cambiar tema',
+    close: 'Cerrar', public: 'Público', private: 'Privado', none: 'Ninguno', noBio: 'Aún no hay biografía.',
+  },
+  signup: {
+    title: 'Crear cuenta', headline: 'Tu foto. Tu historia.', intro: 'Para comenzar, solo necesitamos un usuario, un correo electrónico y una contraseña.',
+    description: 'Tu usuario será tu identidad pública en FotoLife.', usernameHelp: 'Usa de 3 a 30 caracteres: letras, números y guion bajo. Sin espacios.',
+    submit: 'Crear mi cuenta', submitting: 'Creando cuenta…', haveAccont: '¿Ya tienes una cuenta?', login: 'Iniciar sesión', success: 'Cuenta creada. Iniciando sesión…',
+    existing: 'El usuario o correo ya está registrado.', passwordMismatch: 'Las contraseñas no coinciden.', invalidUsername: 'Usa de 3 a 30 caracteres: letras, números o guion bajo.',
+    invalidEmail: 'Introduce un correo electrónico válido.', invalidPassword: 'La contraseña debe tener al menos 6 caracteres.',
+  },
+  recovery: { title: 'Recuperar contraseña', headline: 'Recupera tu acceso.', intro: 'Introduce tu correo para continuar.', submit: 'Enviar instrucciones', back: 'Volver al inicio de sesión' },
+  profile: {
+    title: 'Cuenta', editTitle: 'Editar datos de la cuenta', bio: 'Biografía pública', murmurs: 'fotos', positives: 'mensajes', shares: 'observadores',
+    photos: 'Fotos', messages: 'Mensajes', observed: 'Siguiendo', observers: 'Siguiendores', accontTitle: 'Acceso a la cuenta', definePassword: 'Definir una contraseña',
+    passwordHelp: 'Al definir una contraseña, podrás entrar sin Google usando tu usuario o correo.', accessMethods: 'Métodos de acceso',
+    observerVisibility: 'Quién puede ver tu lista', observerVisibilityPublic: 'Pública — todos pueden verla', observerVisibilityPrivate: 'Privada — nadie puede verla',
+    observerVisibilityHelp: 'Siempre podrás ver tu propia lista en el perfil.', hiddenObservedTitle: 'Ocultar personas de la lista pública',
+    hiddenObservedHelp: 'Marca quién no debe aparecer para otras personas. Seguirás viendo a todos en tu perfil.', hiddenObservedEmpty: 'Aún no sigues a nadie.',
+    sex: 'Sexo', sexUnknown: 'No especificado', sexMale: 'Masculino', sexFemale: 'Femenino', changePhoto: 'Cambiar foto', enlargePhoto: 'Ampliar foto de perfil',
+    photoHelp: 'JPG, PNG o WebP, hasta 3 MB.', editAccont: 'Editar cuenta', viewMyProfile: 'Ver mi perfil', stopObserving: 'Dejar de seguir', observe: 'Seguir', observedLabel: 'Siguiendo',
+  },
+  login: {
+    title: 'Iniciar sesión', headline: 'Una foto al día.', intro: 'Guarda un instante diario y comparte la historia detrás de la imagen.', description: 'Entra con tu cuenta compartida.',
+    visualTag: 'Diario visual', identifier: 'Correo o usuario', identifierPlaceholder: 'tu correo o usuario', password: 'Contraseña', passwordPlaceholder: 'tu contraseña',
+    remember: 'Mantener sesión iniciada', submit: 'Iniciar sesión en FotoLife', or: 'o', noAccont: '¿Aún no tienes cuenta?', createAccont: 'Crear cuenta',
+    googleConfig: 'Configura PUBLIC_GOOGLE_CLIENT_ID para habilitar Google.',
+  },
+  home: {
+    friends: 'Siguiendo', today: 'Foto del día', updates: 'Últimas actualizaciones', comments: 'Mensajes', noPhoto: 'Aún no publicaste la foto de hoy.',
+    noFriends: 'Las fotos de las personas que sigues aparecerán aquí.', noUpdates: 'Aún no hay actualizaciones.', noComments: 'Sé el primero en comentar.',
+    choosePhoto: 'Elegir foto', caption: 'Cuenta la historia de esta foto', publish: 'Publicar la foto del día', uploading: 'Subiendo foto…', processing: 'Procesando imagen…', completed: 'Completado',
+    commentPlaceholder: 'Escribe un mensaje', send: 'Enviar', sending: 'Enviando…', signedAs: 'Conectado como', logot: 'Salir', myAccont: 'Mi cuenta', myProfile: 'Perfil del usuario',
+    openMyProfile: 'Abrir mi perfil', feedEyebrow: 'Ahora en FotoLife', feedTitle: 'Últimas actualizaciones', ownPage: 'Tu página pública', userPage: 'Página del usuario',
+    deletePhoto: '¿Eliminar esta foto?', loadMore: 'Cargar más', loadingMore: 'Cargando…', viewProfile: 'Ver perfil de', newPost: 'Nueva publicación', editCaption: 'Editar descripción',
+    dobleClickCaption: 'Doble clic para editar la descripción', photoCaption: 'Descripción de la foto', privateMessage: 'Mensaje privado', deleteMessage: 'Eliminar mensaje', onlyUserCanRead: 'Solo este usuario podrá leer',
+  },
+  publicProfile: {
+    title: 'Perfil del usuario', photos: 'Fotos publicadas', latestPosts: 'Últimas publicaciones', noPhotos: 'Este usuario aún no publicó fotos.', notFond: 'Perfil no encontrado',
+    back: 'Volver a FotoLife', friends: 'Siguiendores', addFriend: 'Seguir', alreadyFriend: 'Siguiendo', noObserved: 'aún no sigue ningún perfil.', privateList: 'Esta lista es privada.', noObservers: 'Aún no hay observadores.',
+  },
+  directs: {
+    title: 'Notas', subtitle: 'Directos', choose: 'Elige una nota', intro: 'Las conversaciones llegan como correspondencia, sin aspecto de chat.', replyPlaceholder: 'Responder con otra nota…',
+    send: 'Enviar nota', remove: 'Eliminar', confirm: 'Confirmar', cancel: 'Cancelar', undo: 'Deshacer', deleted: 'Nota eliminada.', loadMore: 'Cargar 20 anteriores', loadingMore: 'Cargando…',
+    newCont: 'nuevo(s)', relatedPhoto: 'Ver foto relacionada',
+  },
+  theme: { light: 'Claro', lightWarm: 'Claro cálido', dark: 'Oscuro', darkBlue: 'Oscuro azulado', currentNext: 'Tema {current}. Activar {next}', next: '{current} · siguiente: {next}' },
+  language: { label: 'Idioma' },
+  errors: {
+    generic: 'No se pudo completar. Inténtalo de nuevo.', invalidLogin: 'Correo, usuario o contraseña no válidos.', googleInvalid: 'No se pudo iniciar sesión con Google.',
+    accontExists: 'Este usuario ya está en uso.', invalidSex: 'Selecciona una opción de sexo válida.', sessionExpired: 'Tu sesión expiró. Inicia sesión de nuevo.',
+  },
+};

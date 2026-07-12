@@ -15,7 +15,7 @@ if (auth && !await currentUser(Astro)) {
 }
 ---
 <!doctype html>
-<html lang={locale} data-theme={theme}>
+<html lang={locale} data-theme={theme} data-theme-labels={JSON.stringify(messages.theme)}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -24,6 +24,7 @@ if (auth && !await currentUser(Astro)) {
     <title>{title}</title>
   </head>
   <body>
+    <script is:inline define:vars={{ locale }}>window.__FOTOLIFE_LOCALE__ = locale; window.__MURMUR_LOCALE__ = locale;</script>
     <slot />
 
     <script>

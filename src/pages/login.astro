@@ -4,6 +4,7 @@ import LanguageSwitch from '../components/LanguageSwitch.astro';
 import { currentUser } from '../lib/server/session';
 import { getMessages, normalizeLocale } from '../i18n';
 
+import '../styles/pages/auth.css';
 const rawNext = Astro.url.searchParams.get('next') || '/';
 const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
 if (await currentUser(Astro)) return Astro.redirect(next);
@@ -43,7 +44,7 @@ const googleEnabled = googleClientId.endsWith('.apps.googleusercontent.com');
               <p class="message" data-google-message hidden></p>
             </div>
             <div class="divider"><span>{t.login.or}</span></div>
-            <script is:inline src={`https://accounts.google.com/gsi/client?hl=${locale === 'en' ? 'en' : 'pt-BR'}`} async defer></script>
+            <script is:inline src={`https://accounts.google.com/gsi/client?hl=${locale === 'en' ? 'en' : locale === 'es' ? 'es' : 'pt-BR'}`} async defer></script>
           </>
         ) : null}
 

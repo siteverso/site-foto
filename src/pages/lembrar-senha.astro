@@ -2,6 +2,7 @@
 import AppLayout from '../layouts/AppLayout.astro';
 import LanguageSwitch from '../components/LanguageSwitch.astro';
 import { getMessages, normalizeLocale } from '../i18n';
+import '../styles/pages/auth.css';
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
 ---

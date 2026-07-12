@@ -1,5 +1,6 @@
 ---
 import LanguageSwitch from './LanguageSwitch.astro';
+import '../styles/components/site-header.css';
 import { getMessages, normalizeLocale } from '../i18n';
 
 interface Props {
@@ -14,19 +15,19 @@ const t = getMessages(locale);
   <div class="site-header-inner site-container">
     <a class="wordmark dark" href="/" aria-label={t.site.title}><span>foto</span>life</a>
 
-    <nav class="site-header-actions" aria-label="Navegação principal">
+    <nav class="site-header-actions" aria-label={t.common.navigation}>
       {username ? (
         <>
           <a class="site-user-link" href={`/perfil/${username}`} data-user-profile-link><strong data-user-name>@{username}</strong></a>
           <LanguageSwitch locale={locale} />
-          <button class="site-theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema" title="Alternar tema"><span aria-hidden="true">☀</span></button>
+          <button class="site-theme-toggle" type="button" data-theme-toggle aria-label={t.common.changeTheme} title={t.common.changeTheme}><span aria-hidden="true">☀</span></button>
           <button class="flog-logout" type="button" data-logout>{t.home.logout}</button>
         </>
       ) : (
         <>
           <LanguageSwitch locale={locale} />
-          <button class="site-theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema" title="Alternar tema"><span aria-hidden="true">☀</span></button>
-          <a class="site-account-link" href="/login">{locale === 'pt-BR' ? 'Entrar' : 'Sign in'}</a>
+          <button class="site-theme-toggle" type="button" data-theme-toggle aria-label={t.common.changeTheme} title={t.common.changeTheme}><span aria-hidden="true">☀</span></button>
+          <a class="site-account-link" href="/login">{t.common.signIn}</a>
         </>
       )}
     </nav>
@@ -34,12 +35,15 @@ const t = getMessages(locale);
 </header>
 
 <script>
+  const themeLabels = JSON.parse(document.documentElement.dataset.themeLabels || '{}');
   const FOTO_THEMES = [
-    { code: 'light', name: 'Claro', icon: '☀', scheme: 'light' },
-    { code: 'light-warm', name: 'Claro quente', icon: '◒', scheme: 'light' },
-    { code: 'dark', name: 'Escuro', icon: '☾', scheme: 'dark' },
-    { code: 'dark-blue', name: 'Escuro azulado', icon: '◐', scheme: 'dark' },
+    { code: 'light', name: themeLabels.light || 'Claro', icon: '☀', scheme: 'light' },
+    { code: 'light-warm', name: themeLabels.lightWarm || 'Claro quente', icon: '◒', scheme: 'light' },
+    { code: 'dark', name: themeLabels.dark || 'Escuro', icon: '☾', scheme: 'dark' },
+    { code: 'dark-blue', name: themeLabels.darkBlue || 'Escuro azulado', icon: '◐', scheme: 'dark' },
   ];
+  const currentNextLabel = themeLabels.currentNext || 'Tema {current}. Ativar {next}';
+  const nextLabel = themeLabels.next || '{current} · próximo: {next}';
 
   const themeButton = document.querySelector('[data-theme-toggle]');
 
@@ -57,8 +61,8 @@ const t = getMessages(locale);
     const icon = themeButton.querySelector('span');
     if (icon) icon.textContent = current.icon;
     themeButton.dataset.currentTheme = current.code;
-    themeButton.setAttribute('aria-label', `Tema ${current.name}. Ativar ${next.name}`);
-    themeButton.title = `${current.name} · próximo: ${next.name}`;
+    themeButton.setAttribute('aria-label', currentNextLabel.replace('{current}', current.name).replace('{next}', next.name));
+    themeButton.title = nextLabel.replace('{current}', current.name).replace('{next}', next.name);
   }
 
   refreshThemeButton();

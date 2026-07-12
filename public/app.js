@@ -909,7 +909,7 @@ function bindDirectsPage() {
   const stage = $('[data-direct-stage]', root);
   const form = $('[data-direct-form]', root);
   const textarea = $('textarea[name="contents"]', form);
-  const locale = window.__MURMUR_LOCALE__ === 'en' ? 'en' : 'pt-BR';
+  const locale = ['en', 'es'].includes(window.__MURMUR_LOCALE__) ? window.__MURMUR_LOCALE__ : 'pt-BR';
   const pendingDeletes = new Map();
   const getUrlUserId = () => {
     const value = new URLSearchParams(window.location.search).get('userId');
@@ -931,9 +931,12 @@ function bindDirectsPage() {
   let refreshingDirects = false;
   let directsRefreshTimer = null;
 
-  const labels = locale === 'en'
-    ? { remove: 'Delete', confirm: 'Confirm', cancel: 'Cancel', undo: 'Undo', deleted: 'Message deleted.', loadMore: 'Load 20 earlier', loadingMore: 'Loading…' }
-    : { remove: 'Excluir', confirm: 'Confirmar', cancel: 'Cancelar', undo: 'Desfazer', deleted: 'Bilhete excluído.', loadMore: 'Carregar 20 anteriores', loadingMore: 'Carregando…' };
+  const labelsByLocale = {
+    'pt-BR': { remove: 'Excluir', confirm: 'Confirmar', cancel: 'Cancelar', undo: 'Desfazer', deleted: 'Bilhete excluído.', loadMore: 'Carregar 20 anteriores', loadingMore: 'Carregando…', sending: 'Enviando…', newCount: 'novo(s)', relatedPhoto: 'Ver foto relacionada' },
+    en: { remove: 'Delete', confirm: 'Confirm', cancel: 'Cancel', undo: 'Undo', deleted: 'Note deleted.', loadMore: 'Load 20 earlier', loadingMore: 'Loading…', sending: 'Sending…', newCount: 'new', relatedPhoto: 'View related photo' },
+    es: { remove: 'Eliminar', confirm: 'Confirmar', cancel: 'Cancelar', undo: 'Deshacer', deleted: 'Nota eliminada.', loadMore: 'Cargar 20 anteriores', loadingMore: 'Cargando…', sending: 'Enviando…', newCount: 'nuevo(s)', relatedPhoto: 'Ver foto relacionada' },
+  };
+  const labels = labelsByLocale[locale];
 
   const sexClass = value => value === 'M' ? 'sex-m' : value === 'F' ? 'sex-f' : '';
 
@@ -942,7 +945,7 @@ function bindDirectsPage() {
       <button class="direct-thread ${String(item.otherUserId) === String(activeUserId) ? 'active' : ''} ${sexClass(item.sexCode)}" data-open-direct="${item.otherUserId}" type="button">
         <strong>@${escapeHtml(item.username)}</strong>
         <span>${escapeHtml(item.lastMessage)}</span>
-        <small>${item.unreadCount ? `${item.unreadCount} novo(s)` : ''}</small>
+        <small>${item.unreadCount ? `${item.unreadCount} ${labels.newCount}` : ''}</small>
       </button>
     `).join('');
   };
@@ -953,7 +956,7 @@ function bindDirectsPage() {
     return `
       <article class="direct-note ${own ? 'sent' : 'received'} ${sexClass(senderSexCode)}" data-direct-message="${message.id}" data-direct-sender-id="${message.senderId}">
         <p>${escapeHtml(message.contents)}</p>
-        ${message.photoPostId ? `<a class="direct-photo-reference" href="/api/photos/${message.photoPostId}" target="_blank" rel="noopener">Ver foto relacionada</a>` : ''}
+        ${message.photoPostId ? `<a class="direct-photo-reference" href="/api/photos/${message.photoPostId}" target="_blank" rel="noopener">${labels.relatedPhoto}</a>` : ''}
         <div class="direct-note-footer">
           <time>${new Date(message.createdAt).toLocaleString()}</time>
           ${own ? `<div class="direct-delete-zone">
@@ -1200,7 +1203,7 @@ function bindDirectsPage() {
     if (!contents || !activeUserId) return;
 
     const submit = $('button[type="submit"]', form);
-    setButtonLoading(submit, true, locale === 'en' ? 'Sending…' : 'Enviando…');
+    setButtonLoading(submit, true, labels.sending);
     try {
       await api('/api/directs', {
         method: 'POST',

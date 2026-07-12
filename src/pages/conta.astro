@@ -6,15 +6,16 @@ import { requireUser } from '../lib/server/session';
 import { getMessages, normalizeLocale } from '../i18n';
 import { MESSAGE_MAX_LENGTH } from '../lib/message-limit';
 import { getAccountProfile } from '../lib/server/repositories/account-profile';
+import '../styles/themes/theme-overrides.css';
 const user = await requireUser(Astro);
 const account = await getAccountProfile(user.id);
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
 ---
-<AppLayout title={`Conta — ${t.site.title}`}>
+<AppLayout title={`${t.profile.title} — ${t.site.title}`}>
   <SiteHeader username={user.username} />
   <main class="site-container site-section account-page">
-    <header class="account-heading"><h1>Conta</h1></header>
+    <header class="account-heading"><h1>{t.profile.title}</h1></header>
     <div class="profile-grid">
     <aside>
       <ProfileSidebar
@@ -22,7 +23,7 @@ const t = getMessages(locale);
         editableAvatar
         isOwner
         showStats
-        labels={{ photos: 'Fotos', messages: 'Mensagens', observed: 'Observando', observers: 'Observadores' }}
+        labels={{ photos: t.profile.photos, messages: t.profile.messages, observed: t.profile.observed, observers: t.profile.observers }}
       />
     </aside>
 
@@ -34,11 +35,11 @@ const t = getMessages(locale);
           <div class="field"><label for="email">{t.common.email}</label><input id="email" name="email" type="email" value={account.email} autocomplete="email" required /></div>
           <div class="field"><label for="bio">{t.profile.bio}</label><textarea id="bio" name="bio" maxlength={MESSAGE_MAX_LENGTH} rows="5">{account.bio}</textarea></div>
           <div class="field">
-            <label for="sexCode">Sexo</label>
+            <label for="sexCode">{t.profile.sex}</label>
             <select id="sexCode" name="sexCode">
-              <option value="" selected={account.sexCode === ''}>Não informado</option>
-              <option value="M" selected={account.sexCode === 'M'}>Masculino</option>
-              <option value="F" selected={account.sexCode === 'F'}>Feminino</option>
+              <option value="" selected={account.sexCode === ''}>{t.profile.sexUnknown}</option>
+              <option value="M" selected={account.sexCode === 'M'}>{t.profile.sexMale}</option>
+              <option value="F" selected={account.sexCode === 'F'}>{t.profile.sexFemale}</option>
             </select>
           </div>
           <div class="field">
@@ -49,7 +50,7 @@ const t = getMessages(locale);
             </select>
             <small class="field-help">{t.profile.observerVisibilityHelp}</small>
           </div>
-          <fieldset class="field observed-privacy" data-observed-privacy data-empty-text="Você ainda não observa ninguém.">
+          <fieldset class="field observed-privacy" data-observed-privacy data-empty-text={t.profile.hiddenObservedEmpty}>
             <legend>{t.profile.hiddenObservedTitle}</legend>
             <small class="field-help">{t.profile.hiddenObservedHelp}</small>
             <div class="observed-privacy-list" data-observed-privacy-list></div>
@@ -79,7 +80,9 @@ const t = getMessages(locale);
 </AppLayout>
 
 
-<script>
+<script define:vars={{ clientMessages: {
+    accountExists: t.errors.accountExists, invalidUsername: t.signup.invalidUsername, invalidEmail: t.signup.invalidEmail, invalidSex: t.errors.invalidSex, invalidPassword: t.signup.invalidPassword, passwordMismatch: t.signup.passwordMismatch, sessionExpired: t.errors.sessionExpired, generic: t.errors.generic, noBio: t.common.noBio, emptyObserved: t.profile.hiddenObservedEmpty, password: t.common.password, google: "Google", none: t.common.none, changePassword: t.common.newPassword, definePassword: t.profile.definePassword, saving: t.common.loading
+  } }}>
   const profileForm = document.querySelector('[data-profile-form]');
   const passwordForm = document.querySelector('[data-password-form]');
   const toastElement = document.querySelector('[data-toast]');
@@ -97,16 +100,7 @@ const t = getMessages(locale);
     return data;
   };
 
-  const messages = {
-    CONTA_EXISTENTE: 'Este usuário já está em uso.',
-    USUARIO_INVALIDO: 'Use de 3 a 30 caracteres: letras, números ou sublinhado.',
-    EMAIL_INVALIDO: 'Informe um e-mail válido.',
-    SEXO_INVALIDO: 'Selecione uma opção de sexo válida.',
-    SENHA_INVALIDA: 'A senha deve ter pelo menos 6 caracteres.',
-    SENHAS_DIFERENTES: 'As senhas não conferem.',
-    NAO_AUTENTICADO: 'Sua sessão expirou. Entre novamente.',
-    ERRO_INTERNO: 'Não foi possível concluir. Tente novamente.',
-  };
+  const messages = { CONTA_EXISTENTE: clientMessages.accountExists, USUARIO_INVALIDO: clientMessages.invalidUsername, EMAIL_INVALIDO: clientMessages.invalidEmail, SEXO_INVALIDO: clientMessages.invalidSex, SENHA_INVALIDA: clientMessages.invalidPassword, SENHAS_DIFERENTES: clientMessages.passwordMismatch, NAO_AUTENTICADO: clientMessages.sessionExpired, ERRO_INTERNO: clientMessages.generic };
 
   function showMessage(form, text = '', type = 'info') {
     const element = form?.querySelector('[data-form-message]');
@@ -155,7 +149,7 @@ const t = getMessages(locale);
     const profileEmail = document.querySelector('[data-profile-email]');
     if (profileEmail) profileEmail.textContent = account.email;
     const profileBio = document.querySelector('[data-profile-bio]');
-    if (profileBio) profileBio.textContent = account.bio || 'Sem bio ainda.';
+    if (profileBio) profileBio.textContent = account.bio || clientMessages.noBio;
     const profilePosts = document.querySelector('[data-profile-posts]');
     if (profilePosts) profilePosts.textContent = account.photoCount;
     const profileMessages = document.querySelector('[data-profile-positive]');
@@ -176,7 +170,7 @@ const t = getMessages(locale);
       if (observedUsers.length === 0) {
         const empty = document.createElement('p');
         empty.className = 'observed-privacy-empty';
-        empty.textContent = observedPrivacy?.dataset.emptyText || 'Você ainda não observa ninguém.';
+        empty.textContent = observedPrivacy?.dataset.emptyText || clientMessages.emptyObserved;
         observedPrivacyList.append(empty);
       } else {
         observedUsers.forEach(item => {
@@ -199,9 +193,9 @@ const t = getMessages(locale);
     }
 
     const methods = [];
-    if (account.hasPassword) methods.push('Senha');
-    if (account.hasGoogle) methods.push('Google');
-    document.querySelector('[data-auth-methods]').textContent = methods.join(' + ') || 'Nenhum';
+    if (account.hasPassword) methods.push(clientMessages.password);
+    if (account.hasGoogle) methods.push(clientMessages.google);
+    document.querySelector('[data-auth-methods]').textContent = methods.join(' + ') || clientMessages.none;
     document.querySelector('[data-auth-explanation]').textContent = account.hasGoogle
       ? 'Sua conta pode ser acessada pelo Google. Você também pode definir ou trocar uma senha abaixo.'
       : 'Sua conta usa acesso por usuário/e-mail e senha.';
