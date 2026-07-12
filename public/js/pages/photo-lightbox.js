@@ -16,6 +16,7 @@ const image = dialog?.querySelector("[data-photo-lightbox-image]");
 const STORAGE_KEY = "fotolife-photo-viewer";
 let slideshowTimer = null;
 let slideshowRunning = false;
+let navigationPending = false;
 
 function readPreferences() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
@@ -75,8 +76,47 @@ function applyNavigationMode(mode) {
 
 function applyEffect(effect) {
   if (!(image instanceof HTMLElement)) return;
+  const effectClass = `effect-${effect}`;
+  image.classList.remove(
+    "effect-fade", "effect-slide", "effect-zoom", "effect-dissolve",
+    "effect-out-fade", "effect-out-slide-next", "effect-out-slide-previous",
+    "effect-out-zoom", "effect-out-dissolve"
+  );
+  // Reinicia a animação mesmo quando a imagem já veio do cache.
+  void image.offsetWidth;
+  image.classList.add(effectClass);
+}
+
+function getEffectDuration(effect) {
+  if (effect === "dissolve") return 520;
+  if (effect === "zoom") return 440;
+  if (effect === "slide") return 400;
+  return 340;
+}
+
+function navigateWithEffect(href, direction = "next") {
+  if (!href || navigationPending) return;
+  if (!(image instanceof HTMLElement)) {
+    window.location.href = href;
+    return;
+  }
+
+  navigationPending = true;
+  if (slideshowTimer) window.clearTimeout(slideshowTimer);
+  slideshowTimer = null;
+
+  const effect = effectSelect?.value || "fade";
   image.classList.remove("effect-fade", "effect-slide", "effect-zoom", "effect-dissolve");
-  image.classList.add(`effect-${effect}`);
+  void image.offsetWidth;
+
+  const exitClass = effect === "slide"
+    ? `effect-out-slide-${direction === "previous" ? "previous" : "next"}`
+    : `effect-out-${effect}`;
+  image.classList.add(exitClass);
+
+  window.setTimeout(() => {
+    window.location.href = href;
+  }, getEffectDuration(effect));
 }
 
 function openLightbox() {
@@ -114,7 +154,7 @@ function scheduleNext() {
     return;
   }
   const delay = Number(intervalSelect?.value || 5000);
-  slideshowTimer = window.setTimeout(() => { window.location.href = nextHref; }, delay);
+  slideshowTimer = window.setTimeout(() => { navigateWithEffect(nextHref, "next"); }, delay);
 }
 
 function startSlideshow() {
@@ -152,10 +192,19 @@ fullscreenButton?.addEventListener("click", async () => {
 dialog?.querySelectorAll("[data-navigation-mode]").forEach(button => {
   button.addEventListener("click", () => { stopSlideshow(); applyNavigationMode(button.dataset.navigationMode); });
 });
-[previousLink, nextLink].forEach(link => link?.addEventListener("click", event => {
-  if (link.getAttribute("aria-disabled") === "true") event.preventDefault();
-  else if (!slideshowRunning) stopSlideshow();
-}));
+previousLink?.addEventListener("click", event => {
+  event.preventDefault();
+  if (previousLink.getAttribute("aria-disabled") === "true") return;
+  if (!slideshowRunning) stopSlideshow();
+  navigateWithEffect(previousLink.href, "previous");
+});
+
+nextLink?.addEventListener("click", event => {
+  event.preventDefault();
+  if (nextLink.getAttribute("aria-disabled") === "true") return;
+  if (!slideshowRunning) stopSlideshow();
+  navigateWithEffect(nextLink.href, "next");
+});
 
 slideshowButton?.addEventListener("click", () => slideshowRunning ? stopSlideshow() : startSlideshow());
 intervalSelect?.addEventListener("change", () => {
@@ -186,7 +235,11 @@ if (effectSelect) effectSelect.value = urlParams.get("effect") || preferences.ef
 if (loopToggle instanceof HTMLInputElement) {
   loopToggle.checked = urlParams.get("loop") === "1" || preferences.loop !== false;
 }
-applyEffect(effectSelect?.value || "fade");
+if (image instanceof HTMLImageElement && !image.complete) {
+  image.addEventListener("load", () => applyEffect(effectSelect?.value || "fade"), { once: true });
+} else {
+  applyEffect(effectSelect?.value || "fade");
+}
 applyNavigationMode(urlParams.get("nav") || getMode());
 if (urlParams.get("viewer") === "1") openLightbox();
 if (urlParams.get("slideshow") === "1") startSlideshow();

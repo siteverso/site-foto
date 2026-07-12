@@ -42,8 +42,12 @@ describe('visualizador avançado de foto', () => {
     expect(component).toContain('@{username}');
     expect(script).toContain('fotolife-photo-viewer');
     expect(script).toContain('getNextSlideshowHref');
+    expect(script).toContain('navigateWithEffect');
+    expect(script).toContain('getEffectDuration');
     expect(script).toContain('isLoopEnabled');
     expect(css).toContain('@keyframes photoFade');
+    expect(css).toContain('@keyframes photoFadeOut');
+    expect(css).toContain('@keyframes photoSlideOutNext');
     expect(css).toContain('height: 100dvh');
     expect(css).toContain('object-fit: contain');
   });

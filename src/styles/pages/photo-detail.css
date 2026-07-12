@@ -99,7 +99,8 @@
 }
 
 .photo-detail-viewer-trigger:focus-visible {
-  outline: 3px solid var(--accent, #75a7ff);
+    /*noinspection CssUnresolvedCustomProperty*/
+    outline: 3px solid var(--accent, #75a7ff);
   outline-offset: 3px;
 }
 
@@ -323,10 +324,20 @@ html.photo-lightbox-open {
 .photo-lightbox-image.effect-slide { animation: photoSlide .5s cubic-bezier(.2,.8,.2,1) both; }
 .photo-lightbox-image.effect-zoom { animation: photoZoom .6s ease both; }
 .photo-lightbox-image.effect-dissolve { animation: photoDissolve .7s ease both; }
+.photo-lightbox-image.effect-out-fade { animation: photoFadeOut .34s ease both; }
+.photo-lightbox-image.effect-out-slide-next { animation: photoSlideOutNext .4s cubic-bezier(.4,0,.8,.2) both; }
+.photo-lightbox-image.effect-out-slide-previous { animation: photoSlideOutPrevious .4s cubic-bezier(.4,0,.8,.2) both; }
+.photo-lightbox-image.effect-out-zoom { animation: photoZoomOut .44s ease both; }
+.photo-lightbox-image.effect-out-dissolve { animation: photoDissolveOut .52s ease both; }
 @keyframes photoFade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes photoSlide { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
-@keyframes photoZoom { from { opacity: 0; transform: scale(.965); } to { opacity: 1; transform: scale(1); } }
-@keyframes photoDissolve { 0% { opacity: 0; filter: blur(10px); } 100% { opacity: 1; filter: blur(0); } }
+@keyframes photoSlide { from { opacity: 0; transform: translateX(42px); } to { opacity: 1; transform: none; } }
+@keyframes photoZoom { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+@keyframes photoDissolve { 0% { opacity: 0; filter: blur(14px); } 100% { opacity: 1; filter: blur(0); } }
+@keyframes photoFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes photoSlideOutNext { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(-56px); } }
+@keyframes photoSlideOutPrevious { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(56px); } }
+@keyframes photoZoomOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.055); } }
+@keyframes photoDissolveOut { from { opacity: 1; filter: blur(0); } to { opacity: 0; filter: blur(14px); } }
 
 @media (max-width: 780px) {
   .photo-lightbox-toolbar { left: 10px; right: 10px; justify-content: flex-end; }
