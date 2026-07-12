@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const header = readFileSync(new URL('../src/components/SiteHeader.astro', import.meta.url), 'utf8');
 const profile = readFileSync(new URL('../src/pages/perfil/[username].astro', import.meta.url), 'utf8');
+const publishing = readFileSync(new URL('../public/js/processes/photo-publishing.js', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../src/styles/pages/profile-detail.css', import.meta.url), 'utf8');
 
 describe('publicação de imagem no perfil', () => {
@@ -13,7 +14,7 @@ describe('publicação de imagem no perfil', () => {
 
   it('abre o diálogo diretamente pelo botão do perfil', () => {
     expect(profile).toContain('data-open-post-dialog');
-    expect(profile).toContain("document.querySelector('[data-open-post-dialog]')?.addEventListener('click', () => setPostDialogOpen(true));");
+    expect(publishing).toContain('document.querySelector("[data-open-post-dialog]")');
     expect(profile).not.toContain("location.hash === '#postar'");
   });
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-const profile = readFileSync(new URL('../src/pages/perfil/[username].astro', import.meta.url), 'utf8');
+const profile = readFileSync(new URL('../public/js/processes/photo-publishing.js', import.meta.url), 'utf8');
 
 describe('fluxo do botão Publicar', () => {
   it('habilita após a imagem da prévia estar pronta, sem depender do término do staging', () => {
@@ -15,7 +15,7 @@ describe('fluxo do botão Publicar', () => {
   });
 
   it('transforma resposta inválida do staging em erro visível em vez de travar a Promise', () => {
-    expect(profile).toContain('try {\n            const responseData = JSON.parse(xhr.responseText)');
+    expect(profile).toMatch(/try \{[\s\S]*const responseData = JSON\.parse\(xhr\.responseText\)/);
     expect(profile).toContain('reject(error instanceof Error ? error : new Error(clientMessages.uploadError))');
   });
 });
