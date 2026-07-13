@@ -125,3 +125,42 @@ export async function canExchangeMessages(userId: number, otherUserId: number): 
     return Number(result.rows?.[0]?.ALLOWED || 0) === 1;
   });
 }
+
+export type BlockedUser = {
+  id: number;
+  username: string;
+  avatarUrl: string;
+  level: ProfileBlockLevel;
+  blocksProfile: boolean;
+  blocksMessages: boolean;
+};
+
+export async function listBlockedUsers(ownerUserId: number): Promise<BlockedUser[]> {
+  return withConnection(async connection => {
+    const result = await connection.execute<Row>(
+      `SELECT u.id,
+              u.username,
+              b.block_level
+         FROM murm_user_block b
+         JOIN murm_user u
+           ON u.id = b.blocked_user_id
+        WHERE b.blocker_user_id = :owner_user_id
+          AND u.active = 1
+        ORDER BY CASE b.block_level WHEN 'all' THEN 0 ELSE 1 END,
+                 LOWER(u.username)`,
+      { owner_user_id: ownerUserId });
+
+    return (result.rows || []).map(row => {
+      const level = normalizeProfileBlockLevel(row.BLOCK_LEVEL);
+      const id = Number(row.ID);
+      return {
+        id,
+        username: String(row.USERNAME || ''),
+        avatarUrl: `/api/users/${id}/avatar`,
+        level,
+        blocksProfile: level === 'all',
+        blocksMessages: level === 'all' || level === 'messages',
+      };
+    });
+  });
+}

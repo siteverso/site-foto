@@ -7,12 +7,13 @@ import { getMessages, normalizeLocale } from '../i18n';
 import { MESSAGE_MAX_LENGTH } from '../lib/message-limit';
 import { getAccountProfile } from '../lib/server/repositories/account-profile';
 import { getPublicProfile } from '../lib/server/repositories/photos';
-import { getProfilePrivacy } from '../lib/server/repositories/profile-privacy';
+import { getProfilePrivacy, listBlockedUsers } from '../lib/server/repositories/profile-privacy';
 import '../styles/pages/account.css';
 import '../styles/themes/theme-overrides.css';
 const user = await requireUser(Astro);
 const account = await getAccountProfile(user.id);
 const profilePrivacy = await getProfilePrivacy(user.id);
+const blockedUsers = await listBlockedUsers(user.id);
 // A lateral da conta usa a mesma origem de avatar já validada pela página pública do perfil.
 const publicProfile = await getPublicProfile(account.username);
 const accountSidebar = {
@@ -110,6 +111,35 @@ const t = getMessages(locale);
           <button class="button primary" type="submit">{t.profile.definePassword}</button>
           <p class="form-message" data-form-message hidden></p>
         </form>
+      </section>
+
+      <section class="panel profile-edit account-blocked-users" data-blocked-users-panel>
+        <div class="account-blocked-users-heading">
+          <div>
+            <h2>Usuários bloqueados</h2>
+            <p class="account-section-intro">Gerencie perfis e mensagens que você bloqueou.</p>
+          </div>
+          <span class="account-blocked-users-count" data-blocked-users-count>{blockedUsers.length}</span>
+        </div>
+        <div class="account-blocked-users-list" data-blocked-users-list>
+          {blockedUsers.map(blocked => (
+            <article class="account-blocked-user" data-blocked-user data-user-id={blocked.id} data-level={blocked.level}>
+              <img src={blocked.avatarUrl} alt="" loading="lazy" />
+              <div class="account-blocked-user-identity">
+                <strong>@{blocked.username}</strong>
+                <div class="account-blocked-user-badges">
+                  {blocked.blocksProfile && <span title="Perfil bloqueado">⊘ Perfil</span>}
+                  {blocked.blocksMessages && <span title="Mensagens bloqueadas">✉ Mensagens</span>}
+                </div>
+              </div>
+              <button class="button account-unblock-user" type="button" data-unblock-user data-user-id={blocked.id} data-level={blocked.level}>
+                {blocked.level === 'all' ? 'Desbloquear perfil' : 'Permitir mensagens'}
+              </button>
+            </article>
+          ))}
+          <p class="account-blocked-users-empty" data-blocked-users-empty hidden={blockedUsers.length > 0}>Você não bloqueou nenhum usuário.</p>
+        </div>
+        <p class="form-message" data-blocked-users-message hidden></p>
       </section>
     </div>
     </div>
@@ -435,6 +465,36 @@ const t = getMessages(locale);
     } catch (error) {
       privacyMessage.textContent = messages[error.message] || clientMessages.generic; privacyMessage.dataset.type = 'error'; privacyMessage.hidden = false;
     } finally { button.disabled = false; }
+  });
+
+  const blockedUsersList = document.querySelector('[data-blocked-users-list]');
+  const blockedUsersCount = document.querySelector('[data-blocked-users-count]');
+  const blockedUsersEmpty = document.querySelector('[data-blocked-users-empty]');
+  const blockedUsersMessage = document.querySelector('[data-blocked-users-message]');
+
+  blockedUsersList?.addEventListener('click', async event => {
+    const button = event.target.closest('[data-unblock-user]');
+    if (!button) return;
+    const userId = Number(button.dataset.userId);
+    const level = button.dataset.level === 'messages' ? 'messages' : 'all';
+    button.disabled = true;
+    blockedUsersMessage.hidden = true;
+    try {
+      await api('/api/profile/block', {
+        method: 'PATCH',
+        body: JSON.stringify({ userId, level, blocked: false }),
+      });
+      button.closest('[data-blocked-user]')?.remove();
+      const remaining = blockedUsersList.querySelectorAll('[data-blocked-user]').length;
+      blockedUsersCount.textContent = String(remaining);
+      blockedUsersEmpty.hidden = remaining > 0;
+      toast(level === 'all' ? 'Perfil desbloqueado.' : 'Mensagens liberadas.');
+    } catch (error) {
+      blockedUsersMessage.textContent = messages[error.message] || clientMessages.generic;
+      blockedUsersMessage.dataset.type = 'error';
+      blockedUsersMessage.hidden = false;
+      button.disabled = false;
+    }
   });
 
   document.querySelector('[data-remove-profile]')?.addEventListener('click', async (event) => {

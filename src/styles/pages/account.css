@@ -506,3 +506,94 @@ body.modal-open {
 }
 
 .account-section-intro{margin:-6px 0 16px;color:var(--muted);line-height:1.55}.profile-visibility-options{display:grid;gap:10px;margin:0 0 18px}.profile-visibility-options label{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:14px;border:1px solid var(--line);border-radius:14px;cursor:pointer;transition:border-color .18s ease,background .18s ease,transform .18s ease}.profile-visibility-options label:hover{transform:translateY(-1px);background:color-mix(in srgb,var(--panel) 92%,var(--text) 8%)}.profile-visibility-options input{margin-top:4px}.profile-visibility-options span{display:grid;gap:4px}.profile-visibility-options strong{font-size:.92rem}.profile-visibility-options small{color:var(--muted);line-height:1.45}.account-danger-zone{display:flex;align-items:center;justify-content:space-between;gap:24px}.account-danger-zone h2{margin-bottom:5px}.account-danger-zone p{margin:0;color:var(--muted);line-height:1.5}.account-remove-profile{border:1px solid color-mix(in srgb,#d33 60%,var(--line));color:#d33;background:transparent;white-space:nowrap}.account-remove-profile:hover{background:color-mix(in srgb,#d33 10%,transparent)}@media(max-width:640px){.account-danger-zone{align-items:stretch;flex-direction:column}.account-remove-profile{width:100%}}
+
+/* Usuários bloqueados — gerenciamento centralizado da conta */
+.account-blocked-users-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.account-blocked-users-count {
+  display: inline-grid;
+  min-width: 2rem;
+  height: 2rem;
+  place-items: center;
+  padding: 0 .55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.account-blocked-users-list {
+  display: grid;
+  gap: .75rem;
+  margin-top: 1rem;
+}
+
+.account-blocked-user {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .85rem;
+  padding: .85rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface-soft, rgba(127, 127, 127, .06));
+}
+
+.account-blocked-user > img {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.account-blocked-user-identity {
+  min-width: 0;
+}
+
+.account-blocked-user-identity strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-blocked-user-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-top: .35rem;
+}
+
+.account-blocked-user-badges span {
+  padding: .2rem .5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: .72rem;
+  color: var(--text-muted);
+}
+
+.account-unblock-user {
+  white-space: nowrap;
+}
+
+.account-blocked-users-empty {
+  margin: 0;
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .account-blocked-user {
+    grid-template-columns: 3rem minmax(0, 1fr);
+  }
+
+  .account-unblock-user {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
