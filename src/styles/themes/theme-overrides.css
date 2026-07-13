@@ -231,3 +231,13 @@ html[data-theme="light-warm"] .site-updates-panel {
   .site-theme-toggle { width: 32px; height: 32px; flex-basis: 32px; }
 }
 
+
+/*
+ * Perfil público: as colunas laterais são apenas estruturas de layout.
+ * O fundo pertence exclusivamente aos cards internos, em todos os temas.
+ */
+html .flog-grid > .flog-panel {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
