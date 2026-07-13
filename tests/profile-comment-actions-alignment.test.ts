@@ -1,12 +1,23 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
 
-const page = readFileSync(new URL('../src/pages/perfil/[username].astro', import.meta.url), 'utf8');
-const styles = readFileSync(new URL('../src/styles/pages/profile-detail.css', import.meta.url), 'utf8');
+const page = fs.readFileSync(path.resolve('src/pages/perfil/[username].astro'), 'utf8');
+const css = fs.readFileSync(path.resolve('src/styles/pages/profile-detail.css'), 'utf8');
 
-describe('ações das mensagens da foto', () => {
-  it('mantém a lixeira imediatamente à esquerda da data e alinha o grupo à direita', () => {
-    expect(page.indexOf('data-comment-delete-area')).toBeLessThan(page.indexOf('<time>{formatDate(comment.createdAt)}</time>'));
-    expect(styles).toMatch(/\.comment-meta\s*\{[\s\S]*justify-content:\s*flex-end;/);
+describe('profile comment action alignment', () => {
+  it('keeps the delete button immediately before the date', () => {
+    const deleteIndex = page.indexOf('data-comment-delete-trigger');
+    const timeIndex = page.indexOf('<time>{formatDate(comment.createdAt)}</time>');
+    expect(deleteIndex).toBeGreaterThan(-1);
+    expect(timeIndex).toBeGreaterThan(deleteIndex);
+  });
+
+  it('places the action row together at the top right on desktop', () => {
+    expect(css).toContain('.comment-meta {');
+    expect(css).toContain('position: absolute;');
+    expect(css).toContain('top: 10px;');
+    expect(css).toContain('right: 12px;');
+    expect(css).toContain('justify-content: flex-end;');
   });
 });
