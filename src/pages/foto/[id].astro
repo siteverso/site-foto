@@ -6,6 +6,7 @@ import PhotoMessageCard from '../../components/PhotoMessageCard.astro';
 import PhotoLightbox from '../../components/PhotoLightbox.astro';
 import { requireUser } from '../../lib/server/session';
 import { getComments, getPhotoById, getPhotoNavigation } from '../../lib/server/repositories/photos';
+import { canSeeUserAnywhere } from '../../lib/server/repositories/profile-privacy';
 import { getMessages, normalizeLocale } from '../../i18n';
 import { MESSAGE_MAX_LENGTH } from '../../lib/message-limit';
 
@@ -22,7 +23,8 @@ const user = await requireUser(Astro);
 const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
 const photoId = Number.parseInt(String(Astro.params.id || ''), 10);
-const photo = await getPhotoById(photoId);
+let photo = await getPhotoById(photoId);
+if (photo && !(await canSeeUserAnywhere(user.id, photo.userId))) photo = null;
 if (!photo) Astro.response.status = 404;
 const isOwner = Boolean(photo && photo.userId === user.id);
 const photoNavigation = photo

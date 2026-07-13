@@ -1,5 +1,5 @@
 export type ProfileVisibility = 'public' | 'unlisted' | 'private' | 'deleted';
-export type ProfileBlockLevel = 'all' | 'messages';
+export type ProfileBlockLevel = 'messages' | 'profile' | 'all';
 export type ProfileBlockInput = { userId: number; level: ProfileBlockLevel; blocked: boolean };
 
 export function normalizeProfileVisibility(value: unknown): ProfileVisibility {
@@ -8,7 +8,8 @@ export function normalizeProfileVisibility(value: unknown): ProfileVisibility {
 }
 
 export function normalizeProfileBlockLevel(value: unknown): ProfileBlockLevel {
-  return String(value || '').trim().toLowerCase() === 'messages' ? 'messages' : 'all';
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized === 'messages' || normalized === 'profile' ? normalized : 'all';
 }
 
 export function parseProfileBlockInput(value: unknown): ProfileBlockInput {
@@ -18,7 +19,7 @@ export function parseProfileBlockInput(value: unknown): ProfileBlockInput {
   const level = String(input.level || '').trim().toLowerCase();
 
   if (!Number.isSafeInteger(userId) || userId <= 0) throw new Error('USUARIO_ALVO_INVALIDO');
-  if (level !== 'all' && level !== 'messages') throw new Error('NIVEL_BLOQUEIO_INVALIDO');
+  if (level !== 'all' && level !== 'profile' && level !== 'messages') throw new Error('NIVEL_BLOQUEIO_INVALIDO');
   if (typeof input.blocked !== 'boolean') throw new Error('ESTADO_BLOQUEIO_INVALIDO');
 
   return { userId, level, blocked: input.blocked };

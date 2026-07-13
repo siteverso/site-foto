@@ -212,6 +212,12 @@ export async function getObservedPhotos(userId: number, includeHidden = true): P
                    )
                    AND p.post_type = 'photo'
                    AND p.status = 'published'
+                   AND NOT EXISTS (
+                       SELECT 1 FROM murm_user_block b
+                        WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
+                          AND ((b.blocker_user_id = :user_id AND b.blocked_user_id = p.user_id)
+                            OR (b.blocker_user_id = p.user_id AND b.blocked_user_id = :user_id))
+                   )
              )
              WHERE user_photo_order = 1
                AND ROWNUM <= 8
@@ -241,6 +247,12 @@ export async function getObserverPhotos(userId: number): Promise<PhotoCard[]> {
                    AND f.status = 'A'
                    AND p.post_type = 'photo'
                    AND p.status = 'published'
+                   AND NOT EXISTS (
+                       SELECT 1 FROM murm_user_block b
+                        WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
+                          AND ((b.blocker_user_id = :user_id AND b.blocked_user_id = p.user_id)
+                            OR (b.blocker_user_id = p.user_id AND b.blocked_user_id = :user_id))
+                   )
              )
              WHERE user_photo_order = 1
                AND ROWNUM <= 8
@@ -285,6 +297,12 @@ export async function getLatestPhotos(userId: number): Promise<PhotoCard[]> {
                      WHERE p.user_id <> :user_id
                        AND p.post_type = 'photo'
                        AND p.status = 'published'
+                       AND NOT EXISTS (
+                           SELECT 1 FROM murm_user_block b
+                            WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
+                              AND ((b.blocker_user_id = :user_id AND b.blocked_user_id = p.user_id)
+                                OR (b.blocker_user_id = p.user_id AND b.blocked_user_id = :user_id))
+                       )
                  )
                  WHERE user_photo_order = 1
              )
@@ -334,6 +352,12 @@ export async function getComments(postId: number, viewerUserId: number, limit = 
                  WHERE c.parent_post_id = :post_id
                    AND c.post_type = 'comment'
                    AND c.status = 'published'
+                   AND NOT EXISTS (
+                       SELECT 1 FROM murm_user_block b
+                        WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
+                          AND ((b.blocker_user_id = :viewer_user_id AND b.blocked_user_id = c.user_id)
+                            OR (b.blocker_user_id = c.user_id AND b.blocked_user_id = :viewer_user_id))
+                   )
              )
              WHERE row_number_value > :comment_offset
                AND row_number_value <= :comment_offset + :comment_limit

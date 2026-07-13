@@ -3,7 +3,7 @@ import { withConnection } from '../oracle';
 
 type Row = Record<string, unknown>;
 export type ProfilePrivacy = { visibility: ProfileVisibility; deletedAt: string; recoverUntil: string };
-export type BlockState = { all: boolean; messages: boolean };
+export type BlockState = { all: boolean; profile: boolean; messages: boolean };
 
 export async function getProfilePrivacy(userId: number): Promise<ProfilePrivacy> {
   return withConnection(async connection => {
@@ -56,7 +56,11 @@ export async function getBlockState(ownerUserId: number, targetUserId: number): 
       `SELECT block_level FROM murm_user_block
         WHERE blocker_user_id = :owner AND blocked_user_id = :target`, { owner: ownerUserId, target: targetUserId });
     const levels = new Set((result.rows || []).map(row => String(row.BLOCK_LEVEL)));
-    return { all: levels.has('all'), messages: levels.has('all') || levels.has('messages') };
+    return {
+      all: levels.has('all'),
+      profile: levels.has('all') || levels.has('profile'),
+      messages: levels.has('all') || levels.has('profile') || levels.has('messages'),
+    };
   });
 }
 
@@ -76,13 +80,14 @@ export async function setProfileBlock(ownerUserId: number, targetUserId: number,
             ON (target.blocker_user_id = source.blocker_user_id AND target.blocked_user_id = source.blocked_user_id)
           WHEN MATCHED THEN UPDATE
                SET target.block_level = CASE
-                   WHEN target.block_level = 'all' OR source.block_level = 'all' THEN 'all'
+                   WHEN source.block_level = 'all' THEN 'all'
+                   WHEN source.block_level = 'profile' THEN 'profile'
                    ELSE 'messages'
                END
           WHEN NOT MATCHED THEN INSERT (blocker_user_id, blocked_user_id, block_level)
                VALUES (source.blocker_user_id, source.blocked_user_id, source.block_level)`,
         { owner: ownerUserId, blocked: targetUserId, blockLevel: level });
-      if (level === 'all') {
+      if (level === 'all' || level === 'profile') {
         await connection.execute(
           `DELETE FROM murm_friend
             WHERE (user_id = :owner AND friend_user_id = :blocked)
@@ -94,12 +99,28 @@ export async function setProfileBlock(ownerUserId: number, targetUserId: number,
         `DELETE FROM murm_user_block
           WHERE blocker_user_id = :owner
             AND blocked_user_id = :blocked
-            AND block_level = :blockLevel`,
+            AND NVL(LOWER(TRIM(block_level)), 'all') = :blockLevel`,
         { owner: ownerUserId, blocked: targetUserId, blockLevel: level });
     }
     await connection.commit();
   });
 }
+
+export async function canSeeUserAnywhere(viewerUserId: number, targetUserId: number): Promise<boolean> {
+  if (viewerUserId === targetUserId) return true;
+  return withConnection(async connection => {
+    const result = await connection.execute<Row>(
+      `SELECT CASE WHEN EXISTS (
+          SELECT 1 FROM murm_user_block b
+           WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
+             AND ((b.blocker_user_id = :viewer_id AND b.blocked_user_id = :target_id)
+               OR (b.blocker_user_id = :target_id AND b.blocked_user_id = :viewer_id))
+        ) THEN 0 ELSE 1 END AS allowed FROM dual`,
+      { viewer_id: viewerUserId, target_id: targetUserId });
+    return Number(result.rows?.[0]?.ALLOWED || 0) === 1;
+  });
+}
+
 
 export async function canAccessProfile(ownerUserId: number, viewerUserId: number): Promise<boolean> {
   if (ownerUserId === viewerUserId) return true;
@@ -109,7 +130,7 @@ export async function canAccessProfile(ownerUserId: number, viewerUserId: number
                         OR EXISTS (
                              SELECT 1
                                FROM murm_user_block b
-                              WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
+                              WHERE NVL(LOWER(TRIM(b.block_level)), 'all') IN ('profile', 'all')
                                 AND b.blocker_user_id = u.id
                                 AND b.blocked_user_id = :viewer
                            )
@@ -127,7 +148,7 @@ export async function canExchangeMessages(userId: number, otherUserId: number): 
     const result = await connection.execute<Row>(
       `SELECT CASE WHEN EXISTS (
           SELECT 1 FROM murm_user_block b
-           WHERE b.block_level IN ('all','messages')
+           WHERE NVL(LOWER(TRIM(b.block_level)), 'all') IN ('all','profile','messages')
              AND ((b.blocker_user_id = :user_id AND b.blocked_user_id = :other_id)
                OR (b.blocker_user_id = :other_id AND b.blocked_user_id = :user_id))
         ) THEN 0 ELSE 1 END AS allowed FROM dual`, { user_id: userId, other_id: otherUserId });
@@ -154,7 +175,7 @@ export async function listBlockedUsers(ownerUserId: number): Promise<BlockedUser
          JOIN murm_user u
            ON u.id = b.blocked_user_id
         WHERE b.blocker_user_id = :owner_user_id
-        ORDER BY CASE NVL(LOWER(TRIM(b.block_level)), 'all') WHEN 'all' THEN 0 ELSE 1 END,
+        ORDER BY CASE NVL(LOWER(TRIM(b.block_level)), 'all') WHEN 'all' THEN 0 WHEN 'profile' THEN 1 ELSE 2 END,
                  LOWER(u.username)`,
       { owner_user_id: ownerUserId });
 
@@ -166,8 +187,8 @@ export async function listBlockedUsers(ownerUserId: number): Promise<BlockedUser
         username: String(row.USERNAME || ''),
         avatarUrl: `/api/users/${id}/avatar`,
         level,
-        blocksProfile: level === 'all',
-        blocksMessages: level === 'all' || level === 'messages',
+        blocksProfile: level === 'all' || level === 'profile',
+        blocksMessages: true,
       };
     });
   });

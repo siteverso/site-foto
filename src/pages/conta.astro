@@ -14,7 +14,8 @@ const user = await requireUser(Astro);
 const account = await getAccountProfile(user.id);
 const profilePrivacy = await getProfilePrivacy(user.id);
 const blockedUsers = await listBlockedUsers(user.id);
-const profileBlockedUsers = blockedUsers.filter(item => item.level === 'all');
+const generalBlockedUsers = blockedUsers.filter(item => item.level === 'all');
+const profileBlockedUsers = blockedUsers.filter(item => item.level === 'profile');
 const messageBlockedUsers = blockedUsers.filter(item => item.level === 'messages');
 // A lateral da conta usa a mesma origem de avatar já validada pela página pública do perfil.
 const publicProfile = await getPublicProfile(account.username);
@@ -125,51 +126,28 @@ const t = getMessages(locale);
         </div>
 
         <div class="account-blocked-groups">
-          <section class="account-blocked-group" data-blocked-group="all">
-            <header class="account-blocked-group-heading">
-              <div>
-                <h3><span aria-hidden="true">⊘</span> Perfis bloqueados</h3>
-                <p>Esses usuários não podem acessar seu perfil, observar você nem trocar mensagens.</p>
+          {[
+            { level: 'all', title: 'Bloqueios gerais', icon: '◉', help: 'Vocês deixam de se ver em todo o site. Somente esta área permite desfazer.', users: generalBlockedUsers, empty: 'Nenhum bloqueio geral.', action: 'Remover bloqueio geral', type: 'Invisibilidade total' },
+            { level: 'profile', title: 'Perfis bloqueados', icon: '⊘', help: 'Impede acesso ao perfil, observação e mensagens; conteúdo público ainda pode aparecer.', users: profileBlockedUsers, empty: 'Nenhum perfil bloqueado.', action: 'Desbloquear perfil', type: 'Perfil e mensagens' },
+            { level: 'messages', title: 'Mensagens bloqueadas', icon: '✉', help: 'O perfil e o conteúdo continuam visíveis, mas não há troca de mensagens.', users: messageBlockedUsers, empty: 'Nenhum bloqueio de mensagens.', action: 'Permitir mensagens', type: 'Somente mensagens' },
+          ].map(group => (
+            <section class="account-blocked-group" data-blocked-group={group.level}>
+              <header class="account-blocked-group-heading">
+                <div><h3><span aria-hidden="true">{group.icon}</span> {group.title}</h3><p>{group.help}</p></div>
+                <span data-blocked-group-count>{group.users.length}</span>
+              </header>
+              <div class="account-blocked-users-list" data-blocked-users-list={group.level}>
+                {group.users.map(blocked => (
+                  <article class="account-blocked-user" data-blocked-user data-user-id={blocked.id} data-level={group.level}>
+                    <img src={blocked.avatarUrl} alt="" loading="lazy" />
+                    <div class="account-blocked-user-identity"><strong>@{blocked.username}</strong><span class="account-blocked-user-type">{group.type}</span></div>
+                    <button class="button account-unblock-user" type="button" data-unblock-user data-user-id={blocked.id} data-level={group.level}>{group.action}</button>
+                  </article>
+                ))}
+                <p class="account-blocked-users-empty" data-blocked-users-empty hidden={group.users.length > 0}>{group.empty}</p>
               </div>
-              <span data-blocked-group-count>{profileBlockedUsers.length}</span>
-            </header>
-            <div class="account-blocked-users-list" data-blocked-users-list="all">
-              {profileBlockedUsers.map(blocked => (
-                <article class="account-blocked-user" data-blocked-user data-user-id={blocked.id} data-level="all">
-                  <img src={blocked.avatarUrl} alt="" loading="lazy" />
-                  <div class="account-blocked-user-identity">
-                    <strong>@{blocked.username}</strong>
-                    <span class="account-blocked-user-type">Bloqueio total de perfil</span>
-                  </div>
-                  <button class="button account-unblock-user" type="button" data-unblock-user data-user-id={blocked.id} data-level="all">Desbloquear perfil</button>
-                </article>
-              ))}
-              <p class="account-blocked-users-empty" data-blocked-users-empty hidden={profileBlockedUsers.length > 0}>Nenhum perfil bloqueado.</p>
-            </div>
-          </section>
-
-          <section class="account-blocked-group" data-blocked-group="messages">
-            <header class="account-blocked-group-heading">
-              <div>
-                <h3><span aria-hidden="true">✉</span> Mensagens bloqueadas</h3>
-                <p>Esses usuários continuam visíveis, mas não podem trocar mensagens com você.</p>
-              </div>
-              <span data-blocked-group-count>{messageBlockedUsers.length}</span>
-            </header>
-            <div class="account-blocked-users-list" data-blocked-users-list="messages">
-              {messageBlockedUsers.map(blocked => (
-                <article class="account-blocked-user" data-blocked-user data-user-id={blocked.id} data-level="messages">
-                  <img src={blocked.avatarUrl} alt="" loading="lazy" />
-                  <div class="account-blocked-user-identity">
-                    <strong>@{blocked.username}</strong>
-                    <span class="account-blocked-user-type">Somente mensagens</span>
-                  </div>
-                  <button class="button account-unblock-user" type="button" data-unblock-user data-user-id={blocked.id} data-level="messages">Permitir mensagens</button>
-                </article>
-              ))}
-              <p class="account-blocked-users-empty" data-blocked-users-empty hidden={messageBlockedUsers.length > 0}>Nenhum bloqueio de mensagens.</p>
-            </div>
-          </section>
+            </section>
+          ))}
         </div>
         <p class="form-message" data-blocked-users-message hidden></p>
       </section>
@@ -507,7 +485,7 @@ const t = getMessages(locale);
     const button = event.target.closest('[data-unblock-user]');
     if (!button) return;
     const userId = Number(button.dataset.userId);
-    const level = button.dataset.level === 'messages' ? 'messages' : 'all';
+    const level = ['messages', 'profile', 'all'].includes(button.dataset.level) ? button.dataset.level : 'all';
     button.disabled = true;
     blockedUsersMessage.hidden = true;
     try {
@@ -527,7 +505,7 @@ const t = getMessages(locale);
 
       const totalRemaining = blockedUsersPanel.querySelectorAll('[data-blocked-user]').length;
       blockedUsersCount.textContent = String(totalRemaining);
-      toast(level === 'all' ? 'Perfil desbloqueado.' : 'Mensagens liberadas.');
+      toast(level === 'messages' ? 'Mensagens liberadas.' : level === 'profile' ? 'Perfil desbloqueado.' : 'Bloqueio geral removido.');
     } catch (error) {
       blockedUsersMessage.textContent = messages[error.message] || clientMessages.generic;
       blockedUsersMessage.dataset.type = 'error';

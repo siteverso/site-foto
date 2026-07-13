@@ -33,31 +33,24 @@ if (root) {
   };
 
   const applyState = state => {
-    const messageButton = root.querySelector('[data-profile-block-level="messages"]');
-    const allButton = root.querySelector('[data-profile-block-level="all"]');
-    const messageIndicator = root.querySelector('[data-profile-block-indicator="messages"]');
-    const allIndicator = root.querySelector('[data-profile-block-indicator="all"]');
-    const hasMessagesBlock = Boolean(state.messages);
-    const hasAllBlock = Boolean(state.all);
+    const activeLevel = state.all ? 'all' : state.profile ? 'profile' : state.messages ? 'messages' : '';
+    const labels = {
+      messages: ['Bloquear mensagens', 'Permitir mensagens'],
+      profile: ['Bloquear perfil', 'Desbloquear perfil'],
+      all: ['Bloqueio geral', 'Remover bloqueio geral'],
+    };
 
-    if (messageIndicator) messageIndicator.hidden = !hasMessagesBlock;
-    if (allIndicator) allIndicator.hidden = !hasAllBlock;
-    if (messageButton) {
-      const messagesOnly = Boolean(state.messages && !state.all);
-      messageButton.dataset.blocked = String(messagesOnly);
-      messageButton.querySelector('strong').textContent = messagesOnly ? 'Permitir mensagens' : 'Bloquear mensagens';
-      messageButton.querySelector('small').textContent = messagesOnly
-        ? 'Voltar a receber mensagens deste perfil.'
-        : 'Mantém o perfil visível, mas impede mensagens.';
-      messageButton.hidden = Boolean(state.all);
-    }
-    if (allButton) {
-      allButton.dataset.blocked = String(Boolean(state.all));
-      allButton.querySelector('strong').textContent = state.all ? 'Desbloquear perfil' : 'Bloquear perfil';
-      allButton.querySelector('small').textContent = state.all
-        ? 'Permitir novamente o acesso e as interações.'
-        : 'Impede acesso, observação e qualquer mensagem.';
-    }
+    root.querySelectorAll('[data-profile-block-indicator]').forEach(indicator => {
+      indicator.hidden = indicator.dataset.profileBlockIndicator !== activeLevel;
+    });
+
+    buttons.forEach(button => {
+      const level = button.dataset.profileBlockLevel;
+      const blocked = level === activeLevel;
+      button.dataset.blocked = String(blocked);
+      const strong = button.querySelector('strong');
+      if (strong) strong.textContent = labels[level]?.[blocked ? 1 : 0] || strong.textContent;
+    });
   };
 
   toggle?.addEventListener('click', () => {
@@ -85,28 +78,28 @@ if (root) {
       return;
     }
 
-    const message = level === 'all'
-      ? (blocked ? 'Bloquear completamente este perfil? Ele não poderá acessar seu perfil nem interagir com você.' : 'Desbloquear este perfil?')
-      : (blocked ? 'Bloquear apenas as mensagens deste perfil?' : 'Voltar a permitir mensagens deste perfil?');
-    if (!confirm(message)) return;
+    const confirmations = {
+      messages: blocked ? 'Bloquear somente as mensagens deste perfil?' : 'Voltar a permitir mensagens deste perfil?',
+      profile: blocked ? 'Bloquear o acesso direto deste perfil, observação e mensagens?' : 'Desbloquear este perfil?',
+      all: blocked ? 'Aplicar bloqueio geral? Vocês deixarão de se ver em todo o site.' : 'Remover o bloqueio geral?',
+    };
+    if (!confirm(confirmations[level])) return;
 
     setBusy(true);
     try {
       const response = await fetch('/api/profile/block', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ userId, level, blocked }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || !payload.ok) throw new Error(payload.error || `HTTP_${response.status}`);
 
-      applyState(payload.block || { all: false, messages: false });
+      applyState(payload.block || { all: false, profile: false, messages: false });
       close();
       notice(blocked ? 'Bloqueio atualizado.' : 'Bloqueio removido.', 'success');
 
-      if (level === 'all' && blocked) {
-        window.setTimeout(() => { location.href = '/'; }, 350);
-      }
+      if (level === 'all' && blocked) window.setTimeout(() => { location.href = '/'; }, 350);
     } catch (error) {
       console.error('profile-block:', error);
       const codes = {
@@ -115,7 +108,6 @@ if (root) {
         NIVEL_BLOQUEIO_INVALIDO: 'O nível de bloqueio é inválido.',
         ESTADO_BLOQUEIO_INVALIDO: 'O estado do bloqueio é inválido.',
         NAO_AUTENTICADO: 'Sua sessão expirou. Entre novamente.',
-        ERRO_INTERNO: 'Não foi possível atualizar o bloqueio. Confira se o patch do banco foi executado.',
       };
       notice(codes[error.message] || 'Não foi possível atualizar o bloqueio.');
     } finally {
