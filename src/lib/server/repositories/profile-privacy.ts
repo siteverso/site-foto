@@ -72,7 +72,7 @@ export async function setProfileBlock(ownerUserId: number, targetUserId: number,
     if (blocked) {
       await connection.execute(
         `MERGE INTO murm_user_block target
-         USING (SELECT :owner blocker_user_id, :blocked blocked_user_id, :level block_level FROM dual) source
+         USING (SELECT :owner blocker_user_id, :blocked blocked_user_id, :blockLevel block_level FROM dual) source
             ON (target.blocker_user_id = source.blocker_user_id AND target.blocked_user_id = source.blocked_user_id)
           WHEN MATCHED THEN UPDATE
                SET target.block_level = CASE
@@ -81,7 +81,7 @@ export async function setProfileBlock(ownerUserId: number, targetUserId: number,
                END
           WHEN NOT MATCHED THEN INSERT (blocker_user_id, blocked_user_id, block_level)
                VALUES (source.blocker_user_id, source.blocked_user_id, source.block_level)`,
-        { owner: ownerUserId, blocked: targetUserId, level });
+        { owner: ownerUserId, blocked: targetUserId, blockLevel: level });
       if (level === 'all') {
         await connection.execute(
           `DELETE FROM murm_friend
@@ -94,8 +94,8 @@ export async function setProfileBlock(ownerUserId: number, targetUserId: number,
         `DELETE FROM murm_user_block
           WHERE blocker_user_id = :owner
             AND blocked_user_id = :blocked
-            AND block_level = :level`,
-        { owner: ownerUserId, blocked: targetUserId, level });
+            AND block_level = :blockLevel`,
+        { owner: ownerUserId, blocked: targetUserId, blockLevel: level });
     }
     await connection.commit();
   });
