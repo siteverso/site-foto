@@ -35,6 +35,13 @@ if (root) {
   const applyState = state => {
     const messageButton = root.querySelector('[data-profile-block-level="messages"]');
     const allButton = root.querySelector('[data-profile-block-level="all"]');
+    const messageIndicator = root.querySelector('[data-profile-block-indicator="messages"]');
+    const allIndicator = root.querySelector('[data-profile-block-indicator="all"]');
+    const hasMessagesBlock = Boolean(state.messages);
+    const hasAllBlock = Boolean(state.all);
+
+    if (messageIndicator) messageIndicator.hidden = !hasMessagesBlock;
+    if (allIndicator) allIndicator.hidden = !hasAllBlock;
     if (messageButton) {
       const messagesOnly = Boolean(state.messages && !state.all);
       messageButton.dataset.blocked = String(messagesOnly);

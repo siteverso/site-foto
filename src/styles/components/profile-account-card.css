@@ -198,6 +198,53 @@
 
 .account-avatar-remove[hidden] { display: none; }
 
+/* Estado dos bloqueios: indicadores discretos e reutilizáveis ao lado das ações. */
+.profile-relationship-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 34px;
+}
+
+.profile-block-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.profile-block-status:empty {
+  display: none;
+}
+
+.profile-block-status-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--text);
+  background: var(--surface-2);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--strong) 6%, transparent);
+}
+
+.profile-block-status-icon[hidden] {
+  display: none;
+}
+
+.profile-block-status-icon svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* Ações de relacionamento: menu expansível, opaco e contido no próprio cartão. */
 .profile-relationship-actions {
   position: relative;
@@ -213,7 +260,6 @@
   height: 34px;
   display: grid;
   place-items: center;
-  justify-self: end;
   padding: 0 0 4px;
   border: 1px solid var(--line);
   border-radius: 999px;
