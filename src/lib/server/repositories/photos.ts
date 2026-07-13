@@ -214,9 +214,8 @@ export async function getObservedPhotos(userId: number, includeHidden = true, vi
                    AND p.status = 'published'
                    AND NOT EXISTS (
                        SELECT 1 FROM murm_user_block b
-                        WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
-                          AND ((b.blocker_user_id = :viewer_user_id AND b.blocked_user_id = p.user_id)
-                            OR (b.blocker_user_id = p.user_id AND b.blocked_user_id = :viewer_user_id))
+                        WHERE (b.blocker_user_id = p.user_id AND b.blocked_user_id = :viewer_user_id AND b.hide_from_target = 1)
+                           OR (b.blocker_user_id = :viewer_user_id AND b.blocked_user_id = p.user_id AND b.hide_target = 1)
                    )
              )
              WHERE user_photo_order = 1
@@ -249,9 +248,8 @@ export async function getObserverPhotos(userId: number, viewerUserId = userId): 
                    AND p.status = 'published'
                    AND NOT EXISTS (
                        SELECT 1 FROM murm_user_block b
-                        WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
-                          AND ((b.blocker_user_id = :viewer_user_id AND b.blocked_user_id = p.user_id)
-                            OR (b.blocker_user_id = p.user_id AND b.blocked_user_id = :viewer_user_id))
+                        WHERE (b.blocker_user_id = p.user_id AND b.blocked_user_id = :viewer_user_id AND b.hide_from_target = 1)
+                           OR (b.blocker_user_id = :viewer_user_id AND b.blocked_user_id = p.user_id AND b.hide_target = 1)
                    )
              )
              WHERE user_photo_order = 1
@@ -299,9 +297,8 @@ export async function getLatestPhotos(userId: number): Promise<PhotoCard[]> {
                        AND p.status = 'published'
                        AND NOT EXISTS (
                            SELECT 1 FROM murm_user_block b
-                            WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
-                              AND ((b.blocker_user_id = :user_id AND b.blocked_user_id = p.user_id)
-                                OR (b.blocker_user_id = p.user_id AND b.blocked_user_id = :user_id))
+                            WHERE (b.blocker_user_id = p.user_id AND b.blocked_user_id = :user_id AND b.hide_from_target = 1)
+                               OR (b.blocker_user_id = :user_id AND b.blocked_user_id = p.user_id AND b.hide_target = 1)
                        )
                  )
                  WHERE user_photo_order = 1
@@ -354,9 +351,8 @@ export async function getComments(postId: number, viewerUserId: number, limit = 
                    AND c.status = 'published'
                    AND NOT EXISTS (
                        SELECT 1 FROM murm_user_block b
-                        WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
-                          AND ((b.blocker_user_id = :viewer_user_id AND b.blocked_user_id = c.user_id)
-                            OR (b.blocker_user_id = c.user_id AND b.blocked_user_id = :viewer_user_id))
+                        WHERE (b.blocker_user_id = c.user_id AND b.blocked_user_id = :viewer_user_id AND b.hide_from_target = 1)
+                           OR (b.blocker_user_id = :viewer_user_id AND b.blocked_user_id = c.user_id AND b.hide_target = 1)
                    )
              )
              WHERE row_number_value > :comment_offset
@@ -742,9 +738,8 @@ export async function getFeedPhotos(viewerUserId: number, limit = 20, offset = 0
                        AND NOT EXISTS (
                            SELECT 1
                              FROM murm_user_block b
-                            WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
-                              AND ((b.blocker_user_id = :viewer_user_id AND b.blocked_user_id = p.user_id)
-                                OR (b.blocker_user_id = p.user_id AND b.blocked_user_id = :viewer_user_id))
+                            WHERE (b.blocker_user_id = p.user_id AND b.blocked_user_id = :viewer_user_id AND b.hide_from_target = 1)
+                               OR (b.blocker_user_id = :viewer_user_id AND b.blocked_user_id = p.user_id AND b.hide_target = 1)
                        )
                  )
                  WHERE user_photo_order = 1

@@ -12,7 +12,7 @@ const {
   alreadyFriend = false,
   labels = {},
   showStats = false,
-  blockState = { all: false, profile: false, messages: false },
+  blockState = { messages: false, profileAccess: false, hideMe: false, hideThem: false },
 } = Astro.props;
 
 const username = profile?.username || 'usuario';
@@ -75,59 +75,29 @@ const hasCustomAvatar = Boolean(profile?.hasCustomAvatar ?? avatarUrl);
     {!isOwner && !editableAvatar && (
       <div class="profile-relationship-actions" data-profile-actions data-user-id={profile?.id}>
         <div class="profile-relationship-toolbar">
-          <div class="profile-block-status" data-profile-block-status aria-label="Bloqueios ativos">
-            <span
-              class="profile-block-status-icon"
-              data-profile-block-indicator="messages"
-              title="Mensagens bloqueadas"
-              aria-label="Mensagens bloqueadas"
-              hidden={!blockState.messages}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M4.5 6.5h15v11h-15zM5 7l7 5 7-5" />
-                <path d="M18.5 4.5 5.5 19.5" />
-              </svg>
-            </span>
-            <span
-              class="profile-block-status-icon"
-              data-profile-block-indicator="profile"
-              title="Perfil bloqueado"
-              aria-label="Perfil bloqueado"
-              hidden={!blockState.profile || blockState.all}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <circle cx="12" cy="8" r="3.25" />
-                <path d="M5.75 19c.75-3.35 2.85-5.25 6.25-5.25 1.32 0 2.46.29 3.4.85" />
-                <path d="M4 4l16 16" />
-              </svg>
-            </span>
-            <span
-              class="profile-block-status-icon"
-              data-profile-block-indicator="all"
-              title="Perfil bloqueado"
-              aria-label="Perfil bloqueado"
-              hidden={!blockState.all}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <circle cx="12" cy="8" r="3.25" />
-                <path d="M5.75 19c.75-3.35 2.85-5.25 6.25-5.25 1.32 0 2.46.29 3.4.85" />
-                <path d="M17 15.25v5.5M14.25 18h5.5" />
-                <path d="M4 4l16 16" />
-              </svg>
-            </span>
+          <div class="profile-block-status" data-profile-block-status aria-label="Restrições ativas">
+            {[
+              ['messages', blockState.messages, '✉', 'Mensagens bloqueadas'],
+              ['profile_access', blockState.profileAccess, '⊘', 'Acesso ao seu perfil bloqueado'],
+              ['hide_me', blockState.hideMe, '◌', 'Você está invisível para esta pessoa'],
+              ['hide_them', blockState.hideThem, '◉', 'Esta pessoa está oculta para você'],
+            ].map(([type, active, icon, title]) => (
+              <span class="profile-block-status-icon" data-profile-block-indicator={type} title={title} aria-label={title} hidden={!active}>{icon}</span>
+            ))}
           </div>
           <button class="profile-more-button" type="button" data-profile-actions-toggle aria-label={`Ações para @${username}`} aria-expanded="false">•••</button>
         </div>
         <div class="profile-actions-menu" data-profile-actions-menu hidden>
-          <button type="button" data-profile-block-level="messages" data-blocked={blockState.messages && !blockState.profile && !blockState.all ? 'true' : 'false'}>
-            <span aria-hidden="true">✉</span><span><strong>{blockState.messages && !blockState.profile && !blockState.all ? 'Liberar mensagens' : 'Bloquear conversas'}</strong><small>Vocês continuam se vendo, mas nenhum dos dois pode enviar mensagens ao outro.</small></span>
-          </button>
-          <button type="button" data-profile-block-level="profile" data-blocked={blockState.profile && !blockState.all ? 'true' : 'false'}>
-            <span aria-hidden="true">⊘</span><span><strong>{blockState.profile && !blockState.all ? 'Liberar meu perfil' : 'Bloquear acesso ao meu perfil'}</strong><small>A pessoa não entra no seu perfil nem observa você; você ainda pode ver o conteúdo público dela.</small></span>
-          </button>
-          <button type="button" data-profile-block-level="all" data-blocked={blockState.all ? 'true' : 'false'}>
-            <span aria-hidden="true">◉</span><span><strong>{blockState.all ? 'Voltar a se ver' : 'Ocultar um do outro'}</strong><small>Você não vê essa pessoa e ela não vê você em nenhuma área; somente a Conta permite desfazer.</small></span>
-          </button>
+          {[
+            { type: 'messages', active: blockState.messages, icon: '✉', on: 'Permitir mensagens', off: 'Bloquear mensagens', help: 'Impede apenas a troca de mensagens privadas entre vocês.' },
+            { type: 'profile_access', active: blockState.profileAccess, icon: '⊘', on: 'Liberar acesso ao meu perfil', off: 'Impedir acesso ao meu perfil', help: 'Esta pessoa não poderá abrir seu perfil nem observar você.' },
+            { type: 'hide_me', active: blockState.hideMe, icon: '◌', on: 'Voltar a aparecer para esta pessoa', off: 'Ficar invisível para esta pessoa', help: 'Seu perfil, fotos, comentários e atividades deixam de aparecer para ela.' },
+            { type: 'hide_them', active: blockState.hideThem, icon: '◉', on: 'Voltar a ver esta pessoa', off: 'Não ver esta pessoa', help: 'O perfil, as fotos, os comentários e as atividades dela deixam de aparecer para você.' },
+          ].map(action => (
+            <button type="button" data-profile-block-type={action.type} data-blocked={action.active ? 'true' : 'false'}>
+              <span aria-hidden="true">{action.icon}</span><span><strong>{action.active ? action.on : action.off}</strong><small>{action.help}</small></span>
+            </button>
+          ))}
         </div>
       </div>
     )}
@@ -158,4 +128,4 @@ const hasCustomAvatar = Boolean(profile?.hasCustomAvatar ?? avatarUrl);
 </div>
 
 {editableAvatar && <script type="module" src="/profile-avatar.js?v=20260713-1"></script>}
-{!isOwner && !editableAvatar && <script type="module" src="/js/processes/profile-blocking.js?v=20260713-4"></script>}
+{!isOwner && !editableAvatar && <script type="module" src="/js/processes/profile-blocking.js?v=20260713-5"></script>}

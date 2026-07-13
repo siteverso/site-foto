@@ -14,9 +14,11 @@ const user = await requireUser(Astro);
 const account = await getAccountProfile(user.id);
 const profilePrivacy = await getProfilePrivacy(user.id);
 const blockedUsers = await listBlockedUsers(user.id);
-const generalBlockedUsers = blockedUsers.filter(item => item.level === 'all');
-const profileBlockedUsers = blockedUsers.filter(item => item.level === 'profile');
-const messageBlockedUsers = blockedUsers.filter(item => item.level === 'messages');
+const messageBlockedUsers = blockedUsers.filter(item => item.types.includes('messages'));
+const profileAccessBlockedUsers = blockedUsers.filter(item => item.types.includes('profile_access'));
+const hideMeBlockedUsers = blockedUsers.filter(item => item.types.includes('hide_me'));
+const hideThemBlockedUsers = blockedUsers.filter(item => item.types.includes('hide_them'));
+const blockedRelationCount = blockedUsers.reduce((total, item) => total + item.types.length, 0);
 // A lateral da conta usa a mesma origem de avatar já validada pela página pública do perfil.
 const publicProfile = await getPublicProfile(account.username);
 const accountSidebar = {
@@ -122,26 +124,27 @@ const t = getMessages(locale);
             <h2>Usuários bloqueados</h2>
             <p class="account-section-intro">Escolha exatamente o que deseja impedir para cada pessoa.</p>
           </div>
-          <span class="account-blocked-users-count" data-blocked-users-count>{blockedUsers.length}</span>
+          <span class="account-blocked-users-count" data-blocked-users-count>{blockedRelationCount}</span>
         </div>
 
         <div class="account-blocked-groups">
           {[
-            { level: 'all', title: 'Ocultos um do outro', icon: '◉', help: 'Você não vê essa pessoa e ela não vê você em nenhuma área do FotoLife. Somente esta tela permite desfazer.', users: generalBlockedUsers, empty: 'Nenhuma pessoa oculta por completo.', action: 'Voltar a se ver', type: 'Ninguém vê ninguém' },
-            { level: 'profile', title: 'Acesso ao meu perfil bloqueado', icon: '⊘', help: 'A pessoa não entra no seu perfil, não observa você e não envia mensagens. Você ainda pode ver o conteúdo público dela.', users: profileBlockedUsers, empty: 'Ninguém está impedido de acessar seu perfil.', action: 'Liberar meu perfil', type: 'Ela não acessa você' },
-            { level: 'messages', title: 'Conversas bloqueadas', icon: '✉', help: 'Vocês continuam se vendo normalmente, mas nenhum dos dois pode enviar mensagens ao outro.', users: messageBlockedUsers, empty: 'Nenhuma conversa bloqueada.', action: 'Liberar mensagens', type: 'Sem mensagens entre vocês' },
+            { type: 'messages', title: 'Mensagens bloqueadas', icon: '✉', help: 'Impede apenas a troca de mensagens privadas entre vocês.', users: messageBlockedUsers, empty: 'Nenhuma troca de mensagens bloqueada.', action: 'Permitir mensagens', label: 'Mensagens privadas bloqueadas' },
+            { type: 'profile_access', title: 'Acesso ao meu perfil', icon: '⊘', help: 'Estas pessoas não conseguem abrir seu perfil nem observar você.', users: profileAccessBlockedUsers, empty: 'Ninguém está impedido de acessar seu perfil.', action: 'Liberar acesso', label: 'Não acessa seu perfil' },
+            { type: 'hide_me', title: 'Pessoas para quem estou invisível', icon: '◌', help: 'Seu perfil, fotos, comentários e atividades não aparecem para estas pessoas.', users: hideMeBlockedUsers, empty: 'Você não está invisível para ninguém.', action: 'Voltar a aparecer', label: 'Você não aparece para esta pessoa' },
+            { type: 'hide_them', title: 'Pessoas que não quero ver', icon: '◉', help: 'Perfis, fotos, comentários e atividades destas pessoas não aparecem para você.', users: hideThemBlockedUsers, empty: 'Você não ocultou ninguém da sua visão.', action: 'Voltar a ver', label: 'Esta pessoa não aparece para você' },
           ].map(group => (
-            <section class="account-blocked-group" data-blocked-group={group.level}>
+            <section class="account-blocked-group" data-blocked-group={group.type}>
               <header class="account-blocked-group-heading">
                 <div><h3><span aria-hidden="true">{group.icon}</span> {group.title}</h3><p>{group.help}</p></div>
                 <span data-blocked-group-count>{group.users.length}</span>
               </header>
-              <div class="account-blocked-users-list" data-blocked-users-list={group.level}>
+              <div class="account-blocked-users-list" data-blocked-users-list={group.type}>
                 {group.users.map(blocked => (
-                  <article class="account-blocked-user" data-blocked-user data-user-id={blocked.id} data-level={group.level}>
+                  <article class="account-blocked-user" data-blocked-user data-user-id={blocked.id} data-type={group.type}>
                     <img src={blocked.avatarUrl} alt="" loading="lazy" />
-                    <div class="account-blocked-user-identity"><strong>@{blocked.username}</strong><span class="account-blocked-user-type">{group.type}</span></div>
-                    <button class="button account-unblock-user" type="button" data-unblock-user data-user-id={blocked.id} data-level={group.level}>{group.action}</button>
+                    <div class="account-blocked-user-identity"><strong>@{blocked.username}</strong><span class="account-blocked-user-type">{group.label}</span></div>
+                    <button class="button account-unblock-user" type="button" data-unblock-user data-user-id={blocked.id} data-type={group.type}>{group.action}</button>
                   </article>
                 ))}
                 <p class="account-blocked-users-empty" data-blocked-users-empty hidden={group.users.length > 0}>{group.empty}</p>
@@ -485,13 +488,13 @@ const t = getMessages(locale);
     const button = event.target.closest('[data-unblock-user]');
     if (!button) return;
     const userId = Number(button.dataset.userId);
-    const level = ['messages', 'profile', 'all'].includes(button.dataset.level) ? button.dataset.level : 'all';
+    const type = ['messages', 'profile_access', 'hide_me', 'hide_them'].includes(button.dataset.type) ? button.dataset.type : 'messages';
     button.disabled = true;
     blockedUsersMessage.hidden = true;
     try {
       await api('/api/profile/block', {
         method: 'PATCH',
-        body: JSON.stringify({ userId, level, blocked: false }),
+        body: JSON.stringify({ userId, type, blocked: false }),
       });
       const item = button.closest('[data-blocked-user]');
       const group = item?.closest('[data-blocked-group]');
@@ -505,7 +508,8 @@ const t = getMessages(locale);
 
       const totalRemaining = blockedUsersPanel.querySelectorAll('[data-blocked-user]').length;
       blockedUsersCount.textContent = String(totalRemaining);
-      toast(level === 'messages' ? 'Mensagens liberadas.' : level === 'profile' ? 'Perfil desbloqueado.' : 'Bloqueio geral removido.');
+      const notices = { messages: 'Mensagens liberadas.', profile_access: 'Acesso ao perfil liberado.', hide_me: 'Você voltou a aparecer para essa pessoa.', hide_them: 'Essa pessoa voltou a aparecer para você.' };
+      toast(notices[type]);
     } catch (error) {
       blockedUsersMessage.textContent = messages[error.message] || clientMessages.generic;
       blockedUsersMessage.dataset.type = 'error';
