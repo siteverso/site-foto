@@ -42,8 +42,8 @@ describe('public photo detail page', () => {
   });
 
   it('routes home photos to profiles while preserving detail access from profile and sent messages', () => {
-    expect(home).toContain('class="photo-post-image-link" href={`/perfil/${photo.username}`}');
-    expect(home).toContain('class="photo-post-image-link" href="/perfil/${encodeURIComponent(photo.username)}"');
+    expect(home).toContain('class="photo-post-image-link" href={`/foto/${photo.id}`}');
+    expect(home).toContain('class="photo-post-image-link" href="/foto/${photo.id}"');
     expect(sentCard).toContain('href={`/foto/${item.photoId}`}');
     expect(profile).toContain('href={`/foto/${photo.id}`}');
   });

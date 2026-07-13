@@ -89,14 +89,6 @@ body:has(.login-shell) {
   padding: 70px 28px 36px;
 }
 
-.stage-number {
-  display: block;
-  margin-bottom: 22px;
-  font-size: .75rem;
-  font-weight: 800;
-  letter-spacing: .22em;
-  opacity: .72;
-}
 
 .stage-copy h1 {
   max-width: 640px;
@@ -141,15 +133,6 @@ body:has(.login-shell) {
   margin-bottom: 28px;
 }
 
-.login-card .kicker {
-  display: block;
-  margin-bottom: 10px;
-  color: var(--muted);
-  font-size: .72rem;
-  font-weight: 900;
-  letter-spacing: .15em;
-  text-transform: uppercase;
-}
 
 .login-card h2 {
   margin: 0;

@@ -57,7 +57,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
                 <time>{formatDate(photo.publishedAt)}</time>
               </header>
 
-              <a class="photo-post-image-link" href={`/perfil/${photo.username}`} aria-label={`${t.home.viewProfile}: @${photo.username}`}>
+              <a class="photo-post-image-link" href={`/foto/${photo.id}`} aria-label={`${t.home.viewPhoto}: @${photo.username}`}>
                 <img class="photo-post-image" src={`/api/photos/${photo.id}`} alt={photo.caption || `@${photo.username}`} loading="lazy" />
               </a>
               {photo.caption && <p class="photo-post-caption">{photo.caption}</p>}
@@ -87,7 +87,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
     function postHtml(photo) {
       return `<article class="photo-post" id="foto-${photo.id}" data-photo-id="${photo.id}" data-live-key="photo-${photo.id}">
         <header class="photo-post-header"><a href="/perfil/${encodeURIComponent(photo.username)}"><strong>@${escapeHtml(photo.username)}</strong></a><time>${formatDate(photo.publishedAt)}</time></header>
-        <a class="photo-post-image-link" href="/perfil/${encodeURIComponent(photo.username)}" aria-label="${feedLabels.viewProfile} @${escapeHtml(photo.username)}"><img class="photo-post-image" src="/api/photos/${photo.id}" alt="${escapeHtml(photo.caption || `@${photo.username}`)}" loading="lazy"></a>
+        <a class="photo-post-image-link" href="/foto/${photo.id}" aria-label="${feedLabels.viewPhoto}: @${escapeHtml(photo.username)}"><img class="photo-post-image" src="/api/photos/${photo.id}" alt="${escapeHtml(photo.caption || `@${photo.username}`)}" loading="lazy"></a>
         ${photo.caption ? `<p class="photo-post-caption">${escapeHtml(photo.caption)}</p>` : ''}
       </article>`;
     }

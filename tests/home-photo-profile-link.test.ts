@@ -7,13 +7,13 @@ const cssPath = fileURLToPath(new URL('../src/styles/pages/home-photo-card.css',
 const page = readFileSync(pagePath, 'utf8');
 const css = readFileSync(cssPath, 'utf8');
 
-describe('Home photo profile navigation', () => {
-  it('links server-rendered, dynamically loaded and update-list photos to the owner profile', () => {
+describe('Home photo navigation', () => {
+  it('keeps update-list identities linked to profiles and opens feed images on the photo page', () => {
     expect(page).toContain('href={`/perfil/${photo.username}`} data-live-key={`update-${photo.id}`}');
-    expect(page).toContain('class="photo-post-image-link" href={`/perfil/${photo.username}`}');
-    expect(page).toContain('class="photo-post-image-link" href="/perfil/${encodeURIComponent(photo.username)}"');
-    expect(page).not.toContain('class="photo-post-image-link" href={`/foto/${photo.id}`}');
-    expect(page).not.toContain('class="photo-post-image-link" href="/foto/${photo.id}"');
+    expect(page).toContain('class="photo-post-image-link" href={`/foto/${photo.id}`}');
+    expect(page).toContain('class="photo-post-image-link" href="/foto/${photo.id}"');
+    expect(page).not.toContain('class="photo-post-image-link" href={`/perfil/${photo.username}`}');
+    expect(page).not.toContain('class="photo-post-image-link" href="/perfil/${encodeURIComponent(photo.username)}"');
   });
 
   it('gives the caption modern spacing without an inner border', () => {

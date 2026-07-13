@@ -29,7 +29,7 @@ export default {
     stopObserving: 'Stop following', observe: 'Follow', observedLabel: 'Followed', accountUpdated: 'Account updated.', passwordUpdated: 'Password updated.',
   },
   login: {
-    title: 'Sign in', headline: 'One photo a day.', intro: 'Keep one daily moment and share the story behind the image.', description: 'Sign in with your shared account.',
+    title: 'Sign in', headline: 'One photo. One real moment.', intro: 'Share what you lived, without competing for attention, manufactured appearances, or ego on display.', description: 'Sign in and continue your visual diary.',
     visualTag: 'Visual diary', identifier: 'Email or username', identifierPlaceholder: 'your email or username', password: 'Password', passwordPlaceholder: 'your password',
     remember: 'Keep me signed in', submit: 'Sign in to FotoLife', or: 'or', noAccount: 'Don’t have an account yet?', createAccount: 'Create account',
     googleConfig: 'Set PUBLIC_GOOGLE_CLIENT_ID to enable Google sign-in.',
@@ -37,7 +37,7 @@ export default {
   home: {
     friends: 'Following', today: 'Photo of the day', updates: 'Latest updates', comments: 'Messages', noPhoto: 'You have not posted today’s photo yet.',
     noFriends: 'Photos from people you follow will appear here.', noUpdates: 'There are no updates yet.', noComments: 'Be the first to comment.',
-    choosePhoto: 'Choose photo', caption: 'Tell the story behind this photo', publish: 'Publish today’s photo', uploading: 'Uploading photo…', processing: 'Processing image…', completed: 'Completed', imageReady: 'Image ready', uploadFailed: 'Upload failed', publishing: 'Publishing…', publishingPhoto: 'Publishing your photo…', loadingProfile: 'Loading on profile…', photoPublished: 'Photo published',
+    choosePhoto: 'Choose photo', caption: 'Tell the story behind this photo', publish: 'Publish today’s photo', uploading: 'Uploading photo…', processing: 'Processing image…', completed: 'Completed', imageReady: 'Image ready', uploadFailed: 'Upload failed', publishing: 'Publishing…', publishingPhoto: 'Publishing your photo…', loadingProfile: 'Loading on profile…', photoPublished: 'Photo published', categoryOptional: 'Category (optional)', categoryPlaceholder: 'Search category…', clearCategory: 'Clear category', tagsOptional: 'Tags (optional)', tagsPlaceholder: 'Type and press Enter', tagsHelp: 'Up to 5 tags. Choose an existing one or create a new one.',
     waitImage: 'Wait for the image to finish loading.', uploadReplaced: 'Upload replaced.', uploadError: 'Could not upload the image.', loadConfirmationError: 'The photo was published, but its loading could not be confirmed.', imageStillLoading: 'The photo was published but has not loaded yet. Try again shortly.', temporaryLimit: 'Temporary publishing limit reached.',
     commentPlaceholder: 'Write a message', send: 'Send', sending: 'Sending…', signedAs: 'Signed in as', logout: 'Sign out', myAccount: 'My account', myProfile: 'User profile',
     openMyProfile: 'Open my profile', feedEyebrow: 'Now on FotoLife', feedTitle: 'Latest updates', ownPage: 'Your public page', userPage: 'User page',

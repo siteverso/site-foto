@@ -29,7 +29,7 @@ export default {
     stopObserving: 'Deixar de observar', observe: 'Observar', observedLabel: 'Observado', accountUpdated: 'Conta atualizada.', passwordUpdated: 'Senha atualizada.',
   },
   login: {
-    title: 'Entrar', headline: 'Uma foto por dia.', intro: 'Guarde um instante diário e compartilhe a história por trás da imagem.', description: 'Entre com sua conta compartilhada.',
+    title: 'Entrar', headline: 'Uma foto. Um momento real.', intro: 'Compartilhe o que você viveu, sem disputa por atenção, aparências fabricadas ou ego em cena.', description: 'Entre e continue seu diário visual.',
     visualTag: 'Diário visual', identifier: 'E-mail ou usuário', identifierPlaceholder: 'seu e-mail ou usuário', password: 'Senha', passwordPlaceholder: 'sua senha',
     remember: 'Manter conectado', submit: 'Entrar no FotoLife', or: 'ou', noAccount: 'Ainda não tem conta?', createAccount: 'Criar conta',
     googleConfig: 'Configure PUBLIC_GOOGLE_CLIENT_ID para habilitar o Google.',

@@ -29,7 +29,7 @@ export default {
     stopObserving: 'Dejar de seguir', observe: 'Seguir', observedLabel: 'Siguiendo', accountUpdated: 'Cuenta actualizada.', passwordUpdated: 'Contraseña actualizada.',
   },
   login: {
-    title: 'Iniciar sesión', headline: 'Una foto al día.', intro: 'Guarda un instante diario y comparte la historia detrás de la imagen.', description: 'Entra con tu cuenta compartida.',
+    title: 'Iniciar sesión', headline: 'Una foto. Un momento real.', intro: 'Comparte lo que viviste, sin competir por atención, apariencias fabricadas ni ego en escena.', description: 'Entra y continúa tu diario visual.',
     visualTag: 'Diario visual', identifier: 'Correo o usuario', identifierPlaceholder: 'tu correo o usuario', password: 'Contraseña', passwordPlaceholder: 'tu contraseña',
     remember: 'Mantener la sesión iniciada', submit: 'Iniciar sesión en FotoLife', or: 'ou', noAccount: '¿Aún no tienes cuenta?', createAccount: 'Crear cuenta',
     googleConfig: 'Configura PUBLIC_GOOGLE_CLIENT_ID para habilitar Google.',
@@ -37,7 +37,7 @@ export default {
   home: {
     friends: 'Siguiendo', today: 'Foto del día', updates: 'Últimas actualizaciones', comments: 'Mensajes', noPhoto: 'Aún no publicaste la foto de hoy.',
     noFriends: 'Las fotos de las personas que sigues aparecerán aquí.', noUpdates: 'Aún no hay actualizaciones.', noComments: 'Sé el primero en comentar.',
-    choosePhoto: 'Elegir foto', caption: 'Cuenta la historia de esta foto', publish: 'Publicar la foto del día', uploading: 'Subiendo foto…', processing: 'Procesando imagen…', completed: 'Completado', imageReady: 'Imagen lista', uploadFailed: 'Error de carga', publishing: 'Publicando…', publishingPhoto: 'Publicando tu foto…', loadingProfile: 'Cargando en el perfil…', photoPublished: 'Foto publicada',
+    choosePhoto: 'Elegir foto', caption: 'Cuenta la historia de esta foto', publish: 'Publicar la foto del día', uploading: 'Subiendo foto…', processing: 'Procesando imagen…', completed: 'Completado', imageReady: 'Imagen lista', uploadFailed: 'Error de carga', publishing: 'Publicando…', publishingPhoto: 'Publicando tu foto…', loadingProfile: 'Cargando en el perfil…', photoPublished: 'Foto publicada', categoryOptional: 'Categoría (opcional)', categoryPlaceholder: 'Buscar categoría…', clearCategory: 'Limpiar categoría', tagsOptional: 'Etiquetas (opcionales)', tagsPlaceholder: 'Escribe y presiona Enter', tagsHelp: 'Hasta 5 etiquetas. Elige una existente o crea una nueva.',
     waitImage: 'Espera a que la imagen termine de cargar.', uploadReplaced: 'Carga sustituida.', uploadError: 'No se pudo subir la imagen.', loadConfirmationError: 'La foto se publicó, pero no se pudo confirmar su carga.', imageStillLoading: 'La foto se publicó, pero aún no cargó. Inténtalo de nuevo en unos instantes.', temporaryLimit: 'Se alcanzó el límite temporal de publicación.',
     commentPlaceholder: 'Escribe un mensaje', send: 'Enviar', sending: 'Enviando…', signedAs: 'Conectado como', logout: 'Salir', myAccount: 'Mi cuenta', myProfile: 'Perfil del usuario',
     openMyProfile: 'Abrir mi perfil', feedEyebrow: 'Ahora en FotoLife', feedTitle: 'Últimas actualizaciones', ownPage: 'Tu página pública', userPage: 'Página del usuario',
