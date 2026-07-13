@@ -1,0 +1,18 @@
+---
+import type { ReceivedPhotoMessage } from '../lib/server/repositories/received-photo-messages';
+import PhotoMessageCard from './PhotoMessageCard.astro';
+const { item, labels, locale } = Astro.props as { item: ReceivedPhotoMessage; labels: any; locale: string };
+---
+<PhotoMessageCard
+  id={item.id}
+  username={item.sender.username}
+  message={item.message}
+  createdAt={item.createdAt}
+  locale={locale}
+  visibility={item.visibility}
+  canRead={true}
+  canDelete={true}
+  photoId={item.photoId}
+  photoAlt={item.photo.caption}
+  labels={labels}
+/>

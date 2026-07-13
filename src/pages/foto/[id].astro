@@ -2,6 +2,7 @@
 import AppLayout from '../../layouts/AppLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import PhotoMessageComposer from '../../components/PhotoMessageComposer.astro';
+import PhotoMessageCard from '../../components/PhotoMessageCard.astro';
 import PhotoLightbox from '../../components/PhotoLightbox.astro';
 import { requireUser } from '../../lib/server/session';
 import { getComments, getPhotoById, getPhotoNavigation } from '../../lib/server/repositories/photos';
@@ -95,30 +96,26 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
               <h2>{t.home.comments}</h2>
               <div class="comment-list" data-comment-list hidden={!comments.items.length}>
                 {comments.items.map(comment => (
-                  <article class:list={['comment-item', {
-                    'comment-item-private-visible': comment.isPrivate && comment.canRead,
-                    'comment-item-private-hidden': comment.isPrivate && !comment.canRead,
-                  }]} data-comment-item data-comment-id={comment.id}>
-                    <div class="comment-content">
-                      <a class="comment-user" href={`/perfil/${comment.username}`}><strong>@{comment.username}</strong></a>
-                      {comment.isPrivate && !comment.canRead
-                        ? <p class="private-comment-placeholder private-comment-placeholder-hidden"><span aria-hidden="true">🔒</span> {t.home.privateMessage}</p>
-                        : <>
-                            {comment.isPrivate && <div class="private-comment-badge private-comment-badge-visible"><span aria-hidden="true">🔒</span> {t.home.privateMessage}</div>}
-                            <p class:list={[{'private-comment-message': comment.isPrivate}]}>{comment.message}</p>
-                          </>}
-                      <div class="comment-meta">
-                        {(comment.userId === user.id || isOwner) && (
-                          <div class="comment-delete-area" data-comment-delete-area>
-                            <button class="comment-delete-trigger" type="button" data-comment-delete-trigger aria-label={t.home.deleteMessage} title={t.home.deleteMessage}>
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"/></svg>
-                            </button>
-                          </div>
-                        )}
-                        <time datetime={comment.createdAt}>{formatDate(comment.createdAt)}</time>
-                      </div>
-                    </div>
-                  </article>
+                  <PhotoMessageCard
+                    id={comment.id}
+                    username={comment.username}
+                    message={comment.message}
+                    createdAt={comment.createdAt}
+                    locale={locale}
+                    visibility={comment.isPrivate ? 'private' : 'public'}
+                    canRead={comment.canRead}
+                    canDelete={comment.userId === user.id || isOwner}
+                    mode="inline"
+                    labels={{
+                      privateMessage: t.home.privateMessage,
+                      publicMessage: t.common.public,
+                      deleteMessage: t.home.deleteMessage,
+                      deleteQuestion: t.home.deleteQuestion,
+                      confirmDeletion: t.home.confirmDeletion,
+                      cancelDeletion: t.home.cancelDeletion,
+                      operationError: t.home.operationError,
+                    }}
+                  />
                 ))}
               </div>
               <p class="empty-state comment-empty" data-comment-empty hidden={Boolean(comments.items.length)}>{t.home.noComments}</p>

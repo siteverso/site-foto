@@ -3,21 +3,18 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const page = fs.readFileSync(path.resolve('src/pages/perfil/[username].astro'), 'utf8');
-const css = fs.readFileSync(path.resolve('src/styles/pages/profile-detail.css'), 'utf8');
+const component = fs.readFileSync(path.resolve('src/components/PhotoMessageCard.astro'), 'utf8');
+const css = fs.readFileSync(path.resolve('src/styles/components/received-photo-message-card.css'), 'utf8');
 
-describe('profile comment action alignment', () => {
-  it('keeps the delete button immediately before the date', () => {
-    const deleteIndex = page.indexOf('data-comment-delete-trigger');
-    const timeIndex = page.indexOf('<time>{formatDate(comment.createdAt)}</time>');
-    expect(deleteIndex).toBeGreaterThan(-1);
-    expect(timeIndex).toBeGreaterThan(deleteIndex);
+describe('profile comment shared component', () => {
+  it('applies the same card component inside the profile photo feed', () => {
+    expect(page).toContain("import PhotoMessageCard from '../../components/PhotoMessageCard.astro'");
+    expect(page).toContain('<PhotoMessageCard');
+    expect(page).toContain('mode="inline"');
   });
 
-  it('places the action row together at the top right on desktop', () => {
-    expect(css).toContain('.comment-meta {');
-    expect(css).toContain('position: absolute;');
-    expect(css).toContain('top: 10px;');
-    expect(css).toContain('right: 12px;');
-    expect(css).toContain('justify-content: flex-end;');
+  it('keeps delete immediately before date in the shared component', () => {
+    expect(component.indexOf('data-comment-delete-trigger')).toBeLessThan(component.indexOf('<time datetime={createdAt}>'));
+    expect(css).toContain('.received-message-card.is-inline');
   });
 });

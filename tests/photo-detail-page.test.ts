@@ -19,7 +19,9 @@ describe('public photo detail page', () => {
 
   it('reuses comments permissions, home card classes and the shared composer', () => {
     expect(detail).toContain('getComments(photo.id, user.id, 50)');
-    expect(detail).toContain('comment.isPrivate && !comment.canRead');
+    expect(detail).toContain("visibility={comment.isPrivate ? 'private' : 'public'}");
+    expect(detail).toContain('canRead={comment.canRead}');
+    expect(detail).toContain('<PhotoMessageCard');
     expect(detail).toContain('class="photo-post profile-photo-post photo-detail-thread"');
     expect(detail).toContain('class="comments-panel photo-comments" data-comments-panel');
     expect(detail).toContain('<PhotoMessageComposer');

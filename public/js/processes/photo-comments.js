@@ -113,29 +113,29 @@ document.addEventListener("submit", async (event) => {
       const content = document.createElement("div");
       const deleteArea = document.createElement("div");
       const deleteButton = document.createElement("button");
-      userLink.className = "comment-user";
+      userLink.className = "received-message-user";
       userLink.href = `/perfil/${encodeURIComponent(String(data.comment.username))}`;
       strong.textContent = `@${data.comment.username}`;
       text.textContent = String(data.comment.message || message);
       time.textContent = formatCommentDate(String(data.comment.createdAt || (/* @__PURE__ */ new Date()).toISOString()));
-      article.className = isPrivate ? "comment-item comment-item-private-visible" : "comment-item";
+      article.className = isPrivate ? "received-message-card is-inline is-private" : "received-message-card is-inline";
       article.dataset.commentItem = "";
       article.dataset.commentId = String(data.comment.id || "");
-      content.className = "comment-content";
-      deleteArea.className = "comment-delete-area";
+      content.className = "received-message-body";
+      deleteArea.className = "received-message-actions";
       deleteArea.dataset.commentDeleteArea = "";
-      deleteButton.className = "comment-delete-trigger";
+      deleteButton.className = "received-message-delete";
       deleteButton.type = "button";
       deleteButton.dataset.commentDeleteTrigger = "";
       deleteButton.setAttribute("aria-label", "Excluir mensagem");
       deleteButton.title = "Excluir mensagem";
       deleteButton.innerHTML = `<svg ${iconAttrs}><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" /></svg>`;
       const meta = document.createElement("div");
-      meta.className = "comment-meta";
+      meta.className = "received-message-meta";
       userLink.append(strong);
-      deleteArea.append(deleteButton);
-      meta.append(deleteArea, time);
-      content.append(userLink);
+      deleteArea.append(deleteButton, time);
+      meta.append(userLink, deleteArea);
+      
       if (isPrivate) {
         const badge = document.createElement("div");
         badge.className = "private-comment-badge private-comment-badge-visible";

@@ -1,0 +1,90 @@
+---
+import '../styles/components/received-photo-message-card.css';
+
+const {
+  id,
+  username,
+  message,
+  createdAt,
+  locale,
+  visibility = 'public',
+  canRead = true,
+  canDelete = false,
+  photoId,
+  photoAlt = '',
+  labels,
+  mode = 'default',
+} = Astro.props as {
+  id: number;
+  username: string;
+  message: string;
+  createdAt: string;
+  locale: string;
+  visibility?: 'public' | 'private';
+  canRead?: boolean;
+  canDelete?: boolean;
+  photoId?: number;
+  photoAlt?: string;
+  mode?: 'default' | 'inline';
+  labels: {
+    privateMessage: string;
+    publicMessage: string;
+    deleteMessage: string;
+    deleteQuestion: string;
+    confirmDeletion: string;
+    cancelDeletion: string;
+    operationError: string;
+  };
+};
+
+const formattedDate = new Intl.DateTimeFormat(locale, {
+  day: '2-digit', month: 'short', year: 'numeric',
+  ...(mode === 'default' ? { hour: '2-digit', minute: '2-digit' } : {}),
+}).format(new Date(createdAt));
+const isPrivate = visibility === 'private';
+const isHidden = isPrivate && !canRead;
+---
+<article
+  class:list={['received-message-card', { 'is-private': isPrivate && canRead, 'is-hidden-private': isHidden, 'is-inline': mode === 'inline' }]}
+  data-received-message-card={mode === 'default' ? '' : undefined}
+  data-comment-item={mode === 'inline' ? '' : undefined}
+  data-message-id={id}
+  data-comment-id={mode === 'inline' ? id : undefined}
+  data-delete-question={labels.deleteQuestion}
+  data-confirm-deletion={labels.confirmDeletion}
+  data-cancel-deletion={labels.cancelDeletion}
+  data-operation-error={labels.operationError}
+>
+  {photoId && mode === 'default' && (
+    <a class="received-message-photo" href={`/foto/${photoId}`} aria-label={photoAlt || `Foto ${photoId}`}>
+      <img src={`/api/photos/${photoId}`} alt={photoAlt} loading="lazy" />
+    </a>
+  )}
+
+  <div class="received-message-body">
+    <div class="received-message-meta">
+      <div class="received-message-identity">
+        <a class="received-message-user" href={`/perfil/${encodeURIComponent(username)}`}><strong>@{username}</strong></a>
+        {isPrivate && canRead && <span class="received-message-visibility">🔒 {labels.privateMessage}</span>}
+        {!isPrivate && mode === 'default' && <span class="received-message-visibility">{labels.publicMessage}</span>}
+      </div>
+
+      <div class="received-message-actions" data-received-message-actions data-comment-delete-area={canDelete ? '' : undefined}>
+        {canDelete && (
+          <button class="received-message-delete" type="button" data-received-message-delete data-comment-delete-trigger aria-label={labels.deleteMessage} title={labels.deleteMessage}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"></path></svg>
+          </button>
+        )}
+        <time datetime={createdAt}>{formattedDate}</time>
+      </div>
+    </div>
+
+    {isHidden
+      ? <p class="private-comment-placeholder private-comment-placeholder-hidden"><span aria-hidden="true">🔒</span> {labels.privateMessage}</p>
+      : <p class:list={[{ 'private-comment-message': isPrivate }]}>{message}</p>}
+  </div>
+</article>
+
+<script>
+  import '../scripts/received-photo-message-card';
+</script>
