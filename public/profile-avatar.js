@@ -28,26 +28,54 @@ function closeCropper({ clearInput = false } = {}) {
   activeCropperCleanup = null;
 }
 
+function avatarContainersForUser(userId = '') {
+  const normalizedUserId = String(userId || '');
+  return [...document.querySelectorAll('[data-avatar-container], [data-user-avatar]')].filter(element => {
+    if (!(element instanceof HTMLElement)) return false;
+    return !normalizedUserId || element.getAttribute('data-avatar-user-id') === normalizedUserId;
+  });
+}
+
+function ensureAvatarImage(container, userId = '') {
+  const existing = container.querySelector(':scope > [data-avatar-image]');
+  if (existing instanceof HTMLImageElement) return existing;
+
+  const image = document.createElement('img');
+  image.alt = '';
+  image.setAttribute('aria-hidden', 'true');
+  image.dataset.avatarImage = '';
+  if (userId) image.dataset.avatarUserId = String(userId);
+  if (container.classList.contains('site-user-avatar')) image.className = 'site-user-avatar-image';
+
+  const fallback = container.querySelector(':scope > [data-avatar-fallback]');
+  container.insertBefore(image, fallback || container.firstChild);
+  return image;
+}
+
 function refreshVisibleAvatars(blob, serverAvatarUrl = '', userId = '') {
   const previewUrl = URL.createObjectURL(blob);
   const cacheBustedServerUrl = serverAvatarUrl
     ? `${serverAvatarUrl}${serverAvatarUrl.includes('?') ? '&' : '?'}v=${Date.now()}`
     : '';
-
   const normalizedUserId = String(userId || '');
-  document.querySelectorAll('[data-avatar-image]').forEach(element => {
-    if (normalizedUserId && element.getAttribute('data-avatar-user-id') !== normalizedUserId) return;
-    if (!(element instanceof HTMLImageElement)) return;
-    element.hidden = false;
-    element.src = previewUrl;
+  const sources = cacheBustedServerUrl ? [cacheBustedServerUrl, previewUrl] : [previewUrl];
 
-    if (element.closest('.site-user-avatar')) {
-      element.dataset.avatarSources = JSON.stringify(
-        cacheBustedServerUrl ? [cacheBustedServerUrl] : [previewUrl],
-      );
-      const placeholder = element.parentElement?.querySelector('[data-avatar-fallback]');
-      if (placeholder instanceof HTMLElement) placeholder.hidden = true;
-    }
+  avatarContainersForUser(normalizedUserId).forEach(container => {
+    const image = ensureAvatarImage(container, normalizedUserId);
+    image.hidden = false;
+    image.dataset.avatarSources = JSON.stringify(sources);
+    image.src = previewUrl;
+
+    const fallback = container.querySelector(':scope > [data-avatar-fallback]');
+    if (fallback instanceof HTMLElement) fallback.hidden = true;
+  });
+
+  document.querySelectorAll('[data-avatar-image]').forEach(element => {
+    if (!(element instanceof HTMLImageElement)) return;
+    if (normalizedUserId && element.getAttribute('data-avatar-user-id') !== normalizedUserId) return;
+    element.hidden = false;
+    element.dataset.avatarSources = JSON.stringify(sources);
+    element.src = previewUrl;
   });
 
   document.querySelectorAll('[data-avatar-fallback], [data-profile-avatar-fallback]').forEach(element => {
