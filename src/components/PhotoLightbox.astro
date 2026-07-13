@@ -46,11 +46,15 @@ const {
   <div class="photo-lightbox-shell" data-photo-lightbox-shell>
     <figure class="photo-lightbox-stage" data-photo-stage>
       <img class="photo-lightbox-image" src={`/api/photos/${photoId}`} alt={alt} data-photo-lightbox-image />
-      <figcaption class="photo-lightbox-caption">
-        <strong>@{username}</strong>
-        {caption && <span>{caption}</span>}
+      <figcaption class="photo-lightbox-caption" hidden={!caption}>
+        <span>{caption}</span>
       </figcaption>
-      <span class="photo-lightbox-watermark" aria-hidden="true">@{username}</span>
+      <a
+        class="photo-lightbox-watermark"
+        href={`/perfil/${encodeURIComponent(username)}`}
+        aria-label={`${profileModeLabel}: @${username}`}
+        title={`@${username}`}
+      >@{username}</a>
     </figure>
 
     <div class="photo-lightbox-toolbar">

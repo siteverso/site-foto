@@ -39,7 +39,9 @@ describe('visualizador avançado de foto', () => {
     expect(component).not.toContain('data-slideshow-effect');
     expect(component).toContain('data-slideshow-loop');
     expect(component).toContain('photo-lightbox-watermark');
-    expect(component).toContain('@{username}');
+    expect(component).toContain('href={`/perfil/${encodeURIComponent(username)}`}');
+    expect(component).toContain('>{caption}</span>');
+    expect(component).not.toContain('<strong>@{username}</strong>');
     expect(script).toContain('fotolife-photo-viewer');
     expect(script).toContain('getNextSlideshowHref');
     expect(script).toContain('navigatePhoto');

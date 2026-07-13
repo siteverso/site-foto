@@ -110,8 +110,21 @@ function copyViewerState(nextDialog, nextImage) {
 
   const nextCaption = nextDialog.querySelector(".photo-lightbox-caption");
   const nextWatermark = nextDialog.querySelector(".photo-lightbox-watermark");
-  if (caption && nextCaption) caption.innerHTML = nextCaption.innerHTML;
-  if (watermark && nextWatermark) watermark.textContent = nextWatermark.textContent;
+  if (caption instanceof HTMLElement) {
+    if (nextCaption instanceof HTMLElement) {
+      caption.innerHTML = nextCaption.innerHTML;
+      caption.hidden = false;
+    } else {
+      caption.innerHTML = "";
+      caption.hidden = true;
+    }
+  }
+  if (watermark instanceof HTMLAnchorElement && nextWatermark instanceof HTMLAnchorElement) {
+    watermark.textContent = nextWatermark.textContent;
+    watermark.href = nextWatermark.href;
+    watermark.setAttribute("aria-label", nextWatermark.getAttribute("aria-label") || nextWatermark.textContent || "");
+    watermark.title = nextWatermark.title;
+  }
   applyNavigationMode(getMode());
 }
 
