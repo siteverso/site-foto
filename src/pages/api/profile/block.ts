@@ -15,8 +15,34 @@ export async function GET(context: Ctx) {
     }
     return json({ ok: true, block: await getBlockState(user.id, target) });
   } catch (error) {
-    return errorResponse(error);
+  console.error('[PATCH /api/profile/block] erro completo:', error);
+
+  if (error instanceof Error) {
+    console.error('[PATCH /api/profile/block] mensagem:', error.message);
+    console.error('[PATCH /api/profile/block] stack:', error.stack);
   }
+
+  return new Response(
+    JSON.stringify({
+      ok: false,
+      error: 'PROFILE_BLOCK_FAILED',
+      message:
+        import.meta.env.DEV && error instanceof Error
+          ? error.message
+          : 'Não foi possível atualizar o bloqueio.',
+      stack:
+        import.meta.env.DEV && error instanceof Error
+          ? error.stack
+          : undefined
+    }),
+    {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+}
 }
 
 async function updateBlock(context: Ctx) {
@@ -28,8 +54,34 @@ async function updateBlock(context: Ctx) {
     await setProfileBlock(user.id, input.userId, input.level, input.blocked);
     return json({ ok: true, block: await getBlockState(user.id, input.userId) });
   } catch (error) {
-    return errorResponse(error);
+  console.error('[PATCH /api/profile/block] erro completo:', error);
+
+  if (error instanceof Error) {
+    console.error('[PATCH /api/profile/block] mensagem:', error.message);
+    console.error('[PATCH /api/profile/block] stack:', error.stack);
   }
+
+  return new Response(
+    JSON.stringify({
+      ok: false,
+      error: 'PROFILE_BLOCK_FAILED',
+      message:
+        import.meta.env.DEV && error instanceof Error
+          ? error.message
+          : 'Não foi possível atualizar o bloqueio.',
+      stack:
+        import.meta.env.DEV && error instanceof Error
+          ? error.stack
+          : undefined
+    }),
+    {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+}
 }
 
 // PATCH é o contrato principal. POST é mantido como compatibilidade para testes,
