@@ -31,6 +31,7 @@ const {
 <dialog
   class="photo-lightbox"
   data-photo-lightbox
+  data-photo-id={photoId}
   data-global-previous={globalNavigation.previousId ?? ''}
   data-global-next={globalNavigation.nextId ?? ''}
   data-global-first={globalNavigation.firstId ?? ''}
@@ -45,7 +46,7 @@ const {
 >
   <div class="photo-lightbox-shell" data-photo-lightbox-shell>
     <figure class="photo-lightbox-stage" data-photo-stage>
-      <img class="photo-lightbox-image" src={`/api/photos/${photoId}`} alt={alt} data-photo-lightbox-image />
+      <img class="photo-lightbox-image" src={`/api/photos/${photoId}`} alt={alt} data-photo-lightbox-image draggable="false" />
       <figcaption class="photo-lightbox-caption" hidden={!caption}>
         <span>{caption}</span>
       </figcaption>

@@ -16,6 +16,7 @@ describe('visualizador avançado de foto', () => {
 
   it('oferece fechar, tela cheia e navegação por perfil ou global', () => {
     expect(component).toContain('data-photo-fullscreen');
+    expect(component).toContain('data-photo-id={photoId}');
     expect(component).toContain('data-photo-lightbox-close');
     expect(component).toContain('data-navigation-mode="profile"');
     expect(component).toContain('data-navigation-mode="global"');
@@ -51,10 +52,15 @@ describe('visualizador avançado de foto', () => {
     expect(script).toContain('loadPhotoView');
     expect(script).toContain('copyViewerState');
     expect(script).toContain('history.pushState');
+    expect(script).toContain('DOUBLE_CLICK_DELAY_MS');
+    expect(script).toContain('navigateFromImageSide');
+    expect(script).toContain('openCurrentPhotoPage');
+    expect(script).toContain('window.location.assign(`/foto/${photoId}`)');
     expect(script).not.toContain('window.location.href = href');
     expect(css).not.toContain('.photo-lightbox-image.effect-');
     expect(css).toContain('height: 100dvh');
     expect(css).toContain('object-fit: contain');
+    expect(css).toMatch(/\.photo-lightbox-caption\s*\{[^}]*left:\s*50%[^}]*text-align:\s*center/s);
     expect(css).toMatch(/\.photo-lightbox-image\s*\{[^}]*width:\s*100%[^}]*height:\s*100%/s);
     expect(css).toMatch(/\.photo-lightbox-stage\s*\{[^}]*overflow:\s*hidden/s);
     expect(css).toMatch(/\.photo-lightbox-shell\s*\{[^}]*box-sizing:\s*border-box/s);

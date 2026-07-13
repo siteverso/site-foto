@@ -18,6 +18,8 @@ const STORAGE_KEY = "fotolife-photo-viewer";
 let slideshowTimer = null;
 let slideshowRunning = false;
 let navigationPending = false;
+let imageClickTimer = null;
+const DOUBLE_CLICK_DELAY_MS = 260;
 
 function readPreferences() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
@@ -101,7 +103,7 @@ function copyViewerState(nextDialog, nextImage) {
   if (!(dialog instanceof HTMLElement) || !(image instanceof HTMLImageElement)) return;
   [
     "globalPrevious", "globalNext", "globalFirst", "globalLast",
-    "profilePrevious", "profileNext", "profileFirst", "profileLast"
+    "profilePrevious", "profileNext", "profileFirst", "profileLast", "photoId"
   ].forEach(key => { dialog.dataset[key] = nextDialog.dataset[key] || ""; });
 
   image.src = nextImage.src;
@@ -157,6 +159,46 @@ async function navigatePhoto(href, { replaceHistory = false } = {}) {
   }
 }
 
+
+function getRenderedImageBounds() {
+  if (!(image instanceof HTMLImageElement) || !image.naturalWidth || !image.naturalHeight) return null;
+  const rect = image.getBoundingClientRect();
+  const imageRatio = image.naturalWidth / image.naturalHeight;
+  const boxRatio = rect.width / rect.height;
+  let width = rect.width;
+  let height = rect.height;
+
+  if (imageRatio > boxRatio) height = width / imageRatio;
+  else width = height * imageRatio;
+
+  return {
+    left: rect.left + (rect.width - width) / 2,
+    right: rect.left + (rect.width + width) / 2,
+    top: rect.top + (rect.height - height) / 2,
+    bottom: rect.top + (rect.height + height) / 2,
+    width,
+  };
+}
+
+function isInsideRenderedImage(event) {
+  const bounds = getRenderedImageBounds();
+  return Boolean(bounds && event.clientX >= bounds.left && event.clientX <= bounds.right && event.clientY >= bounds.top && event.clientY <= bounds.bottom);
+}
+
+function openCurrentPhotoPage() {
+  if (!(dialog instanceof HTMLElement)) return;
+  const photoId = dialog.dataset.photoId;
+  if (photoId) window.location.assign(`/foto/${photoId}`);
+}
+
+function navigateFromImageSide(event) {
+  const bounds = getRenderedImageBounds();
+  if (!bounds) return;
+  const isRightSide = event.clientX >= bounds.left + bounds.width / 2;
+  const target = isRightSide ? nextLink : previousLink;
+  if (target instanceof HTMLAnchorElement && target.getAttribute("aria-disabled") !== "true") target.click();
+}
+
 function openLightbox() {
   if (!(dialog instanceof HTMLDialogElement)) return;
   if (!dialog.open) dialog.showModal();
@@ -207,6 +249,24 @@ function closeLightbox() {
   if (document.fullscreenElement) void document.exitFullscreen();
   dialog.close();
 }
+
+
+image?.addEventListener("click", event => {
+  if (navigationPending || !isInsideRenderedImage(event)) return;
+  if (imageClickTimer) window.clearTimeout(imageClickTimer);
+  imageClickTimer = window.setTimeout(() => {
+    imageClickTimer = null;
+    navigateFromImageSide(event);
+  }, DOUBLE_CLICK_DELAY_MS);
+});
+
+image?.addEventListener("dblclick", event => {
+  if (!isInsideRenderedImage(event)) return;
+  event.preventDefault();
+  if (imageClickTimer) window.clearTimeout(imageClickTimer);
+  imageClickTimer = null;
+  openCurrentPhotoPage();
+});
 
 trigger?.addEventListener("click", openLightbox);
 trigger?.addEventListener("keydown", event => {

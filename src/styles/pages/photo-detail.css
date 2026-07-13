@@ -145,6 +145,7 @@
   object-fit: contain;
   object-position: center;
   user-select: none;
+  cursor: pointer;
 }
 
 .photo-lightbox-toolbar {
@@ -236,10 +237,13 @@ html.photo-lightbox-open {
 }
 
 .photo-lightbox-caption {
-  left: 22px;
-  bottom: 22px;
+  left: 50%;
+  bottom: 82px;
   display: block;
-  max-width: min(680px, calc(100% - 44px));
+  width: max-content;
+  max-width: min(680px, calc(100% - 380px));
+  transform: translateX(-50%);
+  text-align: center;
   padding: 13px 17px;
   border: 0;
   border-radius: 14px;
@@ -355,7 +359,7 @@ html.photo-lightbox-open {
   .photo-lightbox-toolbar { left: 10px; right: 10px; justify-content: flex-end; }
   .photo-lightbox-segmented { margin-right: auto; }
   .photo-lightbox-slideshow { width: calc(100% - 20px); justify-content: center; flex-wrap: wrap; bottom: 10px; }
-  .photo-lightbox-caption { left: 12px; bottom: 88px; max-width: calc(100% - 24px); }
+  .photo-lightbox-caption { left: 50%; bottom: 150px; width: auto; max-width: calc(100% - 28px); transform: translateX(-50%); }
   .photo-lightbox-watermark { right: 14px; bottom: 94px; }
 }
 
