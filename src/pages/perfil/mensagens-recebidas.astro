@@ -15,6 +15,11 @@ const text = (t as any).receivedMessages || {
   backToProfile: 'Voltar ao perfil', privateMessage: 'Privada', publicMessage: 'Pública',
   emptyTitle: 'Você ainda não recebeu mensagens.', emptyText: 'Mensagens deixadas nas suas fotos aparecerão aqui.'
 };
+const deleteText = {
+  deleteMessage: t.home.deleteMessage, deleteQuestion: t.home.deleteQuestion,
+  confirmDeletion: t.home.confirmDeletion, cancelDeletion: t.home.cancelDeletion,
+  operationError: t.home.operationError
+};
 const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
   day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
 }).format(new Date(value));
@@ -33,15 +38,22 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
     {items.length ? (
       <section class="received-message-list" aria-label={text.title}>
         {items.map(item => (
-          <article class:list={['received-message-card', { 'is-private': item.visibility === 'private' }]}>
+          <article class:list={['received-message-card', { 'is-private': item.visibility === 'private' }]} data-received-message-card data-message-id={item.id}>
             <a class="received-message-photo" href={`/foto/${item.photoId}`} aria-label={item.photo.caption || `Foto ${item.photoId}`}>
               <img src={`/api/photos/${item.photoId}`} alt={item.photo.caption || ''} loading="lazy" />
             </a>
             <div class="received-message-body">
               <div class="received-message-meta">
-                <a class="received-message-user" href={`/perfil/${encodeURIComponent(item.sender.username)}`}><strong>@{item.sender.username}</strong></a>
-                <span class="received-message-visibility">{item.visibility === 'private' ? `🔒 ${text.privateMessage}` : text.publicMessage}</span>
-                <time datetime={item.createdAt}>{formatDate(item.createdAt)}</time>
+                <div class="received-message-identity">
+                  <a class="received-message-user" href={`/perfil/${encodeURIComponent(item.sender.username)}`}><strong>@{item.sender.username}</strong></a>
+                  <span class="received-message-visibility">{item.visibility === 'private' ? `🔒 ${text.privateMessage}` : text.publicMessage}</span>
+                </div>
+                <div class="received-message-actions" data-received-message-actions>
+                  <button class="received-message-delete" type="button" data-received-message-delete aria-label={deleteText.deleteMessage} title={deleteText.deleteMessage}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"/></svg>
+                  </button>
+                  <time datetime={item.createdAt}>{formatDate(item.createdAt)}</time>
+                </div>
               </div>
               <p>{item.message}</p>
             </div>
@@ -52,6 +64,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
       <section class="received-message-empty"><h2>{text.emptyTitle}</h2><p>{text.emptyText}</p></section>
     )}
   </main>
+  <script id="received-message-delete-text" type="application/json" set:html={JSON.stringify(deleteText)}></script>
   <script id="received-photo-message-state" type="application/json" set:html={JSON.stringify({ latestId: items[0]?.id || 0 })}></script>
   <script>
     const state = document.querySelector('#received-photo-message-state');
@@ -59,5 +72,51 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
       const latestId = JSON.parse(state?.textContent || '{}').latestId || 0;
       localStorage.setItem('fotolife-photo-messages-seen-id', String(latestId));
     } catch {}
+  </script>
+
+  <script>
+    const deleteLabels = (() => {
+      try { return JSON.parse(document.querySelector('#received-message-delete-text')?.textContent || '{}'); }
+      catch { return {}; }
+    })();
+
+    document.addEventListener('click', async event => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const card = target.closest('[data-received-message-card]');
+      if (!(card instanceof HTMLElement)) return;
+      const actions = card.querySelector('[data-received-message-actions]');
+      if (!(actions instanceof HTMLElement)) return;
+
+      if (target.closest('[data-received-message-delete]')) {
+        actions.dataset.original = actions.innerHTML;
+        actions.innerHTML = `
+          <span class="received-message-delete-question">${deleteLabels.deleteQuestion || 'Excluir?'}</span>
+          <button class="received-message-confirm" type="button" data-received-message-confirm aria-label="${deleteLabels.confirmDeletion || 'Confirmar exclusão'}">✓</button>
+          <button class="received-message-cancel" type="button" data-received-message-cancel aria-label="${deleteLabels.cancelDeletion || 'Cancelar exclusão'}">×</button>`;
+        return;
+      }
+
+      if (target.closest('[data-received-message-cancel]')) {
+        if (actions.dataset.original) actions.innerHTML = actions.dataset.original;
+        return;
+      }
+
+      if (target.closest('[data-received-message-confirm]')) {
+        const id = Number(card.dataset.messageId || 0);
+        if (!id) return;
+        const confirmButton = actions.querySelector('[data-received-message-confirm]');
+        if (confirmButton instanceof HTMLButtonElement) confirmButton.disabled = true;
+        try {
+          const response = await fetch(`/api/comments/${id}`, { method: 'DELETE' });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || payload.ok === false) throw new Error(payload.error || deleteLabels.operationError || 'Não foi possível excluir.');
+          card.remove();
+          if (!document.querySelector('[data-received-message-card]')) window.location.reload();
+        } catch (error) {
+          actions.innerHTML = `<span class="received-message-delete-error">${error instanceof Error ? error.message : (deleteLabels.operationError || 'Não foi possível excluir.')}</span>`;
+        }
+      }
+    });
   </script>
 </AppLayout>

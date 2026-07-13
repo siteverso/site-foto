@@ -18,3 +18,25 @@
 .received-message-body > p { margin:14px 0 0; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.55; }
 .received-message-empty { padding:42px; text-align:center; border:1px dashed color-mix(in srgb,var(--text) 18%,transparent); border-radius:18px; }
 @media (max-width:640px) { .received-message-card { grid-template-columns:82px minmax(0,1fr); gap:12px; } .received-message-photo { width:82px; } .received-messages-head { align-items:flex-start; flex-direction:column; } }
+
+.received-message-meta { justify-content:space-between; gap:12px 20px; }
+.received-message-identity { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; min-width:0; }
+.received-message-actions { margin-left:auto; display:flex; align-items:center; justify-content:flex-end; gap:8px; min-height:30px; }
+.received-message-actions time { white-space:nowrap; }
+.received-message-delete,
+.received-message-confirm,
+.received-message-cancel {
+  width:30px; height:30px; padding:0; display:grid; place-items:center;
+  border:1px solid color-mix(in srgb,var(--text) 14%,transparent); border-radius:999px;
+  color:var(--muted); background:transparent; cursor:pointer;
+}
+.received-message-delete:hover { color:#d75a67; border-color:color-mix(in srgb,#d75a67 55%,transparent); background:color-mix(in srgb,#d75a67 8%,transparent); }
+.received-message-confirm { color:#238354; }
+.received-message-cancel { color:var(--muted); }
+.received-message-delete-question { color:var(--muted); font-size:.75rem; font-weight:750; }
+.received-message-delete-error { max-width:340px; color:#d75a67; font-size:.75rem; text-align:right; }
+@media (max-width:640px) {
+  .received-message-meta { align-items:flex-start; }
+  .received-message-actions { width:100%; margin-left:0; justify-content:flex-start; flex-wrap:wrap; }
+  .received-message-delete-error { text-align:left; }
+}
