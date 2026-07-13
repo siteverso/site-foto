@@ -121,7 +121,7 @@ function renderUser(user) {
   $$('[data-profile-avatar]').forEach(el => { el.textContent = userInitials(user.username); });
   $$('[data-profile-username]').forEach(el => { el.textContent = `@${user.username}`; });
   $$('[data-profile-email]').forEach(el => { el.textContent = user.email; });
-  $$('[data-profile-sex]').forEach(el => { el.textContent = user.sexCode === 'M' ? 'Macho' : user.sexCode === 'F' ? 'Fêmea' : 'Sexo não informado'; });
+  $$('[data-profile-sex]').forEach(el => { el.textContent = user.sexCode === 'M' ? 'Masculino' : user.sexCode === 'F' ? 'Feminino' : 'Sexo não informado'; });
   $$('[data-profile-bio]').forEach(el => { el.textContent = user.bio || 'Sem biografia ainda.'; });
   $$('[data-profile-posts]').forEach(el => { el.textContent = user.postCount; });
   $$('[data-profile-positive]').forEach(el => { el.textContent = user.positiveCount; });
@@ -317,8 +317,8 @@ function renderNetworkInfo(posts, malePosts, femalePosts, otherPosts) {
   side.innerHTML = `
     <div class="network-stat-grid">
       <article class="network-stat-card"><strong>${posts.length}</strong><span>Total de murmúrios</span></article>
-      <article class="network-stat-card"><strong>${malePosts.length}</strong><span>Machos</span></article>
-      <article class="network-stat-card"><strong>${femalePosts.length}</strong><span>Fêmeas</span></article>
+      <article class="network-stat-card"><strong>${malePosts.length}</strong><span>Masculino</span></article>
+      <article class="network-stat-card"><strong>${femalePosts.length}</strong><span>Feminino</span></article>
       <article class="network-stat-card"><strong>${otherPosts.length}</strong><span>Sem sexo</span></article>
     </div>
     <section class="network-mini-section">
