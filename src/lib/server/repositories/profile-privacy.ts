@@ -64,6 +64,11 @@ export async function setProfileBlock(ownerUserId: number, targetUserId: number,
   if (ownerUserId === targetUserId) throw new Error('BLOQUEIO_INVALIDO');
   const level = normalizeProfileBlockLevel(levelValue);
   await withConnection(async connection => {
+    const targetResult = await connection.execute<Row>(
+      `SELECT id FROM murm_user WHERE id = :target AND active = 1`,
+      { target: targetUserId });
+    if (!targetResult.rows?.length) throw new Error('USUARIO_ALVO_NAO_ENCONTRADO');
+
     if (blocked) {
       await connection.execute(
         `MERGE INTO murm_user_block target

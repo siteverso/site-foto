@@ -14,3 +14,4 @@ UPDATE murm_user
  WHERE LOWER(username) = 'machine';
 
 COMMIT;
+
