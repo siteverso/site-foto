@@ -26,6 +26,7 @@ if (auth && !await currentUser(Astro)) {
   <body>
     <script is:inline define:vars={{ locale }}>window.__FOTOLIFE_LOCALE__ = locale; window.__MURMUR_LOCALE__ = locale;</script>
     <slot />
+    <script type="module" src="/avatar-fallback.js?v=20260713-1"></script>
 
     <script>
       const prepareLazyImage = image => {

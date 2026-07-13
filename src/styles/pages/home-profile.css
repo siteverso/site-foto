@@ -29,3 +29,5 @@
 .observed-privacy-avatar { width: 30px; height: 30px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: var(--inverse); background: var(--strong); font-size: .72rem; font-weight: 800; }
 .observed-privacy-empty { margin: 0; color: var(--muted); }
 .direct-photo-reference { display: inline-block; margin-top: 8px; font-size: .78rem; text-decoration: underline; opacity: .8; }
+
+.site-update-avatar [data-avatar-fallback]{color:var(--inverse);background:color-mix(in srgb,var(--strong) 88%,var(--surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 14%,transparent)}

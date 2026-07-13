@@ -26,10 +26,10 @@ const profileHref = `/perfil/${encodeURIComponent(item.recipient.username)}`;
 ---
 <article class="sent-photo-message-card">
     <header class="sent-photo-message-recipient">
-        <a class="sent-photo-message-avatar" href={profileHref} aria-label={`${labels.profileOf} @${item.recipient.username}`}>
+        <a class="sent-photo-message-avatar" href={profileHref} data-avatar-container data-avatar-user-id={item.recipient.id} aria-label={`${labels.profileOf} @${item.recipient.username}`}>
             {item.recipient.avatarUrl
-                ? <img src={item.recipient.avatarUrl} alt={`@${item.recipient.username}`} loading="lazy" />
-                : <span>{initials}</span>}
+                ? <><img src={item.recipient.avatarUrl} alt={`@${item.recipient.username}`} loading="lazy" data-avatar-image data-avatar-user-id={item.recipient.id} /><span data-avatar-fallback hidden>{initials}</span></>
+                : <span data-avatar-fallback>{initials}</span>}
         </a>
         <div class="sent-photo-message-recipient-copy">
             <span>{labels.sentTo}</span>

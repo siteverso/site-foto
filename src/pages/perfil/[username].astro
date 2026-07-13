@@ -229,8 +229,8 @@ const formatPhotoDateTime = (value: string) => new Intl.DateTimeFormat(locale, {
                 <button class="profile-avatar-dialog-backdrop" type="button" data-close-avatar-dialog aria-label={t.profile.closePhoto}></button>
                 <section class="profile-avatar-dialog-card" role="dialog" aria-modal="true" aria-label={`${t.profile.profilePhotoOf} @${profile.username}`}>
                     <button class="profile-avatar-dialog-close" type="button" data-close-avatar-dialog aria-label={t.common.close}>×</button>
-                    <div class="profile-avatar-dialog-image">
-                        {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`@${profile.username}`}/> : <span>{profile.username.slice(0, 2).toUpperCase()}</span>}
+                    <div class="profile-avatar-dialog-image" data-avatar-container data-avatar-user-id={profile.id}>
+                        {profile.avatarUrl ? <><img src={profile.avatarUrl} alt={`@${profile.username}`} data-avatar-image data-avatar-user-id={profile.id}/><span data-avatar-fallback hidden>{profile.username.slice(0, 2).toUpperCase()}</span></> : <span data-avatar-fallback>{profile.username.slice(0, 2).toUpperCase()}</span>}
                     </div>
                     {isOwner && (
                             <a class="profile-avatar-dialog-owner-link" href="/conta">
