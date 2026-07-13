@@ -140,13 +140,12 @@ export async function listBlockedUsers(ownerUserId: number): Promise<BlockedUser
     const result = await connection.execute<Row>(
       `SELECT u.id,
               u.username,
-              b.block_level
+              NVL(LOWER(TRIM(b.block_level)), 'all') AS block_level
          FROM murm_user_block b
          JOIN murm_user u
            ON u.id = b.blocked_user_id
         WHERE b.blocker_user_id = :owner_user_id
-          AND u.active = 1
-        ORDER BY CASE b.block_level WHEN 'all' THEN 0 ELSE 1 END,
+        ORDER BY CASE NVL(LOWER(TRIM(b.block_level)), 'all') WHEN 'all' THEN 0 ELSE 1 END,
                  LOWER(u.username)`,
       { owner_user_id: ownerUserId });
 

@@ -597,3 +597,64 @@ body.modal-open {
     width: 100%;
   }
 }
+
+/* Conta · bloqueios separados por responsabilidade */
+.account-blocked-groups {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.account-blocked-group {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface-soft, rgba(127, 127, 127, .04));
+}
+
+.account-blocked-group-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.account-blocked-group-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.account-blocked-group-heading p {
+  margin: .35rem 0 0;
+  color: var(--text-muted);
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+.account-blocked-group-heading > span {
+  display: inline-grid;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.account-blocked-group .account-blocked-users-list {
+  margin: 0;
+  padding: .75rem;
+}
+
+.account-blocked-user-type {
+  display: block;
+  margin-top: .25rem;
+  color: var(--text-muted);
+  font-size: .76rem;
+}
