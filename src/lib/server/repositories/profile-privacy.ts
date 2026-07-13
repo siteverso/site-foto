@@ -106,9 +106,18 @@ export async function canAccessProfile(ownerUserId: number, viewerUserId: number
   return withConnection(async connection => {
     const result = await connection.execute<Row>(
       `SELECT CASE WHEN u.profile_visibility_code IN ('private','deleted')
-                        OR EXISTS (SELECT 1 FROM murm_user_block b WHERE b.block_level = 'all' AND ((b.blocker_user_id = u.id AND b.blocked_user_id = :viewer) OR (b.blocker_user_id = :viewer AND b.blocked_user_id = u.id)))
+                        OR EXISTS (
+                             SELECT 1
+                               FROM murm_user_block b
+                              WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
+                                AND b.blocker_user_id = u.id
+                                AND b.blocked_user_id = :viewer
+                           )
                    THEN 0 ELSE 1 END AS allowed
-         FROM murm_user u WHERE u.id = :owner AND u.active = 1`, { owner: ownerUserId, viewer: viewerUserId });
+         FROM murm_user u
+        WHERE u.id = :owner
+          AND u.active = 1`,
+      { owner: ownerUserId, viewer: viewerUserId });
     return Number(result.rows?.[0]?.ALLOWED || 0) === 1;
   });
 }
