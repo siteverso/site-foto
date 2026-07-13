@@ -12,6 +12,7 @@ const {
   alreadyFriend = false,
   labels = {},
   showStats = false,
+  blockState = { all: false, messages: false },
 } = Astro.props;
 
 const username = profile?.username || 'usuario';
@@ -72,6 +73,20 @@ const hasCustomAvatar = Boolean(profile?.hasCustomAvatar ?? avatarUrl);
     )}
 
     {!isOwner && !editableAvatar && (
+      <div class="profile-relationship-actions" data-profile-actions data-user-id={profile?.id}>
+        <button class="profile-more-button" type="button" data-profile-actions-toggle aria-label={`Ações para @${username}`} aria-expanded="false">•••</button>
+        <div class="profile-actions-menu" data-profile-actions-menu hidden>
+          <button type="button" data-profile-block-level="messages" data-blocked={blockState.messages && !blockState.all ? 'true' : 'false'}>
+            <span aria-hidden="true">✉</span><span><strong>{blockState.messages && !blockState.all ? 'Permitir mensagens' : 'Bloquear mensagens'}</strong><small>{blockState.messages && !blockState.all ? 'Voltar a receber mensagens deste perfil.' : 'Mantém o perfil visível, mas impede mensagens.'}</small></span>
+          </button>
+          <button type="button" data-profile-block-level="all" data-blocked={blockState.all ? 'true' : 'false'}>
+            <span aria-hidden="true">⊘</span><span><strong>{blockState.all ? 'Desbloquear perfil' : 'Bloquear perfil'}</strong><small>{blockState.all ? 'Permitir novamente o acesso e as interações.' : 'Impede acesso, observação e qualquer mensagem.'}</small></span>
+          </button>
+        </div>
+      </div>
+    )}
+
+    {!isOwner && !editableAvatar && (
       <button
         class:list={["friend-button", { "friend-button-remove": alreadyFriend }]}
         type="button"
@@ -97,3 +112,4 @@ const hasCustomAvatar = Boolean(profile?.hasCustomAvatar ?? avatarUrl);
 </div>
 
 {editableAvatar && <script type="module" src="/profile-avatar.js?v=20260713-1"></script>}
+{!isOwner && !editableAvatar && <script type="module" src="/js/processes/profile-blocking.js?v=20260713-1"></script>}

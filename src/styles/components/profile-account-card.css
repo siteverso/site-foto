@@ -197,3 +197,139 @@
 }
 
 .account-avatar-remove[hidden] { display: none; }
+
+/* Ações de relacionamento: menu expansível, opaco e contido no próprio cartão. */
+.profile-relationship-actions {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.profile-more-button {
+  width: 40px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  justify-self: end;
+  padding: 0 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  background: var(--surface-2);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--strong) 6%, transparent);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: .1em;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease;
+}
+
+.profile-more-button:hover {
+  border-color: color-mix(in srgb, var(--strong) 30%, var(--line));
+  background: color-mix(in srgb, var(--surface-2) 88%, var(--text) 12%);
+  transform: translateY(-1px);
+}
+
+.profile-more-button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
+.profile-actions-menu {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 14px 34px color-mix(in srgb, #000 24%, transparent);
+}
+
+.profile-actions-menu[hidden] {
+  display: none;
+}
+
+.profile-actions-menu button {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 12px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--text);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .16s ease, transform .16s ease;
+}
+
+.profile-actions-menu button:hover {
+  background: var(--surface-2);
+  transform: translateY(-1px);
+}
+
+.profile-actions-menu button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+
+.profile-actions-menu button > span:first-child {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+  border-radius: 50%;
+  color: var(--text);
+  background: var(--surface-2);
+  font-size: .95rem;
+  line-height: 1;
+}
+
+.profile-actions-menu button > span:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.profile-actions-menu strong {
+  min-width: 0;
+  font-size: .82rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.profile-actions-menu small {
+  min-width: 0;
+  color: var(--muted);
+  font-size: .72rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .profile-actions-menu button {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 9px;
+    padding: 11px 10px;
+  }
+
+  .profile-actions-menu button > span:first-child {
+    width: 28px;
+    height: 28px;
+  }
+}

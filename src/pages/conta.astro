@@ -7,10 +7,12 @@ import { getMessages, normalizeLocale } from '../i18n';
 import { MESSAGE_MAX_LENGTH } from '../lib/message-limit';
 import { getAccountProfile } from '../lib/server/repositories/account-profile';
 import { getPublicProfile } from '../lib/server/repositories/photos';
+import { getProfilePrivacy } from '../lib/server/repositories/profile-privacy';
 import '../styles/pages/account.css';
 import '../styles/themes/theme-overrides.css';
 const user = await requireUser(Astro);
 const account = await getAccountProfile(user.id);
+const profilePrivacy = await getProfilePrivacy(user.id);
 // A lateral da conta usa a mesma origem de avatar já validada pela página pública do perfil.
 const publicProfile = await getPublicProfile(account.username);
 const accountSidebar = {
@@ -73,6 +75,27 @@ const t = getMessages(locale);
           <button class="button primary" type="submit">{t.common.save}</button>
           <p class="form-message" data-form-message hidden></p>
         </form>
+      </section>
+
+
+      <section class="panel profile-edit account-privacy-panel" data-profile-privacy-panel>
+        <h2>Privacidade do perfil</h2>
+        <p class="account-section-intro">Controle como seu perfil aparece sem alterar suas fotos ou seus dados.</p>
+        <div class="profile-visibility-options" role="radiogroup" aria-label="Visibilidade do perfil">
+          <label><input type="radio" name="profileVisibility" value="public" checked={profilePrivacy.visibility === 'public'} /><span><strong>Público</strong><small>Aparece normalmente no site e pode ser encontrado.</small></span></label>
+          <label><input type="radio" name="profileVisibility" value="unlisted" checked={profilePrivacy.visibility === 'unlisted'} /><span><strong>Oculto</strong><small>Não aparece nas áreas de descoberta. Continua acessível pelo link direto.</small></span></label>
+          <label><input type="radio" name="profileVisibility" value="private" checked={profilePrivacy.visibility === 'private'} /><span><strong>Bloqueado</strong><small>Somente você consegue entrar no perfil.</small></span></label>
+        </div>
+        <button class="button primary" type="button" data-save-profile-privacy>Salvar privacidade</button>
+        <p class="form-message" data-privacy-message hidden></p>
+      </section>
+
+      <section class="panel profile-edit account-danger-zone">
+        <div>
+          <h2>Remover perfil</h2>
+          <p>O perfil sai do site imediatamente, mas pode ser resgatado por você durante 30 dias.</p>
+        </div>
+        <button class="button account-remove-profile" type="button" data-remove-profile>Remover perfil</button>
       </section>
 
       <section class="panel profile-edit account-access">
@@ -400,4 +423,26 @@ const t = getMessages(locale);
   });
 
   loadAccount();
+
+  const privacyMessage = document.querySelector('[data-privacy-message]');
+  document.querySelector('[data-save-profile-privacy]')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const visibility = document.querySelector('input[name="profileVisibility"]:checked')?.value || 'public';
+    button.disabled = true;
+    try {
+      await api('/api/profile/privacy', { method: 'PATCH', body: JSON.stringify({ visibility }) });
+      privacyMessage.textContent = 'Privacidade atualizada.'; privacyMessage.dataset.type = 'success'; privacyMessage.hidden = false;
+    } catch (error) {
+      privacyMessage.textContent = messages[error.message] || clientMessages.generic; privacyMessage.dataset.type = 'error'; privacyMessage.hidden = false;
+    } finally { button.disabled = false; }
+  });
+
+  document.querySelector('[data-remove-profile]')?.addEventListener('click', async (event) => {
+    if (!confirm('Remover seu perfil do site? Você terá 30 dias para resgatá-lo ao entrar novamente.')) return;
+    const button = event.currentTarget; button.disabled = true;
+    try {
+      await api('/api/profile/privacy', { method: 'PATCH', body: JSON.stringify({ action: 'remove' }) });
+      location.href = '/login?perfil=removido';
+    } catch (error) { button.disabled = false; toast(clientMessages.generic); }
+  });
 </script>

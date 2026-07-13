@@ -11,6 +11,7 @@ import {getMessages, normalizeLocale} from '../../i18n';
 import {MESSAGE_MAX_LENGTH} from '../../lib/message-limit';
 import {canViewObservedList} from '../../lib/observer-visibility';
 import {getObservedSectionTitle, getObserverSectionTitle} from '../../lib/profile-observer-copy';
+import { canAccessProfile, getBlockState } from '../../lib/server/repositories/profile-privacy';
 
 import '../../styles/components/photo-workspace.css';
 import '../../styles/components/photo-caption.css';
@@ -25,18 +26,22 @@ const username = String(Astro.params.username || '').trim();
 const profile = username ? await getPublicProfile(username) : null;
 if (!profile) Astro.response.status = 404;
 const isOwner = Boolean(profile && profile.id === user.id);
-const photos = profile ? await getUserPhotos(profile.username) : [];
-const alreadyFriend = profile && !isOwner ? await isFriend(user.id, profile.id) : false;
-const showObservedList = Boolean(profile && canViewObservedList(profile.id, user.id, profile.observerVisibility));
+const profileAccessible = profile ? await canAccessProfile(profile.id, user.id) : false;
+const visibleProfile = profileAccessible ? profile : null;
+if (profile && !profileAccessible) Astro.response.status = 404;
+const photos = visibleProfile ? await getUserPhotos(visibleProfile.username) : [];
+const alreadyFriend = visibleProfile && !isOwner ? await isFriend(user.id, visibleProfile.id) : false;
+const blockState = visibleProfile && !isOwner ? await getBlockState(user.id, visibleProfile.id) : { all: false, messages: false };
+const showObservedList = Boolean(visibleProfile && canViewObservedList(visibleProfile.id, user.id, visibleProfile.observerVisibility));
 const [observerPhotos, observedPhotos, latestPhotos, commentsByPhoto] = await Promise.all([
-    profile ? getObserverPhotos(profile.id) : Promise.resolve([]),
-    profile && showObservedList ? getObservedPhotos(profile.id, isOwner) : Promise.resolve([]),
-    profile ? getLatestPhotos(profile.id) : Promise.resolve([]),
+    visibleProfile ? getObserverPhotos(visibleProfile.id) : Promise.resolve([]),
+    visibleProfile && showObservedList ? getObservedPhotos(visibleProfile.id, isOwner) : Promise.resolve([]),
+    visibleProfile ? getLatestPhotos(visibleProfile.id) : Promise.resolve([]),
     Promise.all(photos.map(async photo => ({photoId: photo.id, comments: await getComments(photo.id, user.id, 50)}))),
 ]);
 const commentsMap = new Map(commentsByPhoto.map(item => [item.photoId, item.comments]));
-const observedSectionTitle = profile ? getObservedSectionTitle(isOwner, profile.sexCode) : 'Observando';
-const observerSectionTitle = profile ? getObserverSectionTitle(isOwner, profile.sexCode) : 'Observadores';
+const observedSectionTitle = visibleProfile ? getObservedSectionTitle(isOwner, profile.sexCode) : 'Observando';
+const observerSectionTitle = visibleProfile ? getObserverSectionTitle(isOwner, profile.sexCode) : 'Observadores';
 const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {day: '2-digit', month: 'short', year: 'numeric'}).format(new Date(value));
 const formatPhotoDateTime = (value: string) => new Intl.DateTimeFormat(locale, {
     day: '2-digit',
@@ -46,17 +51,18 @@ const formatPhotoDateTime = (value: string) => new Intl.DateTimeFormat(locale, {
     minute: '2-digit',
 }).format(new Date(value));
 ---
-<AppLayout title={profile ? `@${profile.username} — ${t.site.title}` : t.publicProfile.notFound}>
+<AppLayout title={visibleProfile ? `@${profile.username} — ${t.site.title}` : t.publicProfile.notFound}>
     <main class="flog-page">
         <SiteHeader username={user.username} userId={user.id} avatarUrl={user.avatarUrl} />
 
-        {profile ? (
+        {visibleProfile ? (
                         <section class="flog-grid">
                             <aside class="flog-panel">
                                 <ProfileSidebar
-                                        profile={profile}
+                                        profile={visibleProfile}
                                         isOwner={isOwner}
                                         alreadyFriend={alreadyFriend}
+                                        blockState={blockState}
                                         labels={{addFriend: t.publicProfile.addFriend, alreadyFriend: t.publicProfile.alreadyFriend}}
                                 />
 
