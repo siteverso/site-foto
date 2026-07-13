@@ -33,6 +33,16 @@ const t = getMessages(locale);
             />
             <strong data-user-name>@{username}</strong>
           </a>
+          <div class="site-photo-messages" data-photo-messages>
+            <button class="site-photo-messages-button" type="button" data-photo-messages-toggle aria-label="Mensagens recebidas nas fotos" title="Mensagens recebidas nas fotos" aria-expanded="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H8.5L4 20V5.5Zm2 2v8.3l1.8-1.3H18v-7H6Z"/></svg>
+              <span class="site-photo-messages-badge" data-photo-messages-badge hidden>0</span>
+            </button>
+            <section class="site-photo-messages-popover" data-photo-messages-popover hidden aria-label="Mensagens recentes">
+              <header><strong>Mensagens nas suas fotos</strong><a href="/perfil/mensagens-recebidas">Ver todas</a></header>
+              <div class="site-photo-messages-list" data-photo-messages-list><p class="site-photo-messages-loading">Carregando…</p></div>
+            </section>
+          </div>
           <LanguageSwitch locale={locale} />
           <button class="site-theme-toggle" type="button" data-theme-toggle aria-label={t.common.changeTheme} title={t.common.changeTheme}><span aria-hidden="true">☀</span></button>
           <button class="flog-logout" type="button" data-logout>{t.home.logout}</button>
@@ -123,4 +133,88 @@ const t = getMessages(locale);
     await fetch('/api/auth/logout', { method: 'POST' });
     location.href = '/login';
   });
+</script>
+
+
+<script>
+  const photoMessagesRoot = document.querySelector('[data-photo-messages]');
+  const photoMessagesToggle = photoMessagesRoot?.querySelector('[data-photo-messages-toggle]');
+  const photoMessagesPopover = photoMessagesRoot?.querySelector('[data-photo-messages-popover]');
+  const photoMessagesList = photoMessagesRoot?.querySelector('[data-photo-messages-list]');
+  const photoMessagesBadge = photoMessagesRoot?.querySelector('[data-photo-messages-badge]');
+  let photoMessagesLoaded = false;
+  let latestPhotoMessageId = 0;
+
+  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+
+  function renderPhotoMessages(items) {
+    if (!(photoMessagesList instanceof HTMLElement)) return;
+    if (!items.length) {
+      photoMessagesList.innerHTML = '<p class="site-photo-messages-empty">Nenhuma mensagem recebida ainda.</p>';
+      return;
+    }
+    photoMessagesList.innerHTML = items.map(item => `
+      <article class="site-photo-message-item ${item.visibility === 'private' ? 'is-private' : ''}">
+        <a class="site-photo-message-thumb" href="/foto/${Number(item.photoId)}"><img src="/api/photos/${Number(item.photoId)}" alt="" loading="lazy"></a>
+        <div>
+          <div class="site-photo-message-item-head">
+            <a href="/perfil/${encodeURIComponent(item.sender.username)}"><strong>@${escapeHtml(item.sender.username)}</strong></a>
+            ${item.visibility === 'private' ? '<span>🔒 Privada</span>' : ''}
+          </div>
+          <p>${escapeHtml(item.message)}</p>
+        </div>
+      </article>`).join('');
+  }
+
+  function refreshPhotoMessageBadge(items, latestId) {
+    latestPhotoMessageId = Number(latestId || 0);
+    let seenId = 0;
+    try { seenId = Number(localStorage.getItem('fotolife-photo-messages-seen-id') || 0); } catch {}
+    const unread = items.filter(item => Number(item.id) > seenId).length;
+    if (!(photoMessagesBadge instanceof HTMLElement)) return;
+    photoMessagesBadge.textContent = unread > 9 ? '9+' : String(unread);
+    photoMessagesBadge.hidden = unread <= 0;
+  }
+
+  async function loadPhotoMessages() {
+    try {
+      const response = await fetch('/api/photos/received-messages', { headers: { Accept: 'application/json' } });
+      const payload = await response.json();
+      if (!response.ok || !payload?.ok) throw new Error('Falha ao carregar mensagens.');
+      const items = Array.isArray(payload.items) ? payload.items : [];
+      renderPhotoMessages(items);
+      refreshPhotoMessageBadge(items, payload.latestId);
+      photoMessagesLoaded = true;
+    } catch {
+      if (photoMessagesList instanceof HTMLElement) photoMessagesList.innerHTML = '<p class="site-photo-messages-empty">Não foi possível carregar agora.</p>';
+    }
+  }
+
+  function closePhotoMessages() {
+    if (!(photoMessagesPopover instanceof HTMLElement) || !(photoMessagesToggle instanceof HTMLButtonElement)) return;
+    photoMessagesPopover.hidden = true;
+    photoMessagesToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  photoMessagesToggle?.addEventListener('click', async event => {
+    event.stopPropagation();
+    if (!(photoMessagesPopover instanceof HTMLElement) || !(photoMessagesToggle instanceof HTMLButtonElement)) return;
+    const opening = photoMessagesPopover.hidden;
+    photoMessagesPopover.hidden = !opening;
+    photoMessagesToggle.setAttribute('aria-expanded', String(opening));
+    if (opening) {
+      if (!photoMessagesLoaded) await loadPhotoMessages();
+      try { localStorage.setItem('fotolife-photo-messages-seen-id', String(latestPhotoMessageId)); } catch {}
+      if (photoMessagesBadge instanceof HTMLElement) photoMessagesBadge.hidden = true;
+    }
+  });
+
+  document.addEventListener('click', event => {
+    if (photoMessagesRoot instanceof HTMLElement && !photoMessagesRoot.contains(event.target)) closePhotoMessages();
+  });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') closePhotoMessages(); });
+  if (photoMessagesRoot) {
+    loadPhotoMessages();
+    window.setInterval(loadPhotoMessages, 30000);
+  }
 </script>

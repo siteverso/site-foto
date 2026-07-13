@@ -1,0 +1,63 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { requireUser } from '../../lib/server/session';
+import { getReceivedPhotoMessages } from '../../lib/server/repositories/received-photo-messages';
+import { getMessages, normalizeLocale } from '../../i18n';
+import '../../styles/pages/received-photo-messages.css';
+
+const user = await requireUser(Astro);
+const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
+const t = getMessages(locale);
+const items = await getReceivedPhotoMessages(user.id);
+const text = (t as any).receivedMessages || {
+  title: 'Mensagens recebidas', privateNotice: 'Somente você pode visualizar esta página.',
+  backToProfile: 'Voltar ao perfil', privateMessage: 'Privada', publicMessage: 'Pública',
+  emptyTitle: 'Você ainda não recebeu mensagens.', emptyText: 'Mensagens deixadas nas suas fotos aparecerão aqui.'
+};
+const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
+  day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+}).format(new Date(value));
+---
+<AppLayout title={`${text.title} — ${t.site.title}`}>
+  <SiteHeader username={user.username} userId={user.id} avatarUrl={user.avatarUrl} />
+  <main class="received-messages-page site-container site-section">
+    <header class="received-messages-head">
+      <div>
+        <p>{text.privateNotice}</p>
+        <h1>{text.title}</h1>
+      </div>
+      <a href={`/perfil/${encodeURIComponent(user.username)}`}>{text.backToProfile}</a>
+    </header>
+
+    {items.length ? (
+      <section class="received-message-list" aria-label={text.title}>
+        {items.map(item => (
+          <article class:list={['received-message-card', { 'is-private': item.visibility === 'private' }]}>
+            <a class="received-message-photo" href={`/foto/${item.photoId}`} aria-label={item.photo.caption || `Foto ${item.photoId}`}>
+              <img src={`/api/photos/${item.photoId}`} alt={item.photo.caption || ''} loading="lazy" />
+            </a>
+            <div class="received-message-body">
+              <div class="received-message-meta">
+                <a class="received-message-user" href={`/perfil/${encodeURIComponent(item.sender.username)}`}><strong>@{item.sender.username}</strong></a>
+                <span class="received-message-visibility">{item.visibility === 'private' ? `🔒 ${text.privateMessage}` : text.publicMessage}</span>
+                <time datetime={item.createdAt}>{formatDate(item.createdAt)}</time>
+              </div>
+              <p>{item.message}</p>
+            </div>
+          </article>
+        ))}
+      </section>
+    ) : (
+      <section class="received-message-empty"><h2>{text.emptyTitle}</h2><p>{text.emptyText}</p></section>
+    )}
+  </main>
+  <script id="received-photo-message-state" type="application/json" set:html={JSON.stringify({ latestId: items[0]?.id || 0 })}></script>
+  <script>
+    const state = document.querySelector('#received-photo-message-state');
+    try {
+      const latestId = JSON.parse(state?.textContent || '{}').latestId || 0;
+      localStorage.setItem('fotolife-photo-messages-seen-id', String(latestId));
+    } catch {}
+  </script>
+</AppLayout>
