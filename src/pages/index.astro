@@ -16,7 +16,7 @@ const locale = normalizeLocale(Astro.cookies.get('fotolife-language')?.value);
 const t = getMessages(locale);
 const requestedLiveCount = Number.parseInt(Astro.url.searchParams.get('__live_count') || '20', 10);
 const feedLimit = Math.min(100, Math.max(20, Number.isFinite(requestedLiveCount) ? requestedLiveCount : 20));
-const photos = await getFeedPhotos(feedLimit, 0);
+const photos = await getFeedPhotos(user.id, feedLimit, 0);
 const updates = photos.slice(0, 10);
 const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
   day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'

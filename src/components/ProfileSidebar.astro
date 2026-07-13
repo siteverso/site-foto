@@ -120,13 +120,13 @@ const hasCustomAvatar = Boolean(profile?.hasCustomAvatar ?? avatarUrl);
         </div>
         <div class="profile-actions-menu" data-profile-actions-menu hidden>
           <button type="button" data-profile-block-level="messages" data-blocked={blockState.messages && !blockState.profile && !blockState.all ? 'true' : 'false'}>
-            <span aria-hidden="true">✉</span><span><strong>{blockState.messages && !blockState.profile && !blockState.all ? 'Permitir mensagens' : 'Bloquear mensagens'}</strong><small>Impede apenas mensagens; o perfil e o conteúdo continuam visíveis.</small></span>
+            <span aria-hidden="true">✉</span><span><strong>{blockState.messages && !blockState.profile && !blockState.all ? 'Liberar mensagens' : 'Bloquear conversas'}</strong><small>Vocês continuam se vendo, mas nenhum dos dois pode enviar mensagens ao outro.</small></span>
           </button>
           <button type="button" data-profile-block-level="profile" data-blocked={blockState.profile && !blockState.all ? 'true' : 'false'}>
-            <span aria-hidden="true">⊘</span><span><strong>{blockState.profile && !blockState.all ? 'Desbloquear perfil' : 'Bloquear perfil'}</strong><small>Impede acesso ao perfil, observação e mensagens, mas mantém conteúdo público visível.</small></span>
+            <span aria-hidden="true">⊘</span><span><strong>{blockState.profile && !blockState.all ? 'Liberar meu perfil' : 'Bloquear acesso ao meu perfil'}</strong><small>A pessoa não entra no seu perfil nem observa você; você ainda pode ver o conteúdo público dela.</small></span>
           </button>
           <button type="button" data-profile-block-level="all" data-blocked={blockState.all ? 'true' : 'false'}>
-            <span aria-hidden="true">◉</span><span><strong>{blockState.all ? 'Remover bloqueio geral' : 'Bloqueio geral'}</strong><small>Vocês deixam de se ver em todo o site; somente a Conta permite desfazer.</small></span>
+            <span aria-hidden="true">◉</span><span><strong>{blockState.all ? 'Voltar a se ver' : 'Ocultar um do outro'}</strong><small>Você não vê essa pessoa e ela não vê você em nenhuma área; somente a Conta permite desfazer.</small></span>
           </button>
         </div>
       </div>

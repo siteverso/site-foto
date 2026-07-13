@@ -184,7 +184,7 @@ export async function getTodayPhoto(userId: number): Promise<PhotoCard | null> {
     });
 }
 
-export async function getObservedPhotos(userId: number, includeHidden = true): Promise<PhotoCard[]> {
+export async function getObservedPhotos(userId: number, includeHidden = true, viewerUserId = userId): Promise<PhotoCard[]> {
     return withConnection(async connection => {
         const result = await connection.execute<OracleRow>(
             `SELECT *
@@ -215,20 +215,20 @@ export async function getObservedPhotos(userId: number, includeHidden = true): P
                    AND NOT EXISTS (
                        SELECT 1 FROM murm_user_block b
                         WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
-                          AND ((b.blocker_user_id = :user_id AND b.blocked_user_id = p.user_id)
-                            OR (b.blocker_user_id = p.user_id AND b.blocked_user_id = :user_id))
+                          AND ((b.blocker_user_id = :viewer_user_id AND b.blocked_user_id = p.user_id)
+                            OR (b.blocker_user_id = p.user_id AND b.blocked_user_id = :viewer_user_id))
                    )
              )
              WHERE user_photo_order = 1
                AND ROWNUM <= 8
              ORDER BY published_at DESC`,
-            { user_id: userId, include_hidden: includeHidden ? 1 : 0 },
+            { user_id: userId, viewer_user_id: viewerUserId, include_hidden: includeHidden ? 1 : 0 },
         );
         return (result.rows || []).map(card);
     });
 }
 
-export async function getObserverPhotos(userId: number): Promise<PhotoCard[]> {
+export async function getObserverPhotos(userId: number, viewerUserId = userId): Promise<PhotoCard[]> {
     return withConnection(async connection => {
         const result = await connection.execute<OracleRow>(
             `SELECT *
@@ -250,14 +250,14 @@ export async function getObserverPhotos(userId: number): Promise<PhotoCard[]> {
                    AND NOT EXISTS (
                        SELECT 1 FROM murm_user_block b
                         WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
-                          AND ((b.blocker_user_id = :user_id AND b.blocked_user_id = p.user_id)
-                            OR (b.blocker_user_id = p.user_id AND b.blocked_user_id = :user_id))
+                          AND ((b.blocker_user_id = :viewer_user_id AND b.blocked_user_id = p.user_id)
+                            OR (b.blocker_user_id = p.user_id AND b.blocked_user_id = :viewer_user_id))
                    )
              )
              WHERE user_photo_order = 1
                AND ROWNUM <= 8
              ORDER BY published_at DESC`,
-            { user_id: userId },
+            { user_id: userId, viewer_user_id: viewerUserId },
         );
         return (result.rows || []).map(card);
     });
@@ -706,7 +706,7 @@ export async function getUserPhotos(username: string): Promise<PhotoCard[]> {
     });
 }
 
-export async function getFeedPhotos(limit = 20, offset = 0): Promise<PhotoCard[]> {
+export async function getFeedPhotos(viewerUserId: number, limit = 20, offset = 0): Promise<PhotoCard[]> {
     return withConnection(async connection => {
         const result = await connection.execute<OracleRow>(
             `SELECT id,
@@ -739,6 +739,13 @@ export async function getFeedPhotos(limit = 20, offset = 0): Promise<PhotoCard[]
                      JOIN murm_user u ON u.id = p.user_id
                      WHERE p.post_type = 'photo'
                        AND p.status = 'published'
+                       AND NOT EXISTS (
+                           SELECT 1
+                             FROM murm_user_block b
+                            WHERE NVL(LOWER(TRIM(b.block_level)), 'all') = 'all'
+                              AND ((b.blocker_user_id = :viewer_user_id AND b.blocked_user_id = p.user_id)
+                                OR (b.blocker_user_id = p.user_id AND b.blocked_user_id = :viewer_user_id))
+                       )
                  )
                  WHERE user_photo_order = 1
              )
@@ -746,6 +753,7 @@ export async function getFeedPhotos(limit = 20, offset = 0): Promise<PhotoCard[]
                AND row_number_value <= :photo_offset + :photo_limit
              ORDER BY row_number_value`,
             {
+                viewer_user_id: viewerUserId,
                 photo_offset: Math.max(0, offset),
                 photo_limit: Math.max(1, Math.min(limit, 20)),
             },

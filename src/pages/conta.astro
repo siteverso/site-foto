@@ -120,16 +120,16 @@ const t = getMessages(locale);
         <div class="account-blocked-users-heading">
           <div>
             <h2>Usuários bloqueados</h2>
-            <p class="account-section-intro">Gerencie separadamente os bloqueios de perfil e de mensagens.</p>
+            <p class="account-section-intro">Escolha exatamente o que deseja impedir para cada pessoa.</p>
           </div>
           <span class="account-blocked-users-count" data-blocked-users-count>{blockedUsers.length}</span>
         </div>
 
         <div class="account-blocked-groups">
           {[
-            { level: 'all', title: 'Bloqueios gerais', icon: '◉', help: 'Vocês deixam de se ver em todo o site. Somente esta área permite desfazer.', users: generalBlockedUsers, empty: 'Nenhum bloqueio geral.', action: 'Remover bloqueio geral', type: 'Invisibilidade total' },
-            { level: 'profile', title: 'Perfis bloqueados', icon: '⊘', help: 'Impede acesso ao perfil, observação e mensagens; conteúdo público ainda pode aparecer.', users: profileBlockedUsers, empty: 'Nenhum perfil bloqueado.', action: 'Desbloquear perfil', type: 'Perfil e mensagens' },
-            { level: 'messages', title: 'Mensagens bloqueadas', icon: '✉', help: 'O perfil e o conteúdo continuam visíveis, mas não há troca de mensagens.', users: messageBlockedUsers, empty: 'Nenhum bloqueio de mensagens.', action: 'Permitir mensagens', type: 'Somente mensagens' },
+            { level: 'all', title: 'Ocultos um do outro', icon: '◉', help: 'Você não vê essa pessoa e ela não vê você em nenhuma área do FotoLife. Somente esta tela permite desfazer.', users: generalBlockedUsers, empty: 'Nenhuma pessoa oculta por completo.', action: 'Voltar a se ver', type: 'Ninguém vê ninguém' },
+            { level: 'profile', title: 'Acesso ao meu perfil bloqueado', icon: '⊘', help: 'A pessoa não entra no seu perfil, não observa você e não envia mensagens. Você ainda pode ver o conteúdo público dela.', users: profileBlockedUsers, empty: 'Ninguém está impedido de acessar seu perfil.', action: 'Liberar meu perfil', type: 'Ela não acessa você' },
+            { level: 'messages', title: 'Conversas bloqueadas', icon: '✉', help: 'Vocês continuam se vendo normalmente, mas nenhum dos dois pode enviar mensagens ao outro.', users: messageBlockedUsers, empty: 'Nenhuma conversa bloqueada.', action: 'Liberar mensagens', type: 'Sem mensagens entre vocês' },
           ].map(group => (
             <section class="account-blocked-group" data-blocked-group={group.level}>
               <header class="account-blocked-group-heading">

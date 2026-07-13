@@ -31,12 +31,12 @@ const visibleProfile = profileAccessible ? profile : null;
 if (profile && !profileAccessible) Astro.response.status = 404;
 const photos = visibleProfile ? await getUserPhotos(visibleProfile.username) : [];
 const alreadyFriend = visibleProfile && !isOwner ? await isFriend(user.id, visibleProfile.id) : false;
-const blockState = visibleProfile && !isOwner ? await getBlockState(user.id, visibleProfile.id) : { all: false, messages: false };
+const blockState = visibleProfile && !isOwner ? await getBlockState(user.id, visibleProfile.id) : { all: false, profile: false, messages: false };
 const showObservedList = Boolean(visibleProfile && canViewObservedList(visibleProfile.id, user.id, visibleProfile.observerVisibility));
 const [observerPhotos, observedPhotos, latestPhotos, commentsByPhoto] = await Promise.all([
-    visibleProfile ? getObserverPhotos(visibleProfile.id) : Promise.resolve([]),
-    visibleProfile && showObservedList ? getObservedPhotos(visibleProfile.id, isOwner) : Promise.resolve([]),
-    visibleProfile ? getLatestPhotos(visibleProfile.id) : Promise.resolve([]),
+    visibleProfile ? getObserverPhotos(visibleProfile.id, user.id) : Promise.resolve([]),
+    visibleProfile && showObservedList ? getObservedPhotos(visibleProfile.id, isOwner, user.id) : Promise.resolve([]),
+    visibleProfile ? getLatestPhotos(user.id) : Promise.resolve([]),
     Promise.all(photos.map(async photo => ({photoId: photo.id, comments: await getComments(photo.id, user.id, 50)}))),
 ]);
 const commentsMap = new Map(commentsByPhoto.map(item => [item.photoId, item.comments]));
